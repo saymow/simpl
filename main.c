@@ -9,11 +9,15 @@ int main() {
   Chunk chunk;
   initChunk(&chunk);
   
-  int constantIdx = addConstant(&chunk, 777);
-  
   writeChunk(&chunk, OP_CONSTANT, 1);
-  writeChunk(&chunk, constantIdx, 1);
+  writeChunk(&chunk, addConstant(&chunk, 3), 1);
   writeChunk(&chunk, OP_NEGATE, 1);
+  writeChunk(&chunk, OP_CONSTANT, 1);
+  writeChunk(&chunk, addConstant(&chunk, 2), 1);
+  writeChunk(&chunk, OP_MULTIPLY, 1);
+  writeChunk(&chunk, OP_CONSTANT, 1);
+  writeChunk(&chunk, addConstant(&chunk, 5), 1);
+  writeChunk(&chunk, OP_ADD, 1);
   writeChunk(&chunk, OP_RETURN, 1);
 
   disassembleChunk(&chunk, "test chunk");
