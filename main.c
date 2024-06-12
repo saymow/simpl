@@ -6,8 +6,15 @@
 int main() {
   Chunk chunk;
   initChunk(&chunk);
-  writeChunk(&chunk, OP_RETURN);
+  
+  int constantIdx = addConstant(&chunk, 777);
+  
+  writeChunk(&chunk, OP_CONSTANT, 1);
+  writeChunk(&chunk, constantIdx, 1);
+  writeChunk(&chunk, OP_RETURN, 1);
+
   disassembleChunk(&chunk, "test chunk");
+  
   freeChunk(&chunk);
   return 0;
 }
