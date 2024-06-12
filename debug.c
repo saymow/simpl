@@ -26,7 +26,7 @@ static int constantInstruction(const char* name, Chunk* chunk, int offset) {
 
 int disassembleInstruction(Chunk* chunk, int offset) {
   uint8_t instruction = chunk->code[offset];
-  
+
   printf("%04d ", offset);
 
   if (offset > 0 && chunk->lines[offset] == chunk->lines[offset - 1]) {
@@ -38,6 +38,8 @@ int disassembleInstruction(Chunk* chunk, int offset) {
   switch (instruction) {
     case OP_CONSTANT:
       return constantInstruction("OP_CONSTANT", chunk, offset);
+    case OP_NEGATE:
+      return simpleInstruction("OP_NEGATE", offset);
     case OP_RETURN:
       return simpleInstruction("OP_RETURN", offset);
     default:
