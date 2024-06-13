@@ -28,6 +28,10 @@ static void runtimeError(const char* format, ...) {
   resetStack();
 }
 
+static bool isFalsey(Value value) {
+  return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
+}
+
 static Value peek(int distance) { return vm.stackTop[-(1 + distance)]; }
 
 void push(Value value) {
@@ -84,6 +88,14 @@ static InterpretResult run() {
       case OP_NIL:
         push(NIL_VAL);
         break;
+      case OP_GREATER: {
+        BINARY_OP(BOOL_VAL, >);
+        break;
+      }
+      case OP_LESS: {
+        BINARY_OP(BOOL_VAL, <);
+        break;
+      }
       case OP_ADD: {
         BINARY_OP(NUMBER_VAL, +);
         break;
@@ -107,6 +119,9 @@ static InterpretResult run() {
         push(BOOL_VAL(valuesEqual(a, b)));
         break;
       }
+      case OP_NOT:
+        push(BOOL_VAL(isFalsey(pop())));
+        break;
       case OP_NEGATE: {
         if (!IS_NUMBER(peek(0))) {
           runtimeError("Operand must be a number.");

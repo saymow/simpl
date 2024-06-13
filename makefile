@@ -1,4 +1,4 @@
-all: run
+all: compile
 
 compile:
 	@gcc -o main.run *.c  -Wall -I .
