@@ -48,10 +48,12 @@ int disassembleInstruction(Chunk* chunk, int offset) {
       return simpleInstruction("OP_DIVIDE", offset);
     case OP_NEGATE:
       return simpleInstruction("OP_NEGATE", offset);
+    case OP_EQUAL:
+      return simpleInstruction("OP_EQUAL", offset);
     case OP_RETURN:
       return simpleInstruction("OP_RETURN", offset);
     default:
-      printf("Unknow opcode %d\n", instruction);
+      printf("Unknown opcode %d\n", instruction);
       return offset + 1;
   }
 }
