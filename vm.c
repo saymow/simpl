@@ -15,10 +15,15 @@ static void resetStack() { vm.stackTop = vm.stack; }
 
 void initVM() {
   resetStack();
+  initTable(&vm.strings);
   vm.objects = NULL;
 }
 
-void freeVM() { freeObjects(); }
+void freeVM() {
+  freeObjects();
+  freeTable(&vm.strings);
+  resetStack();
+}
 
 static void runtimeError(const char* format, ...) {
   va_list args;

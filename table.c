@@ -1,6 +1,7 @@
 #include "table.h"
 
 #include "memory.h"
+#include "string.h"
 
 #define TABLE_MAX_LOAD .75
 
@@ -108,11 +109,33 @@ bool tableDelete(Table* table, ObjString* key) {
   return true;
 }
 
-bool tableAddAll(Table* from, Table* to) {
+void tableAddAll(Table* from, Table* to) {
   for (int idx = 0; idx < from->capacity; idx++) {
-    Entry *entry = &from->entries[idx];
+    Entry* entry = &from->entries[idx];
     if (entry->key != NULL) {
       tableSet(to, entry->key, entry->value);
     }
+  }
+}
+
+ObjString* tableFindString(Table* table, const char* chars, int length,
+                           uint32_t hash) {
+  if (table->count == 0) return NULL;
+
+  uint32_t idx = hash % table->capacity;
+
+  for (;;) {
+    Entry* entry = &table->entries[idx];
+
+    if (entry->key == NULL) {
+      if (IS_NIL(entry->value)) {
+        return NULL;
+      }
+    } else if (entry->key->length == length && entry->key->hash == hash &&
+               memcmp(entry->key->chars, chars, length) == 0) {
+      return entry->key;
+    }
+
+    idx = (idx + 1) % table->capacity;
   }
 }

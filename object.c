@@ -42,14 +42,31 @@ ObjString *allocateString(char *chars, int length) {
   string->length = length;
   string->hash = hashString(chars, length);
 
+  tableSet(&vm.strings, string, BOOL_VAL(true));
+
   return string;
 }
 
 ObjString *takeString(char *chars, int length) {
+  int32_t hash = hashString(chars, length);
+  ObjString *interned = tableFindString(&vm.strings, chars, length, hash);
+
+  if (interned != NULL) {
+    FREE_ARRAY(char, chars, length);
+    return interned;
+  }
+
   return allocateString(chars, length);
 }
 
 ObjString *copyString(const char *chars, int length) {
+  int32_t hash = hashString(chars, length);
+  ObjString *interned = tableFindString(&vm.strings, chars, length, hash);
+
+  if (interned != NULL) {
+    return interned;
+  }
+
   char *buffer = ALLOCATE(char, length + 1);
   memcpy(buffer, chars, length);
   buffer[length] = '\0';
