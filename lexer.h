@@ -30,7 +30,7 @@ typedef struct {
     int line;
 } Token;
 
-void initScanner(const char* source);
+void initLexer(const char* source);
 Token scanToken();
 
 #endif

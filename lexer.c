@@ -15,7 +15,7 @@ Lexer lexer;
 
 void initLexer(const char* source) {
   lexer.start = source;
-  lexer.line = source;
+  lexer.current = source;
   lexer.line = 1;
 };
 
@@ -77,8 +77,9 @@ static void skipWhitespace() {
       case '/':
         if (peekNext() == '/') {
           while (peek() != '\n' && !isAtEnd()) advance();
+        } else {
+          return;
         }
-
         break;
       default:
         return;
@@ -92,7 +93,7 @@ static Token string() {
     advance();
   }
 
-  if (isAtEnd()) return errorToken('Unterminated string.');
+  if (isAtEnd()) return errorToken("Unterminated string.");
 
   advance();
   return makeToken(TOKEN_STRING);
