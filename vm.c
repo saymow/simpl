@@ -97,8 +97,6 @@ static InterpretResult run() {
       case OP_CONSTANT: {
         Value constant = READ_CONSTANT();
         push(constant);
-        printfValue(constant);
-        printf("\n");
         break;
       }
       case OP_TRUE:
@@ -161,9 +159,16 @@ static InterpretResult run() {
         push(NUMBER_VAL(-AS_NUMBER(pop())));
         break;
       }
-      case OP_RETURN: {
+      case OP_PRINT: {
         printfValue(pop());
         printf("\n");
+        break;
+      }
+      case OP_POP: {
+        pop();
+        break;
+      }
+      case OP_RETURN: {
         return INTERPRET_OK;
       }
 

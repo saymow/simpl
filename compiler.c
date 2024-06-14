@@ -41,6 +41,8 @@ typedef struct {
   bool panicMode;
 } Parser;
 
+static void declaration();
+static void statement();
 static void expression();
 static ParseRule* getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
@@ -88,6 +90,13 @@ static void advance() {
   }
 }
 
+static bool match(TokenType type) {
+  if (parser.current.type != type) return false;
+
+  advance();
+  return true;
+}
+
 static void consume(TokenType type, const char* message) {
   if (parser.current.type == type) {
     advance();
@@ -114,8 +123,6 @@ static void parsePrecedence(Precedence precedence) {
     infixRule();
   }
 }
-
-static void expression() { parsePrecedence(PREC_ASSIGNMENT); }
 
 static void emitByte(uint8_t byte) {
   writeChunk(currentChunk(), byte, parser.previous.line);
@@ -150,6 +157,30 @@ static void endCompiler() {
 #endif
 }
 
+static void declaration() { statement(); }
+
+static void printStatement() {
+  expression();
+  consume(TOKEN_SEMICOLON, "Expect ';' after value.");
+  emitByte(OP_PRINT);
+}
+
+static void expressionStatement() {
+  expression();
+  consume(TOKEN_SEMICOLON, "Expect ';' after expression.");
+  emitByte(OP_POP);
+}
+
+static void statement() {
+  if (match(TOKEN_PRINT)) {
+    printStatement();
+  } else {
+    expressionStatement();
+  }
+}
+
+static void expression() { parsePrecedence(PREC_ASSIGNMENT); }
+
 bool compile(const char* source, Chunk* chunk) {
   initLexer(source);
   compilingChunk = chunk;
@@ -158,8 +189,11 @@ bool compile(const char* source, Chunk* chunk) {
   parser.panicMode = false;
 
   advance();
-  expression();
-  consume(TOKEN_EOF, "Expect end of expression.");
+
+  while (!match(TOKEN_EOF)) {
+    declaration();
+  }
+
   endCompiler();
   return !parser.hadError;
 }

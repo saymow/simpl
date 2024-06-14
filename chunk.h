@@ -5,6 +5,7 @@
 #include "value.h"
 
 typedef enum {
+  OP_POP,
   OP_CONSTANT,
   OP_TRUE,
   OP_FALSE,
@@ -18,6 +19,7 @@ typedef enum {
   OP_EQUAL,
   OP_NEGATE,
   OP_NOT,
+  OP_PRINT,
   OP_RETURN,
 } OpCode;
 
