@@ -63,7 +63,7 @@ Parser parser;
 Chunk* compilingChunk;
 Compiler* current = NULL;
 
-static void* currentChunk() { return compilingChunk; }
+static Chunk* currentChunk() { return compilingChunk; }
 
 static void initCompiler(Compiler* compiler) {
   compiler->localCount = 0;
@@ -319,11 +319,50 @@ static void block() {
   endScope();
 }
 
+static int emitJump(OpCode instruction) {
+  writeChunk(currentChunk(), instruction, parser.previous.line);
+  writeChunk(currentChunk(), 0xff, parser.previous.line);
+  writeChunk(currentChunk(), 0xff, parser.previous.line);
+  return currentChunk()->count - 2;
+}
+
+static void patchJmp(int jmp) {
+  int offset = currentChunk()->count - jmp - 2;
+  if (offset > UINT16_MAX) {
+    error("To much code to jump over.");
+  }
+  currentChunk()->code[jmp] = (offset >> 8) & 0xff;
+  currentChunk()->code[jmp + 1] = offset & 0xff;
+}
+
+static void ifStatement() {
+  consume(TOKEN_LEFT_PAREN, "Expect '(' before if expresion");
+  expression();
+  consume(TOKEN_RIGHT_PAREN, "Expect ')' after if expresion");
+
+  int thenJmp = emitJump(OP_JUMP_IF_FALSE);
+
+  emitByte(OP_POP);
+  statement();
+
+  int elseJmp = emitJump(OP_JUMP);
+
+  patchJmp(thenJmp);
+  emitByte(OP_POP);
+
+  if (match(TOKEN_ELSE)) {
+    statement();
+  }
+  patchJmp(elseJmp);
+}
+
 static void statement() {
   if (match(TOKEN_PRINT)) {
     printStatement();
   } else if (match(TOKEN_LEFT_BRACE)) {
     block();
+  } else if (match(TOKEN_IF)) {
+    ifStatement();
   } else {
     expressionStatement();
   }

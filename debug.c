@@ -74,6 +74,10 @@ int disassembleInstruction(Chunk* chunk, int offset) {
       return simpleInstruction("OP_LESS", offset);
     case OP_NOT:
       return simpleInstruction("OP_NOT", offset);
+    case OP_JUMP:
+      return simpleInstruction("OP_JUMP", offset);
+    case OP_JUMP_IF_FALSE:
+      return simpleInstruction("OP_JUMP_IF_FALSE", offset);
     case OP_PRINT:
       return simpleInstruction("OP_PRINT", offset);
     case OP_RETURN:

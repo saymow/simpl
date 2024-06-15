@@ -1,16 +1,9 @@
-var test = 1; 
-{ 
-    var test2 = 2; 
-    {
-        var test3 = 3;
-        {
-            var test4 = 4;
-            {
-                test = "test";
-                test2 = "test2";
-                test3 = "test3";
-                test4 = "test4";
-            }
-        }
-    }
+print "before jump";
+
+if (false) {
+    print "then";
+} else {
+    print "else";
 }
+
+print "after jump";
