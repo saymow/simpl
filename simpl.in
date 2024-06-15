@@ -1,9 +1,6 @@
-print "before jump";
+var i = 0;
 
-if (false) {
-    print "then";
-} else {
-    print "else";
+for (;;) {
+    print i;
+    i = i + 1;
 }
-
-print "after jump";
