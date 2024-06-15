@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "common.h"
 #include "lexer.h"
@@ -41,6 +42,17 @@ typedef struct {
   bool panicMode;
 } Parser;
 
+typedef struct {
+  Token name;
+  int depth;
+} Local;
+
+typedef struct {
+  Local locals[UINT8_MAX];
+  int localCount;
+  int scopeDepth;
+} Compiler;
+
 static void declaration();
 static void statement();
 static void expression();
@@ -48,10 +60,16 @@ static ParseRule* getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
 
 Parser parser;
-
 Chunk* compilingChunk;
+Compiler* current = NULL;
 
 static void* currentChunk() { return compilingChunk; }
+
+static void initCompiler(Compiler* compiler) {
+  compiler->localCount = 0;
+  compiler->scopeDepth = 0;
+  current = compiler;
+}
 
 static void errorAt(Token* token, const char* message) {
   if (parser.panicMode) return;
@@ -88,6 +106,10 @@ static void advance() {
 
     errorAtCurrent(parser.current.start);
   }
+}
+
+static bool check(TokenType tokenType) {
+  return parser.current.type == tokenType;
 }
 
 static bool match(TokenType type) {
@@ -167,12 +189,60 @@ static uint8_t identifierConstant(Token* name) {
   return makeConstant(OBJ_VAL(copyString(name->start, name->length)));
 }
 
+static void addLocal(Token name) {
+  if (current->localCount == UINT8_COUNT) {
+    error("Too many local variables in function.");
+    return;
+  }
+
+  Local* local = &current->locals[current->localCount++];
+  local->name = name;
+  local->depth = -1;
+}
+
+static void markLocalInitialized() {
+  current->locals[current->localCount - 1].depth = current->scopeDepth;
+}
+
+static bool identifiersEqual(Token* a, Token* b) {
+  if (a->length != b->length) return false;
+  return memcmp(a->start, b->start, a->length) == 0;
+}
+
+static void declareVariable() {
+  if (current->scopeDepth == 0) return;
+
+  Token* name = &parser.previous;
+
+  for (int idx = current->localCount - 1; idx >= 0; idx--) {
+    Local* local = &current->locals[idx];
+
+    if (local->depth != -1 && local->depth < current->scopeDepth) {
+      break;
+    }
+    if (identifiersEqual(name, &local->name)) {
+      error("Already variable with this name in this scope.");
+    }
+  }
+
+  addLocal(*name);
+}
+
 static uint8_t parseVariable(const char* message) {
   consume(TOKEN_IDENTIFIER, message);
+
+  declareVariable();
+  if (current->scopeDepth > 0) return 0;
+
   return identifierConstant(&parser.previous);
 }
 
 static void defineVariable(uint8_t global) {
+  if (current->scopeDepth > 0) {
+    markLocalInitialized();
+    return;
+  }
+
   emitBytes(OP_DEFINE_GLOBAL, global);
 }
 
@@ -233,9 +303,27 @@ static void expressionStatement() {
   emitByte(OP_POP);
 }
 
+static void beginScope() { current->scopeDepth++; }
+
+static void endScope() { current->scopeDepth--; }
+
+static void block() {
+  beginScope();
+
+  while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
+    declaration();
+  }
+
+  consume(TOKEN_RIGHT_BRACE, "Expect '}' at end of block.");
+
+  endScope();
+}
+
 static void statement() {
   if (match(TOKEN_PRINT)) {
     printStatement();
+  } else if (match(TOKEN_LEFT_BRACE)) {
+    block();
   } else {
     expressionStatement();
   }
@@ -245,6 +333,8 @@ static void expression() { parsePrecedence(PREC_ASSIGNMENT); }
 
 bool compile(const char* source, Chunk* chunk) {
   initLexer(source);
+  Compiler compiler;
+  initCompiler(&compiler);
   compilingChunk = chunk;
 
   parser.hadError = false;
@@ -349,16 +439,38 @@ static void string(bool canAssign) {
       copyString(parser.previous.start + 1, parser.previous.length - 2)));
 }
 
-static void namedVariable(Token token, bool canAssign) {
-  uint8_t arg = identifierConstant(&token);
-  OpCode operation = OP_GET_GLOBAL;
-
-  if (canAssign && match(TOKEN_EQUAL)) {
-    operation = OP_SET_GLOBAL;
-    expression();
+static int resolveLocal(Token name) {
+  for (int idx = current->localCount - 1; idx >= 0; idx--) {
+    if (identifiersEqual(&current->locals[idx].name, &name)) {
+      if (current->locals[idx].depth == -1) {
+        error("Cannot resolve local variable in its own initializer.");
+      }
+      return idx;
+    }
   }
 
-  emitBytes(operation, arg);
+  return -1;
+}
+
+static void namedVariable(Token token, bool canAssign) {
+  uint8_t getOp, setOp;
+  int arg = resolveLocal(token);
+
+  if (arg == -1) {
+    arg = identifierConstant(&token);
+    getOp = OP_GET_GLOBAL;
+    setOp = OP_SET_GLOBAL;
+  } else {
+    getOp = OP_GET_LOCAL;
+    setOp = OP_SET_LOCAL;
+  }
+
+  if (canAssign && match(TOKEN_EQUAL)) {
+    expression();
+    emitBytes(setOp, (uint8_t)arg);
+  } else {
+    emitBytes(getOp, (uint8_t)arg);
+  }
 }
 
 static void variable(bool canAssign) {

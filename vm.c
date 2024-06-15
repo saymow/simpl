@@ -128,6 +128,14 @@ static InterpretResult run() {
         }
         break;
       }
+      case OP_GET_LOCAL: {
+        push(vm.stack[READ_BYTE()]);
+        break;
+      }
+      case OP_SET_LOCAL: {
+        vm.stack[READ_BYTE()] = peek(0);
+        break;
+      }
       case OP_TRUE:
         push(BOOL_VAL(true));
         break;
