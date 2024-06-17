@@ -1,1 +1,6 @@
-false or 1 and 2;
+fun add(a, b, c) {
+    print a + b + c;
+}
+
+
+add(1, 2, 3);
