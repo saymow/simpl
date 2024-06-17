@@ -1,6 +1,1 @@
-var i = 0;
-
-for (;;) {
-    print i;
-    i = i + 1;
-}
+false or 1 and 2;
