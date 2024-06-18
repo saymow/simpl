@@ -24,6 +24,8 @@ typedef struct {
 
   Table strings;
   Table global;
+
+  ObjUpValue* upvalues;
   Obj* objects;
 } VM;
 

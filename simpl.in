@@ -1,9 +1,16 @@
 fun example() {
-    var name = "John";
+    var number = 0;
 
-    fun inner() {
-        print name;
+    fun inc() {
+        return (number = number + 1);
     }
+
+    return inc;
 }
 
-example();
+var closure = example();
+
+print closure();
+print closure();
+print closure();
+print closure();

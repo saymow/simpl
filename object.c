@@ -32,6 +32,8 @@ Obj *allocateObj(ObjType type, size_t size) {
 ObjUpValue *newUpValue(Value *value) {
   ObjUpValue *upValue = ALLOCATE_OBJ(OBJ_UPVALUE, ObjUpValue);
   upValue->location = value;
+  upValue->closed = NIL_VAL;
+  upValue->next = NULL;
 
   return upValue;
 }

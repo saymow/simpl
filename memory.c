@@ -32,7 +32,9 @@ static void freeObject(Obj* object) {
       break;
     }
     case OBJ_CLOSURE: {
-      FREE(ObjClosure, object);
+      ObjClosure* closure = (ObjClosure * ) object;
+      FREE(ObjClosure, closure);
+      FREE_ARRAY(ObjUpValue *, closure->upvalues, closure->upvalueCount);
       break;
     }
     case OBJ_NATIVE_FN: {

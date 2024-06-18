@@ -45,6 +45,7 @@ typedef struct {
 typedef struct {
   Token name;
   int depth;
+  bool isCaptured;
 } Local;
 
 typedef struct {
@@ -62,7 +63,6 @@ typedef struct Compiler {
   int localCount;
   int scopeDepth;
   UpValue upvalues[UINT8_MAX];
-  int upvaluesCount;
 
   struct Compiler* enclosing;
 } Compiler;
@@ -86,7 +86,6 @@ static void initCompiler(Compiler* compiler, FunctionType type) {
   compiler->type = type;
   compiler->localCount = 0;
   compiler->scopeDepth = 0;
-  compiler->upvaluesCount = 0;
   current = compiler;
 
   if (type != TYPE_SCRIPT) {
@@ -98,6 +97,7 @@ static void initCompiler(Compiler* compiler, FunctionType type) {
   local->depth = 0;
   local->name.start = "";
   local->name.length = 0;
+  local->isCaptured = false;
 }
 
 static void emitReturn() {
@@ -239,6 +239,7 @@ static void addLocal(Token name) {
   Local* local = &current->locals[current->localCount++];
   local->name = name;
   local->depth = -1;
+  local->isCaptured = false;
 }
 
 static void markLocalInitialized() {
@@ -330,7 +331,12 @@ static void endScope() {
 
   while (current->localCount > 0 &&
          current->locals[current->localCount - 1].depth > current->scopeDepth) {
-    emitByte(OP_POP);
+    if (current->locals[current->localCount - 1].isCaptured) {
+      emitByte(OP_CLOSE_UPVALUE);
+    } else {
+      emitByte(OP_POP);
+    }
+
     current->localCount--;
   }
 }
@@ -698,12 +704,13 @@ static int resolveUpValue(Compiler* compiler, Token* name) {
 
   int local = resolveLocal(compiler->enclosing, name);
   if (local != -1) {
+    compiler->enclosing->locals[local].isCaptured = true;
     return addUpValue(compiler, (uint8_t)local, true);
   }
 
   int upvalue = resolveUpValue(compiler->enclosing, name);
   if (upvalue != -1) {
-    return addUpValue(compiler, (uint8_t) upvalue, false);
+    return addUpValue(compiler, (uint8_t)upvalue, false);
   }
 
   return -1;
