@@ -494,6 +494,20 @@ static void forStatement() {
   endScope();
 }
 
+static void returnStatement() {
+  if (current->enclosing == NULL) {
+    error("Cannot return outside a function.");
+  }
+
+  if (match(TOKEN_SEMICOLON)) {
+    emitReturn();
+  } else {
+    expression();
+    consume(TOKEN_SEMICOLON, "Expect ';' after return expression.");
+    emitByte(OP_RETURN);
+  }
+}
+
 static void statement() {
   if (match(TOKEN_PRINT)) {
     printStatement();
@@ -507,6 +521,8 @@ static void statement() {
     whileStatement();
   } else if (match(TOKEN_FOR)) {
     forStatement();
+  } else if (match(TOKEN_RETURN)) {
+    returnStatement();
   } else {
     expressionStatement();
   }
