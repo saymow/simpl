@@ -29,6 +29,13 @@ Obj *allocateObj(ObjType type, size_t size) {
   return object;
 }
 
+ObjClosure *newClosure(ObjFunction *function) {
+  ObjClosure *closure = ALLOCATE_OBJ(OBJ_CLOSURE, ObjClosure);
+  closure->function = function;
+
+  return closure;
+}
+
 ObjFunction *newFunction() {
   ObjFunction *function = ALLOCATE_OBJ(OBJ_FUNCTION, ObjFunction);
   function->arity = 0;
@@ -101,5 +108,7 @@ void printObject(Value value) {
     case OBJ_NATIVE_FN:
       printf("<native fn>");
       break;
+    case OBJ_CLOSURE:
+      printf("<closure>");
   }
 }

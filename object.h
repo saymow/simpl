@@ -5,7 +5,7 @@
 #include "common.h"
 #include "value.h"
 
-typedef enum { OBJ_STRING, OBJ_FUNCTION, OBJ_NATIVE_FN } ObjType;
+typedef enum { OBJ_STRING, OBJ_FUNCTION, OBJ_NATIVE_FN, OBJ_CLOSURE } ObjType;
 
 struct Obj {
   ObjType type;
@@ -33,6 +33,11 @@ typedef struct ObjFunction {
   ObjString *name;
 } ObjFunction;
 
+typedef struct ObjClosure {
+  Obj obj;
+  ObjFunction *function;
+} ObjClosure;
+
 #define OBJ_TYPE(value) (AS_OBJ(value)->type)
 
 #define IS_STRING(value) (isObjType(value, OBJ_STRING))
@@ -41,8 +46,10 @@ typedef struct ObjFunction {
 #define AS_STRING(value) ((ObjString *)AS_OBJ(value))
 #define AS_CSTRING(value) (((ObjString *)AS_OBJ(value))->chars)
 #define AS_FUNCTION(value) ((ObjFunction *)AS_OBJ(value))
+#define AS_CLOSURE(value) ((ObjClosure *)AS_OBJ(value))
 #define AS_NATIVE_FN(value) (((ObjNativeFn *)AS_OBJ(value))->function)
 
+ObjClosure *newClosure(ObjFunction* function);
 ObjFunction *newFunction();
 ObjNativeFn *newNativeFunction(NativeFn function);
 ObjString *copyString(const char *chars, int length);
