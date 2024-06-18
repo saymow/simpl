@@ -29,9 +29,22 @@ Obj *allocateObj(ObjType type, size_t size) {
   return object;
 }
 
+ObjUpValue *newUpValue(Value *value) {
+  ObjUpValue *upValue = ALLOCATE_OBJ(OBJ_UPVALUE, ObjUpValue);
+  upValue->location = value;
+
+  return upValue;
+}
+
 ObjClosure *newClosure(ObjFunction *function) {
   ObjClosure *closure = ALLOCATE_OBJ(OBJ_CLOSURE, ObjClosure);
+  closure->upvalues = ALLOCATE(ObjUpValue *, function->upvalueCount);
   closure->function = function;
+  closure->upvalueCount = function->upvalueCount;
+
+  for (int idx = 0; idx < function->upvalueCount; idx++) {
+    closure->upvalues[idx] = NULL;
+  }
 
   return closure;
 }
@@ -39,6 +52,7 @@ ObjClosure *newClosure(ObjFunction *function) {
 ObjFunction *newFunction() {
   ObjFunction *function = ALLOCATE_OBJ(OBJ_FUNCTION, ObjFunction);
   function->arity = 0;
+  function->upvalueCount = 0;
   function->name = NULL;
 
   initChunk(&function->chunk);
@@ -109,6 +123,10 @@ void printObject(Value value) {
       printf("<native fn>");
       break;
     case OBJ_CLOSURE:
-      printf("<closure>");
+      printFunction(AS_CLOSURE(value)->function);
+      break;
+    case OBJ_UPVALUE:
+      printf("<up value>");
+      break;
   }
 }

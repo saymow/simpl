@@ -1,11 +1,9 @@
 fun example() {
     var name = "John";
 
-    fun closure() {
+    fun inner() {
         print name;
     }
-
-    closure();
 }
 
 example();

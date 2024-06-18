@@ -47,6 +47,11 @@ typedef struct {
   int depth;
 } Local;
 
+typedef struct {
+  uint8_t index;
+  bool isLocal;
+} UpValue;
+
 typedef enum { TYPE_FUNCTION, TYPE_SCRIPT } FunctionType;
 
 typedef struct Compiler {
@@ -56,6 +61,8 @@ typedef struct Compiler {
   Local locals[UINT8_MAX];
   int localCount;
   int scopeDepth;
+  UpValue upvalues[UINT8_MAX];
+  int upvaluesCount;
 
   struct Compiler* enclosing;
 } Compiler;
@@ -79,6 +86,7 @@ static void initCompiler(Compiler* compiler, FunctionType type) {
   compiler->type = type;
   compiler->localCount = 0;
   compiler->scopeDepth = 0;
+  compiler->upvaluesCount = 0;
   current = compiler;
 
   if (type != TYPE_SCRIPT) {
@@ -357,6 +365,10 @@ static void function(FunctionType type) {
 
   ObjFunction* function = endCompiler();
   emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(function)));
+  for (int idx = 0; idx < function->upvalueCount; idx++) {
+    emitByte(compiler.upvalues[idx].index);
+    emitByte(compiler.upvalues[idx].isLocal ? 1 : 0);
+  }
 }
 
 static void funDeclaration() {
@@ -660,17 +672,57 @@ static int resolveLocal(Compiler* compiler, Token* name) {
   return -1;
 }
 
+static int addUpValue(Compiler* compiler, uint8_t index, bool isLocal) {
+  int upvaluesCount = compiler->function->upvalueCount;
+
+  for (int idx = upvaluesCount - 1; idx >= 0; idx--) {
+    if (compiler->upvalues[idx].index == index &&
+        compiler->upvalues[idx].isLocal == isLocal) {
+      return idx;
+    }
+  }
+
+  if (upvaluesCount == UINT8_COUNT) {
+    error("Too many closure variables in a function.");
+    return 0;
+  }
+
+  compiler->upvalues[upvaluesCount].index = index;
+  compiler->upvalues[upvaluesCount].isLocal = isLocal;
+
+  return compiler->function->upvalueCount++;
+}
+
+static int resolveUpValue(Compiler* compiler, Token* name) {
+  if (compiler->enclosing == NULL) return -1;
+
+  int local = resolveLocal(compiler->enclosing, name);
+  if (local != -1) {
+    return addUpValue(compiler, (uint8_t)local, true);
+  }
+
+  int upvalue = resolveUpValue(compiler->enclosing, name);
+  if (upvalue != -1) {
+    return addUpValue(compiler, (uint8_t) upvalue, false);
+  }
+
+  return -1;
+}
+
 static void namedVariable(Token token, bool canAssign) {
   uint8_t getOp, setOp;
   int arg = resolveLocal(current, &token);
 
-  if (arg == -1) {
+  if (arg != -1) {
+    getOp = OP_GET_LOCAL;
+    setOp = OP_SET_LOCAL;
+  } else if ((arg = resolveUpValue(current, &token)) != -1) {
+    getOp = OP_GET_UPVALUE;
+    setOp = OP_SET_UPVALUE;
+  } else {
     arg = identifierConstant(&token);
     getOp = OP_GET_GLOBAL;
     setOp = OP_SET_GLOBAL;
-  } else {
-    getOp = OP_GET_LOCAL;
-    setOp = OP_SET_LOCAL;
   }
 
   if (canAssign && match(TOKEN_EQUAL)) {

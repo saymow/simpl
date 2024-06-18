@@ -139,11 +139,17 @@ Value pop() {
   return *vm.stackTop;
 }
 
+static ObjUpValue* captureUpvalue(Value* value) {
+  ObjUpValue* upValue = newUpValue(value);
+  return upValue;
+}
+
 static InterpretResult run() {
   CallFrame* frame = &vm.frames[vm.framesCount - 1];
 
 #define READ_BYTE() (*frame->ip++)
-#define READ_CONSTANT() (frame->closure->function->chunk.constants.values[READ_BYTE()])
+#define READ_CONSTANT() \
+  (frame->closure->function->chunk.constants.values[READ_BYTE()])
 #define READ_SHORT() \
   (frame->ip += 2, (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1]))
 #define READ_STRING() (AS_STRING(READ_CONSTANT()))
@@ -167,8 +173,9 @@ static InterpretResult run() {
       printf(" ]");
     }
     printf("\n");
-    disassembleInstruction(&frame->closure->function->chunk,
-                           (int)(frame->ip - frame->closure->function->chunk.code));
+    disassembleInstruction(
+        &frame->closure->function->chunk,
+        (int)(frame->ip - frame->closure->function->chunk.code));
 #endif
 
     uint8_t instruction;
@@ -211,6 +218,16 @@ static InterpretResult run() {
       }
       case OP_SET_LOCAL: {
         vm.stack[READ_BYTE()] = peek(0);
+        break;
+      }
+      case OP_GET_UPVALUE: {
+        uint8_t slot = READ_BYTE();
+        push(*frame->closure->upvalues[slot]->location);
+        break;
+      }
+      case OP_SET_UPVALUE: {
+        uint8_t slot = READ_BYTE();
+        *frame->closure->upvalues[slot]->location = peek(0);
         break;
       }
       case OP_JUMP: {
@@ -309,6 +326,16 @@ static InterpretResult run() {
         ObjFunction* function = AS_FUNCTION(READ_CONSTANT());
         ObjClosure* closure = newClosure(function);
         push(OBJ_VAL(closure));
+        for (int idx = 0; idx < closure->upvalueCount; idx++) {
+          uint8_t index = READ_BYTE();
+          uint8_t isLocal = READ_BYTE();
+
+          if (isLocal) {
+            closure->upvalues[idx] = captureUpvalue(frame->slots + index);
+          } else {
+            closure->upvalues[idx] = frame->closure->upvalues[index];
+          }
+        }
         break;
       }
       case OP_RETURN: {

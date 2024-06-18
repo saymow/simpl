@@ -5,7 +5,13 @@
 #include "common.h"
 #include "value.h"
 
-typedef enum { OBJ_STRING, OBJ_FUNCTION, OBJ_NATIVE_FN, OBJ_CLOSURE } ObjType;
+typedef enum {
+  OBJ_STRING,
+  OBJ_FUNCTION,
+  OBJ_NATIVE_FN,
+  OBJ_CLOSURE,
+  OBJ_UPVALUE
+} ObjType;
 
 struct Obj {
   ObjType type;
@@ -29,12 +35,20 @@ struct ObjString {
 typedef struct ObjFunction {
   Obj obj;
   int arity;
+  int upvalueCount;
   Chunk chunk;
   ObjString *name;
 } ObjFunction;
 
+typedef struct ObjUpValue {
+  Obj obj;
+  Value *location;
+} ObjUpValue;
+
 typedef struct ObjClosure {
   Obj obj;
+  int upvalueCount;
+  ObjUpValue **upvalues;
   ObjFunction *function;
 } ObjClosure;
 
@@ -49,7 +63,8 @@ typedef struct ObjClosure {
 #define AS_CLOSURE(value) ((ObjClosure *)AS_OBJ(value))
 #define AS_NATIVE_FN(value) (((ObjNativeFn *)AS_OBJ(value))->function)
 
-ObjClosure *newClosure(ObjFunction* function);
+ObjClosure *newClosure(ObjFunction *function);
+ObjUpValue *newUpValue(Value *value);
 ObjFunction *newFunction();
 ObjNativeFn *newNativeFunction(NativeFn function);
 ObjString *copyString(const char *chars, int length);
