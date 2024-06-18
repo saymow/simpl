@@ -39,6 +39,12 @@ ObjFunction *newFunction() {
   return function;
 }
 
+ObjNativeFn *newNativeFunction(NativeFn function) {
+  ObjNativeFn *nativeFn = ALLOCATE_OBJ(OBJ_NATIVE_FN, ObjNativeFn);
+  nativeFn->function = function;
+  return nativeFn;
+}
+
 ObjString *allocateString(char *chars, int length) {
   ObjString *string = ALLOCATE_OBJ(OBJ_STRING, ObjString);
   string->chars = chars;
@@ -76,7 +82,7 @@ ObjString *copyString(const char *chars, int length) {
   return allocateString(buffer, length);
 }
 
-static void printFunction(ObjFunction* function) {
+static void printFunction(ObjFunction *function) {
   if (function->name == NULL) {
     printf("<script>");
   } else {
@@ -91,6 +97,9 @@ void printObject(Value value) {
       break;
     case OBJ_FUNCTION:
       printFunction(AS_FUNCTION(value));
+      break;
+    case OBJ_NATIVE_FN:
+      printf("<native fn>");
       break;
   }
 }

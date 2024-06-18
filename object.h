@@ -1,16 +1,23 @@
 #ifndef object_h
 #define object_h
 
+#include "chunk.h"
 #include "common.h"
 #include "value.h"
-#include "chunk.h"
 
-typedef enum { OBJ_STRING, OBJ_FUNCTION } ObjType;
+typedef enum { OBJ_STRING, OBJ_FUNCTION, OBJ_NATIVE_FN } ObjType;
 
 struct Obj {
   ObjType type;
   struct Obj *next;
 };
+
+typedef Value (*NativeFn)(int argCount, Value *args);
+
+typedef struct {
+  Obj obj;
+  NativeFn function;
+} ObjNativeFn;
 
 struct ObjString {
   Obj obj;
@@ -23,7 +30,7 @@ typedef struct ObjFunction {
   Obj obj;
   int arity;
   Chunk chunk;
-  ObjString* name;
+  ObjString *name;
 } ObjFunction;
 
 #define OBJ_TYPE(value) (AS_OBJ(value)->type)
@@ -31,13 +38,15 @@ typedef struct ObjFunction {
 #define IS_STRING(value) (isObjType(value, OBJ_STRING))
 #define IS_FUNCTION(value) (isObjType(value, OBJ_FUNCTION))
 
-#define AS_STRING(value) ((ObjString *) AS_OBJ(value))
-#define AS_FUNCTION(value) ((ObjFunction *) AS_OBJ(value))
-#define AS_CSTRING(value) (((ObjString *) AS_OBJ(value))->chars)
+#define AS_STRING(value) ((ObjString *)AS_OBJ(value))
+#define AS_CSTRING(value) (((ObjString *)AS_OBJ(value))->chars)
+#define AS_FUNCTION(value) ((ObjFunction *)AS_OBJ(value))
+#define AS_NATIVE_FN(value) (((ObjNativeFn *)AS_OBJ(value))->function)
 
-ObjFunction* newFunction();
-ObjString *copyString(const char *chars, int length); 
-ObjString *takeString(char *chars, int length); 
+ObjFunction *newFunction();
+ObjNativeFn *newNativeFunction(NativeFn function);
+ObjString *copyString(const char *chars, int length);
+ObjString *takeString(char *chars, int length);
 void printObject(Value value);
 
 static inline bool isObjType(Value value, ObjType type) {

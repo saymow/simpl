@@ -1,12 +1,8 @@
-fun test() {
-    var variable = 5;
-
-    fun test2() {
-        print variable;
-    }
-
-    test2();
+fun fib(n) {
+    if (n < 2) return n;
+    return fib(n - 2) + fib (n - 1);
 }
 
-
-test();
+var start = clock();
+fib(15);
+print clock() - start;
