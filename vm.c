@@ -51,10 +51,20 @@ static void runtimeError(const char* format, ...) {
   vfprintf(stderr, format, args);
   va_end(args);
   fputs("\n", stderr);
-  CallFrame* frame = &vm.frames[vm.framesCount - 1];
-  size_t instruction = frame->ip - frame->function->chunk.code - 1;
-  int line = frame->function->chunk.lines[instruction];
-  fprintf(stderr, "[line %d] in script.\n", line);
+
+  for (int idx = vm.framesCount - 1; idx >= 0; idx--) {
+    CallFrame* frame = &vm.frames[idx];
+    ObjFunction* function = frame->function;
+    size_t instruction = frame->ip - function->chunk.code - 1;
+
+    fprintf(stderr, "[line %d] in ", function->chunk.lines[instruction]);
+    if (function->name == NULL) {
+      fprintf(stderr, "script\n");
+    } else {
+      fprintf(stderr, "%s()\n", function->name->chars);
+    }
+  }
+  
   resetStack();
 }
 
@@ -108,7 +118,8 @@ static bool callValue(Value callee, int argCount) {
         return call(AS_FUNCTION(callee), argCount);
       case OBJ_NATIVE_FN:
         return callNativeFn(AS_NATIVE_FN(callee), argCount);
-      default: break;
+      default:
+        break;
     }
   }
 
