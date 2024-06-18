@@ -163,7 +163,8 @@ static InterpretResult run() {
         break;
       }
       case OP_GET_LOCAL: {
-        push(frame->slots[READ_BYTE()]);
+        uint8_t slot = READ_BYTE();
+        push(frame->slots[slot]);
         break;
       }
       case OP_SET_LOCAL: {

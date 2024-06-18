@@ -1,6 +1,12 @@
-fun add(a, b, c) {
-    print a + b + c;
+fun test() {
+    var variable = 5;
+
+    fun test2() {
+        print variable;
+    }
+
+    test2();
 }
 
 
-add(1, 2, 3);
+test();
