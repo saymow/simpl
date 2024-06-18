@@ -4,5 +4,5 @@ fun fib(n) {
 }
 
 var start = clock();
-fib(15);
+fib(30);
 print clock() - start;
