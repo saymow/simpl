@@ -41,6 +41,8 @@ void initVM() {
   vm.grayCount = 0;
   vm.grayCapacity = 0;
   vm.grayStack = NULL;
+  vm.bytesAllocated = 0;
+  vm.GCThreshold = 1024 * 1024;
 
   defineNativeFunction("clock", clockNative);
 }
