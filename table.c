@@ -139,3 +139,20 @@ ObjString* tableFindString(Table* table, const char* chars, int length,
     idx = (idx + 1) % table->capacity;
   }
 }
+
+void markTable(Table* table) {
+  for (int idx = 0; idx < table->capacity; idx++) {
+    Entry* entry = &table->entries[idx];
+    markObject((Obj*)entry->key);
+    markValue(entry->value);
+  }
+}
+
+void tableRemoveNotReferenced(Table* table) {
+  for (int idx = 0; idx < table->capacity; idx++) {
+    Entry* entry = &table->entries[idx];
+    if (entry->key != NULL && !entry->key->obj.isMarked) {
+      tableDelete(table, entry->key);
+    }
+  }
+}

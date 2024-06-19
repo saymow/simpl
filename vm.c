@@ -2,6 +2,7 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
@@ -34,6 +35,11 @@ void initVM() {
   initTable(&vm.strings);
   initTable(&vm.global);
   vm.objects = NULL;
+  vm.upvalues = NULL;
+  vm.framesCount = 0;
+  vm.grayCount = 0;
+  vm.grayCapacity = 0;
+  vm.grayStack = NULL;
 
   defineNativeFunction("clock", clockNative);
 }
@@ -42,7 +48,7 @@ void freeVM() {
   freeObjects();
   freeTable(&vm.strings);
   freeTable(&vm.global);
-  resetStack();
+  free(vm.grayStack);
 }
 
 static void runtimeError(const char* format, ...) {

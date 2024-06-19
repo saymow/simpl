@@ -18,5 +18,8 @@
 
 void* reallocate(void* pointer, size_t oldSize, size_t newSize);
 void freeObjects();
+void markValue(Value value);
+void markObject(Obj* obj);
+void startGarbageCollector();
 
 #endif

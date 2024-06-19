@@ -22,9 +22,14 @@ static uint32_t hashString(const char *key, int length) {
 Obj *allocateObj(ObjType type, size_t size) {
   Obj *object = reallocate(NULL, 0, size);
   object->type = type;
+  object->isMarked = false;
 
   object->next = vm.objects;
   vm.objects = object;
+
+#ifdef DEBUG_LOG_GC
+  printf("%p allocate %d for %d\n", (void *)object, size, type);
+#endif
 
   return object;
 }
