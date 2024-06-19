@@ -45,13 +45,13 @@ static void freeObject(Obj* object) {
     case OBJ_FUNCTION: {
       ObjFunction* function = (ObjFunction*)object;
       freeChunk(&function->chunk);
-      FREE(ObjString, object);
+      FREE(ObjFunction, object);
       break;
     }
     case OBJ_CLOSURE: {
       ObjClosure* closure = (ObjClosure*)object;
-      FREE(ObjClosure, closure);
       FREE_ARRAY(ObjUpValue*, closure->upvalues, closure->upvalueCount);
+      FREE(ObjClosure, closure);
       break;
     }
     case OBJ_NATIVE_FN: {
@@ -72,6 +72,8 @@ void freeObjects() {
     freeObject(object);
     object = tmp;
   }
+
+  free(vm.grayStack);
 }
 
 void markObject(Obj* obj) {
@@ -101,14 +103,14 @@ void markValue(Value value) {
   markObject(AS_OBJ(value));
 }
 
-void markArray(ValueArray valueArray) {
-  for (int idx = 0; idx < valueArray.count; idx++) {
-    markValue(valueArray.values[idx]);
+void markArray(ValueArray* valueArray) {
+  for (int idx = 0; idx < valueArray->count; idx++) {
+    markValue(valueArray->values[idx]);
   }
 }
 
 static void markRoots() {
-  for (Value* slot = vm.stackTop; slot < vm.stack; slot++) {
+  for (Value* slot = vm.stack; slot < vm.stackTop; slot++) {
     markValue(*slot);
   }
 
@@ -136,17 +138,21 @@ static void blackenObject(Obj* obj) {
     case OBJ_FUNCTION: {
       ObjFunction* function = (ObjFunction*)obj;
       markObject((Obj*)function->name);
-      markArray(function->chunk.constants);
+      markArray(&function->chunk.constants);
+      break;
     }
     case OBJ_CLOSURE: {
       ObjClosure* closure = (ObjClosure*)obj;
+      markObject((Obj*)closure->function);
       for (int idx = 0; idx < closure->upvalueCount; idx++) {
         markObject((Obj*)closure->upvalues[idx]);
       }
+      break;
     }
     case OBJ_UPVALUE: {
       ObjUpValue* upvalue = (ObjUpValue*)obj;
       markValue(upvalue->closed);
+      break;
     }
     case OBJ_STRING:
     case OBJ_NATIVE_FN:
@@ -198,4 +204,4 @@ void startGarbageCollector() {
 #ifdef DEBUG_LOG_GC
   printf("-- gc end\n");
 #endif
-};
+}

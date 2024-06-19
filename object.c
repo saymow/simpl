@@ -44,14 +44,17 @@ ObjUpValue *newUpValue(Value *value) {
 }
 
 ObjClosure *newClosure(ObjFunction *function) {
+  // Garbage Collector 👌
+  ObjUpValue **upvalues = ALLOCATE(ObjUpValue *, function->upvalueCount);
+  for (int idx = 0; idx < function->upvalueCount; idx++) {
+    upvalues[idx] = NULL;
+  }
+
   ObjClosure *closure = ALLOCATE_OBJ(OBJ_CLOSURE, ObjClosure);
-  closure->upvalues = ALLOCATE(ObjUpValue *, function->upvalueCount);
   closure->function = function;
+  closure->upvalues = upvalues;
   closure->upvalueCount = function->upvalueCount;
 
-  for (int idx = 0; idx < function->upvalueCount; idx++) {
-    closure->upvalues[idx] = NULL;
-  }
 
   return closure;
 }

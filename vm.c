@@ -37,6 +37,7 @@ void initVM() {
   vm.objects = NULL;
   vm.upvalues = NULL;
   vm.framesCount = 0;
+
   vm.grayCount = 0;
   vm.grayCapacity = 0;
   vm.grayStack = NULL;
@@ -48,7 +49,6 @@ void freeVM() {
   freeObjects();
   freeTable(&vm.strings);
   freeTable(&vm.global);
-  free(vm.grayStack);
 }
 
 static void runtimeError(const char* format, ...) {
