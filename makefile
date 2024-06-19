@@ -6,6 +6,12 @@ compile:
 compile-debug:
 	@gcc -o main.run *.c  -DDEBUG -Wall -I .
 
+compile-debug-logs:
+	@gcc -o main.run *.c  -DDEBUG_LOGS -Wall -I .
+
+compile-debug-gc:
+	@gcc -o main.run *.c  -DDEBUG_GC -Wall -I .
+
 run:
 	@./main.run ./simpl.in
 
@@ -17,3 +23,9 @@ exec:
 
 exec-debug:
 	@make compile-debug --no-print-directory && make run --no-print-directory
+
+exec-debug-logs:
+	@make compile-debug-logs --no-print-directory && make run --no-print-directory
+
+exec-debug-gc:
+	@make compile-debug-gc --no-print-directory && make run --no-print-directory

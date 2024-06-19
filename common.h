@@ -6,8 +6,16 @@
 #include <stdint.h>
 
 #ifdef DEBUG
+    #define DEBUG_LOGS
+    #define DEBUG_GC
+#endif
+
+#ifdef DEBUG_LOGS
     #define DEBUG_PRINT_CODE
     #define DEBUG_TRACE_EXECUTION
+#endif
+
+#ifdef DEBUG_GC
     #define DEBUG_STRESS_GC
     #define DEBUG_LOG_GC
 #endif
