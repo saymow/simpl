@@ -54,7 +54,11 @@ typedef struct {
   bool isLocal;
 } UpValue;
 
-typedef enum { TYPE_FUNCTION, TYPE_SCRIPT } FunctionType;
+typedef enum {
+  TYPE_FUNCTION,
+  TYPE_FUNCTION_EXPRESSION,
+  TYPE_SCRIPT
+} FunctionType;
 
 typedef struct Compiler {
   ObjFunction* function;
@@ -379,7 +383,7 @@ static void function(FunctionType type) {
 }
 
 static void funDeclaration() {
-  uint8_t global = parseVariable("Expect funcion name.");
+  uint8_t global = parseVariable("Expect function name.");
   markLocalInitialized();
   function(TYPE_FUNCTION);
   defineVariable(global);
@@ -798,6 +802,10 @@ static void call(bool canAssign) {
   emitBytes(OP_CALL, argCount);
 }
 
+static void functionExpression(bool canAssign) {
+  function(TYPE_FUNCTION_EXPRESSION);
+}
+
 ParseRule rules[] = {
     [TOKEN_LEFT_PAREN] = {grouping, call, PREC_CALL},
     [TOKEN_RIGHT_PAREN] = {NULL, NULL, PREC_NONE},
@@ -826,7 +834,7 @@ ParseRule rules[] = {
     [TOKEN_ELSE] = {NULL, NULL, PREC_NONE},
     [TOKEN_FALSE] = {literal, NULL, PREC_NONE},
     [TOKEN_FOR] = {NULL, NULL, PREC_NONE},
-    [TOKEN_FUN] = {NULL, NULL, PREC_NONE},
+    [TOKEN_FUN] = {functionExpression, NULL, PREC_NONE},
     [TOKEN_IF] = {NULL, NULL, PREC_NONE},
     [TOKEN_NIL] = {literal, NULL, PREC_NONE},
     [TOKEN_OR] = {NULL, _or, PREC_OR},

@@ -1,27 +1,13 @@
-var increment;
-var decrement;
+fun closure() {
+    var enclosured = 0;
 
-fun example() {
-    var number = 0;
+    var test = fun () {
+        print (enclosured = enclosured + 1);
+    };
 
-    fun inc() {
-        return (number = number + 1);
-    }
-
-    fun dec() {
-        return (number = number - 1);
-    }
-
-    increment = inc;
-    decrement = dec;
+    return test;
 }
 
-example();
+var closured = closure();
 
-print increment();
-print increment();
-print increment();
-print increment();
-print decrement();
-print decrement();
-print decrement();
+closured();
