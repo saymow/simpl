@@ -279,6 +279,37 @@ static InterpretResult run() {
         *frame->closure->upvalues[slot]->location = peek(0);
         break;
       }
+      case OP_GET_PROPERTY: {
+        Value reference = pop();
+        ObjString* name = READ_STRING();
+        Value value;
+
+        if (!IS_INSTANCE(reference)) {
+          runtimeError("Cannot access property '%s'.", name->chars);
+          return INTERPRET_RUNTIME_ERROR;
+        }
+
+        if (tableGet(&AS_INSTANCE(reference)->properties, name, &value)) {
+          push(value);
+        } else {
+          push(NIL_VAL);
+        }
+        break;
+      }
+      case OP_SET_PROPERTY: {
+        Value value = pop();
+        Value reference = pop();
+        ObjString* name = READ_STRING();
+
+        if (!IS_INSTANCE(reference)) {
+          runtimeError("Cannot access property '%s'.", name->chars);
+          return INTERPRET_RUNTIME_ERROR;
+        }
+
+        tableSet(&AS_INSTANCE(reference)->properties, name, value);
+        push(value);
+        break;
+      }
       case OP_JUMP: {
         uint16_t offset = READ_SHORT();
         frame->ip += offset;
