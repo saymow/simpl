@@ -34,6 +34,22 @@ Obj *allocateObj(ObjType type, size_t size) {
   return object;
 }
 
+ObjInstance *newInstance(ObjClass *klass) {
+  ObjInstance *instance = ALLOCATE_OBJ(OBJ_INSTANCE, ObjInstance);
+  instance->klass = klass;
+
+  initTable(&instance->properties);
+
+  return instance;
+}
+
+ObjClass *newClass(ObjString *name) {
+  ObjClass *klass = ALLOCATE_OBJ(OBJ_CLASS, ObjClass);
+  klass->name = name;
+
+  return klass;
+}
+
 ObjUpValue *newUpValue(Value *value) {
   ObjUpValue *upValue = ALLOCATE_OBJ(OBJ_UPVALUE, ObjUpValue);
   upValue->location = value;
@@ -54,7 +70,6 @@ ObjClosure *newClosure(ObjFunction *function) {
   closure->function = function;
   closure->upvalues = upvalues;
   closure->upvalueCount = function->upvalueCount;
-
 
   return closure;
 }
@@ -123,6 +138,12 @@ static void printFunction(ObjFunction *function) {
 
 void printObject(Value value) {
   switch (AS_OBJ(value)->type) {
+    case OBJ_INSTANCE:
+      printf("instance of %s", AS_INSTANCE(value)->klass->name->chars);
+      break;
+    case OBJ_CLASS:
+      printf("%s", AS_CLASS(value)->name->chars);
+      break;
     case OBJ_STRING:
       printf("%s", AS_CSTRING(value));
       break;

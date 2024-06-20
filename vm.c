@@ -119,9 +119,17 @@ static bool callNativeFn(NativeFn function, int argCount) {
   return true;
 }
 
+static bool callConstructor(ObjClass* klass, int argCount) {
+  ObjInstance* instance = newInstance(klass);
+  vm.stackTop[-(argCount + 1)] = OBJ_VAL(instance);
+  return true;
+}
+
 static bool callValue(Value callee, int argCount) {
   if (IS_OBJ(callee)) {
     switch (OBJ_TYPE(callee)) {
+      case OBJ_CLASS:
+        return callConstructor(AS_CLASS(callee), argCount);
       case OBJ_CLOSURE:
         return call(AS_CLOSURE(callee), argCount);
       case OBJ_NATIVE_FN:
@@ -377,6 +385,10 @@ static InterpretResult run() {
             closure->upvalues[idx] = frame->closure->upvalues[index];
           }
         }
+        break;
+      }
+      case OP_CLASS: {
+        push(OBJ_VAL(newClass(READ_STRING())));
         break;
       }
       case OP_CLOSE_UPVALUE: {

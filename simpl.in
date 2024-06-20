@@ -1,13 +1,5 @@
-fun closure() {
-    var enclosured = 0;
+class Animal {}
 
-    var test = fun () {
-        print (enclosured = enclosured + 1);
-    };
+var animal = Animal();
 
-    return test;
-}
-
-var closured = closure();
-
-closured();
+print animal;
