@@ -2,8 +2,17 @@ class Animal {
     Animal(name) {
         this.name = name;
     }
+
+    say() {
+        print this.name;
+    }
 }
 
 var animal = Animal("bear");
 
-print animal.name;
+animal.say2 = fun () {
+    print "say2";
+};
+
+animal.say();
+animal.say2();

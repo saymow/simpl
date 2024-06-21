@@ -226,6 +226,22 @@ static bool bindMethod(Value base, ObjString* name, Value* value) {
   return false;
 }
 
+static bool invokeMethod(Value base, ObjString* name, uint8_t argCount) {
+  if (!IS_INSTANCE(base)) {
+    runtimeError("Cannot invoke property '%s'.", name->chars);
+    return false;
+  }
+
+  Value value;
+  if (!(tableGet(&AS_INSTANCE(base)->properties, name, &value) ||
+        bindMethod(base, name, &value))) {
+    runtimeError("Undefined property '%s'.", name->chars);
+    return false;
+  }
+
+  return callValue(value, argCount);
+}
+
 static InterpretResult run() {
   CallFrame* frame = &vm.frames[vm.framesCount - 1];
 
@@ -328,6 +344,18 @@ static InterpretResult run() {
         } else {
           push(NIL_VAL);
         }
+        break;
+      }
+      case OP_INVOKE: {
+        ObjString* name = READ_STRING();
+        uint8_t argCount = READ_BYTE();
+        Value base = pop();
+
+        if (!invokeMethod(base, name, argCount)) {
+          return INTERPRET_RUNTIME_ERROR;
+        }
+
+        frame = &vm.frames[vm.framesCount - 1];
         break;
       }
       case OP_SET_PROPERTY: {

@@ -124,7 +124,7 @@ static void initCompiler(Compiler* compiler, FunctionType type) {
 
 static void emitReturn() {
   if (current->type == TYPE_CONSTRUCTOR) {
-    emitBytes(OP_GET_LOCAL, (uint8_t) 0);
+    emitBytes(OP_GET_LOCAL, (uint8_t)0);
   } else {
     emitByte(OP_NIL);
   }
@@ -417,7 +417,7 @@ static void method(Token* className) {
 
   if (parser.previous.length == className->length &&
       memcmp(className->start, parser.previous.start, className->length) == 0) {
-        type = TYPE_CONSTRUCTOR;
+    type = TYPE_CONSTRUCTOR;
   }
   function(type);
   emitBytes(OP_METHOD, nameConstant);
@@ -877,6 +877,10 @@ static void propertyGetOrSet(bool canAssign) {
   if (match(TOKEN_EQUAL) && canAssign) {
     expression();
     emitBytes(OP_SET_PROPERTY, name);
+  } else if (match(TOKEN_LEFT_PAREN)) {
+    uint8_t args = argumentsList();
+    emitBytes(OP_INVOKE, name);
+    emitByte(args);
   } else {
     emitBytes(OP_GET_PROPERTY, name);
   }
