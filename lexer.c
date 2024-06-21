@@ -127,10 +127,19 @@ static TokenType identifierType() {
           case 'x':
             return checkKeyword(2, 4, "port", TOKEN_EXPORT);
         }
+        break;
       }
     default:
     case 'i':
-      return checkKeyword(1, 1, "f", TOKEN_IF);
+      if (lexer.current - lexer.start > 1) {
+        switch (lexer.start[1]) {
+          case 'm':
+            return checkKeyword(2, 4, "port", TOKEN_IMPORT);
+          case 'f':
+            return checkKeyword(2, 0, "", TOKEN_IF);
+        }
+        break;
+      }
     case 'n':
       return checkKeyword(1, 2, "il", TOKEN_NIL);
     case 'o':
