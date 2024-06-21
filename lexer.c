@@ -120,7 +120,15 @@ static TokenType identifierType() {
     case 'a':
       return checkKeyword(1, 2, "nd", TOKEN_AND);
     case 'e':
-      return checkKeyword(1, 3, "lse", TOKEN_ELSE);
+      if (lexer.current - lexer.start > 1) {
+        switch (lexer.start[1]) {
+          case 'l':
+            return checkKeyword(2, 2, "se", TOKEN_ELSE);
+          case 'x':
+            return checkKeyword(2, 4, "port", TOKEN_EXPORT);
+        }
+      }
+    default:
     case 'i':
       return checkKeyword(1, 1, "f", TOKEN_IF);
     case 'n':
