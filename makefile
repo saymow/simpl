@@ -1,7 +1,7 @@
 all: compile
 
 compile:
-	@gcc -o main.run *.c  -Wall -I .
+	@gcc -o main.run *.c */*.c  -Wall -I .
 
 compile-debug:
 	@gcc -o main.run *.c  -DDEBUG -Wall -I .

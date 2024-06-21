@@ -10,15 +10,12 @@
 #include "compiler.h"
 #include "debug.h"
 #include "memory.h"
+#include "lib/clock-native.h"
 
 VM vm;
 
 void push(Value value);
 Value pop();
-
-Value clockNative(int argCount, Value* args) {
-  return NUMBER_VAL(clock() / CLOCKS_PER_SEC);
-}
 
 static void defineNativeFunction(const char* name, NativeFn function) {
   push(OBJ_VAL(copyString(name, strlen(name))));
