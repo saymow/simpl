@@ -44,14 +44,20 @@ static void freeObject(Obj* object) {
 #endif
 
   switch (object->type) {
+    case OBJ_BOUND_METHOD: {
+      ObjBoundMethod* boundMethod = (ObjBoundMethod*)object;
+      FREE(ObjBoundMethod, boundMethod);
+      break;
+    }
     case OBJ_INSTANCE: {
-      ObjInstance* klass = (ObjInstance*)object;
-      freeTable(&klass->properties);
-      FREE(ObjInstance, klass);
+      ObjInstance* instance = (ObjInstance*)object;
+      freeTable(&instance->properties);
+      FREE(ObjInstance, instance);
       break;
     }
     case OBJ_CLASS: {
       ObjClass* klass = (ObjClass*)object;
+      freeTable(&klass->methods);
       FREE(ObjClass, klass);
       break;
     }
@@ -154,6 +160,12 @@ static void blackenObject(Obj* obj) {
 #endif
 
   switch (obj->type) {
+    case OBJ_BOUND_METHOD: {
+      ObjBoundMethod* boundMethod = (ObjBoundMethod*)obj;
+      markObject((Obj *) boundMethod->method);
+      markValue(boundMethod->base);
+      break;
+    }
     case OBJ_INSTANCE: {
       ObjInstance* instance = (ObjInstance*)obj;
       markObject((Obj *) instance->klass);
@@ -163,6 +175,7 @@ static void blackenObject(Obj* obj) {
     case OBJ_CLASS: {
       ObjClass* klass = (ObjClass*)obj;
       markObject((Obj*)klass->name);
+      markTable(&klass->methods);
       break;
     }
     case OBJ_FUNCTION: {

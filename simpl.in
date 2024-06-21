@@ -1,13 +1,9 @@
-class Animal {}
+class Animal {
+    Animal(name) {
+        this.name = name;
+    }
+}
 
-var animal = Animal();
-
-animal.name = "Bidu";
-animal.name1 = "Bidu1";
-animal.name2 = "Bidu2";
-animal.name3 = "Bidu3";
+var animal = Animal("bear");
 
 print animal.name;
-print animal.name1;
-print animal.name2;
-print animal.test;

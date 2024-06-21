@@ -122,12 +122,26 @@ static bool callNativeFn(NativeFn function, int argCount) {
 static bool callConstructor(ObjClass* klass, int argCount) {
   ObjInstance* instance = newInstance(klass);
   vm.stackTop[-(argCount + 1)] = OBJ_VAL(instance);
+
+  Value initializer;
+  if (tableGet(&klass->methods, klass->name, &initializer)) {
+    call(AS_CLOSURE(initializer), argCount);
+  } else if (argCount != 0) {
+    runtimeError("Expected 0 arguments but got %d.", argCount);
+    return false;
+  }
+
   return true;
 }
 
 static bool callValue(Value callee, int argCount) {
   if (IS_OBJ(callee)) {
     switch (OBJ_TYPE(callee)) {
+      case OBJ_BOUND_METHOD: {
+        ObjBoundMethod* boundMethod = AS_BOUND_METHOD(callee);
+        vm.stackTop[-(argCount + 1)] = boundMethod->base;
+        return call(boundMethod->method, argCount);
+      }
       case OBJ_CLASS:
         return callConstructor(AS_CLASS(callee), argCount);
       case OBJ_CLOSURE:
@@ -191,6 +205,25 @@ static void closeUpValues(Value* last) {
     closeUpValue(vm.upvalues);
     vm.upvalues = vm.upvalues->next;
   }
+}
+
+static void defineMethod(ObjString* name) {
+  Value method = peek(0);
+  ObjClass* klass = AS_CLASS(peek(1));
+
+  tableSet(&klass->methods, name, method);
+  pop();
+}
+
+static bool bindMethod(Value base, ObjString* name, Value* value) {
+  Value method;
+
+  if (tableGet(&AS_INSTANCE(base)->klass->methods, name, &method)) {
+    *value = OBJ_VAL(newBoundMethod(base, AS_CLOSURE(method)));
+    return true;
+  };
+
+  return false;
 }
 
 static InterpretResult run() {
@@ -280,16 +313,17 @@ static InterpretResult run() {
         break;
       }
       case OP_GET_PROPERTY: {
-        Value reference = pop();
+        Value base = pop();
         ObjString* name = READ_STRING();
         Value value;
 
-        if (!IS_INSTANCE(reference)) {
+        if (!IS_INSTANCE(base)) {
           runtimeError("Cannot access property '%s'.", name->chars);
           return INTERPRET_RUNTIME_ERROR;
         }
 
-        if (tableGet(&AS_INSTANCE(reference)->properties, name, &value)) {
+        if (tableGet(&AS_INSTANCE(base)->properties, name, &value) ||
+            bindMethod(base, name, &value)) {
           push(value);
         } else {
           push(NIL_VAL);
@@ -298,15 +332,15 @@ static InterpretResult run() {
       }
       case OP_SET_PROPERTY: {
         Value value = pop();
-        Value reference = pop();
+        Value base = pop();
         ObjString* name = READ_STRING();
 
-        if (!IS_INSTANCE(reference)) {
+        if (!IS_INSTANCE(base)) {
           runtimeError("Cannot access property '%s'.", name->chars);
           return INTERPRET_RUNTIME_ERROR;
         }
 
-        tableSet(&AS_INSTANCE(reference)->properties, name, value);
+        tableSet(&AS_INSTANCE(base)->properties, name, value);
         push(value);
         break;
       }
@@ -420,6 +454,10 @@ static InterpretResult run() {
       }
       case OP_CLASS: {
         push(OBJ_VAL(newClass(READ_STRING())));
+        break;
+      }
+      case OP_METHOD: {
+        defineMethod(READ_STRING());
         break;
       }
       case OP_CLOSE_UPVALUE: {
