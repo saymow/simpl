@@ -8,6 +8,7 @@
 #include "lexer.h"
 #include "memory.h"
 #include "object.h"
+#include "utils.h"
 #include "vm.h"
 
 #ifdef DEBUG_PRINT_CODE
@@ -59,14 +60,6 @@ typedef struct {
   bool isLocal;
 } UpValue;
 
-typedef enum {
-  TYPE_SCRIPT,
-  TYPE_FUNCTION,
-  TYPE_FUNCTION_EXPRESSION,
-  TYPE_CONSTRUCTOR,
-  TYPE_METHOD
-} FunctionType;
-
 typedef struct Compiler {
   ObjFunction* function;
   FunctionType type;
@@ -77,6 +70,8 @@ typedef struct Compiler {
   UpValue upvalues[UINT8_MAX];
 
   struct Compiler* enclosing;
+  struct Compiler* semanticallyEnclosing;
+  FunctionType topLevelType;
 } Compiler;
 
 static void emitByte(uint8_t byte);
@@ -88,26 +83,38 @@ static void emitByte(uint8_t byte);
 static ParseRule* getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
 static void namedVariable(Token token, bool canAssign);
+static void string(bool canAssign);
 
 Parser parser;
 Chunk* compilingChunk;
 Compiler* current;
 ClassCompiler* currentClass;
 
+#define GLOBAL_VARIABLES() \
+  (current->scopeDepth == 0 && current->type != TYPE_MODULE)
+
 static Chunk* currentChunk() { return &current->function->chunk; }
 
 static void initCompiler(Compiler* compiler, FunctionType type) {
   compiler->enclosing = current;
+  compiler->semanticallyEnclosing = type == TYPE_MODULE ? NULL : current;
   compiler->function = newFunction();
   compiler->type = type;
   compiler->localCount = 0;
   compiler->scopeDepth = 0;
-  current = compiler;
+
+  if (type == TYPE_SCRIPT || type == TYPE_MODULE) {
+    compiler->topLevelType = type;
+  } else {
+    compiler->topLevelType = current->topLevelType;
+  }
 
   if (type != TYPE_SCRIPT) {
     compiler->function->name =
         copyString(parser.previous.start, parser.previous.length);
   }
+
+  current = compiler;
 
   Local* local = &current->locals[current->localCount++];
   local->depth = 0;
@@ -152,6 +159,10 @@ static void errorAt(Token* token, const char* message) {
   if (parser.panicMode) return;
 
   parser.panicMode = true;
+
+  if (!parser.hadError) {
+    printf("filename.in\n");
+  }
 
   fprintf(stderr, "[line %d] Error", token->line);
 
@@ -269,7 +280,7 @@ static void addLocal(Token name) {
 }
 
 static void markLocalInitialized() {
-  if (current->scopeDepth == 0) return;
+  if (GLOBAL_VARIABLES()) return;
   current->locals[current->localCount - 1].depth = current->scopeDepth;
 }
 
@@ -279,7 +290,7 @@ static bool identifiersEqual(Token* a, Token* b) {
 }
 
 static void declareVariable() {
-  if (current->scopeDepth == 0) return;
+  if (GLOBAL_VARIABLES()) return;
 
   Token* name = &parser.previous;
 
@@ -301,13 +312,13 @@ static uint8_t parseVariable(const char* message) {
   consume(TOKEN_IDENTIFIER, message);
 
   declareVariable();
-  if (current->scopeDepth > 0) return 0;
+  if (!GLOBAL_VARIABLES()) return 0;
 
   return identifierConstant(&parser.previous);
 }
 
 static void defineVariable(uint8_t global) {
-  if (current->scopeDepth > 0) {
+  if (!GLOBAL_VARIABLES()) {
     markLocalInitialized();
     return;
   }
@@ -586,7 +597,7 @@ static void forStatement() {
 }
 
 static void returnStatement() {
-  if (current->enclosing == NULL) {
+  if (current->semanticallyEnclosing == NULL) {
     error("Cannot return outside a function.");
   }
 
@@ -603,8 +614,87 @@ static void returnStatement() {
   }
 }
 
+ObjFunction* compileModule(const char* source) {
+  Compiler compiler;
+  Lexer moduleLexer;
+  Parser moduleParser;
+  Parser previousParser = parser;
+
+  moduleParser.hadError = parser.hadError;
+  moduleParser.panicMode = false;
+  parser = moduleParser;
+
+  stackLexer(&moduleLexer, source);
+  initCompiler(&compiler, TYPE_MODULE);
+  beginScope();
+
+  advance();
+
+  while (!match(TOKEN_EOF)) {
+    declaration();
+  }
+
+  ObjFunction* function = endCompiler();
+  ObjFunction* returnValue = parser.hadError ? NULL : function;
+
+  parser = previousParser;
+  popLexer();
+
+  return returnValue;
+}
+
+static void importStatement() {
+  int constant = -1;
+
+  if (!check(TOKEN_STRING)) {
+    constant = parseVariable("Expect import identifier name.");
+    consume(TOKEN_FROM, "Expect 'from' after import identifier.");
+  }
+  consume(TOKEN_STRING, "Expect import path.");
+
+  ObjString* path =
+      copyString(parser.previous.start + 1, parser.previous.length - 2);
+  char* source = readFile(path->chars);
+  ObjFunction* module = compileModule(source);
+
+  if (module == NULL) {
+    error("Cannot compile module.");
+    return;
+  }
+
+  uint8_t moduleConstant = makeConstant(OBJ_VAL(module));
+
+  module->name = path;
+
+  emitBytes(OP_IMPORT, moduleConstant);
+  if (constant != -1) {
+    defineVariable(constant);
+  } else {
+    emitByte(OP_POP);
+  }
+
+  consume(TOKEN_SEMICOLON, "Expect ';' after import statement.");
+}
+
+static void exportStatement() {
+  if (current->type != TYPE_MODULE) {
+    errorAtCurrent("Expect export statement at the top level of a module.");
+    return;
+  }
+  consume(TOKEN_IDENTIFIER, "Expect name.");
+  uint8_t constant = identifierConstant(&parser.previous);
+
+  namedVariable(parser.previous, false);
+  emitBytes(OP_EXPORT, constant);
+  consume(TOKEN_SEMICOLON, "Expect ';' after export statement.");
+}
+
 static void statement() {
-  if (match(TOKEN_PRINT)) {
+  if (match(TOKEN_IMPORT)) {
+    importStatement();
+  } else if (match(TOKEN_EXPORT)) {
+    exportStatement();
+  } else if (match(TOKEN_PRINT)) {
     printStatement();
   } else if (match(TOKEN_LEFT_BRACE)) {
     beginScope();
@@ -625,10 +715,10 @@ static void statement() {
 
 static void expression() { parsePrecedence(PREC_ASSIGNMENT); }
 
-ObjFunction* compile(const char* source) {
+ObjFunction* compile(const char* source, FunctionType type) {
   initLexer(source);
   Compiler compiler;
-  initCompiler(&compiler, TYPE_SCRIPT);
+  initCompiler(&compiler, type);
 
   parser.hadError = false;
   parser.panicMode = false;
@@ -777,15 +867,15 @@ static int addUpValue(Compiler* compiler, uint8_t index, bool isLocal) {
 }
 
 static int resolveUpValue(Compiler* compiler, Token* name) {
-  if (compiler->enclosing == NULL) return -1;
+  if (compiler->semanticallyEnclosing == NULL) return -1;
 
-  int local = resolveLocal(compiler->enclosing, name);
+  int local = resolveLocal(compiler->semanticallyEnclosing, name);
   if (local != -1) {
-    compiler->enclosing->locals[local].isCaptured = true;
+    compiler->semanticallyEnclosing->locals[local].isCaptured = true;
     return addUpValue(compiler, (uint8_t)local, true);
   }
 
-  int upvalue = resolveUpValue(compiler->enclosing, name);
+  int upvalue = resolveUpValue(compiler->semanticallyEnclosing, name);
   if (upvalue != -1) {
     return addUpValue(compiler, (uint8_t)upvalue, false);
   }
@@ -804,6 +894,12 @@ static void namedVariable(Token token, bool canAssign) {
     getOp = OP_GET_UPVALUE;
     setOp = OP_SET_UPVALUE;
   } else {
+    if (current->topLevelType == TYPE_MODULE) {
+      // todo: print variable name
+      error("Undefined variable.");
+      return;
+    }
+
     arg = identifierConstant(&token);
     getOp = OP_GET_GLOBAL;
     setOp = OP_SET_GLOBAL;

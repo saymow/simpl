@@ -60,6 +60,8 @@ int disassembleInstruction(Chunk* chunk, int offset) {
       return constantInstruction("OP_DEFINE_GLOBAL", chunk, offset);
     case OP_SET_GLOBAL:
       return constantInstruction("OP_SET_GLOBAL", chunk, offset);
+    case OP_EXPORT:
+      return constantInstruction("OP_EXPORT", chunk, offset);
     case OP_GET_LOCAL:
       return byteInstruction("OP_GET_LOCAL", chunk, offset);
     case OP_SET_LOCAL:
@@ -83,7 +85,7 @@ int disassembleInstruction(Chunk* chunk, int offset) {
       for (int idx = 0; idx < function->upvalueCount; idx++) {
         int isLocal = chunk->code[offset++];
         int index = chunk->code[offset++];
-        printf("%04d | %s %d\n", offset - 2, isLocal ? "local" : "upvalue",
+        printf("%04d    | %s %d\n", offset - 2, isLocal ? "local" : "upvalue",
                index);
       }
     }
@@ -123,6 +125,8 @@ int disassembleInstruction(Chunk* chunk, int offset) {
       return simpleInstruction("OP_LOOP", offset);
     case OP_PRINT:
       return simpleInstruction("OP_PRINT", offset);
+    case OP_IMPORT:
+      return byteInstruction("OP_IMPORT", chunk, offset);
     case OP_RETURN:
       return simpleInstruction("OP_RETURN", offset);
     default:

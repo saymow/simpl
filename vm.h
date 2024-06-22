@@ -9,10 +9,14 @@
 #define FRAMES_MAX 64
 #define STACK_MAX (FRAMES_MAX * UINT8_COUNT)
 
+typedef enum { FRAME_TYPE_NORMAL, FRAME_TYPE_MODULE } CallFrameType;
+
 typedef struct {
   ObjClosure* closure;
   uint8_t* ip;
   Value* slots;
+  CallFrameType type;
+  Table moduleExports;
 } CallFrame;
 
 typedef struct {
@@ -34,6 +38,7 @@ typedef struct {
   size_t bytesAllocated;
   size_t GCThreshold;
 
+  ObjClass* moduleExportsClass;
 } VM;
 
 typedef enum {

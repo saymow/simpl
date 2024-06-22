@@ -1,0 +1,3 @@
+import module from "./simpl-module2.in";
+
+export module;

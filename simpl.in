@@ -1,18 +1,3 @@
-class Animal {
-    Animal(name) {
-        this.name = name;
-    }
+import thing from "./simpl-module.in";
 
-    say() {
-        print this.name;
-    }
-}
-
-var animal = Animal("bear");
-
-animal.say2 = fun () {
-    print "say2";
-};
-
-animal.say();
-animal.say2();
+print thing.module.lexicalScope;

@@ -3,8 +3,8 @@
 
 #include "chunk.h"
 #include "common.h"
-#include "value.h"
 #include "table.h"
+#include "value.h"
 
 typedef enum {
   OBJ_STRING,
@@ -27,13 +27,13 @@ typedef Value (*NativeFn)(int argCount, Value *args);
 
 typedef struct {
   Obj obj;
-  ObjString* name;
+  ObjString *name;
   Table methods;
 } ObjClass;
 
 typedef struct {
   Obj obj;
-  ObjClass* klass;
+  ObjClass *klass;
   Table properties;
 } ObjInstance;
 
@@ -61,7 +61,7 @@ typedef struct ObjUpValue {
   Obj obj;
   Value *location;
   Value closed;
-  struct ObjUpValue* next;
+  struct ObjUpValue *next;
 } ObjUpValue;
 
 typedef struct ObjClosure {

@@ -148,6 +148,7 @@ static void markRoots() {
     markObject((Obj*)upvalue);
   }
 
+  markObject((Obj*)&vm.moduleExportsClass);
   markTable(&vm.global);
   markCompilerRoots();
 }
@@ -162,13 +163,13 @@ static void blackenObject(Obj* obj) {
   switch (obj->type) {
     case OBJ_BOUND_METHOD: {
       ObjBoundMethod* boundMethod = (ObjBoundMethod*)obj;
-      markObject((Obj *) boundMethod->method);
+      markObject((Obj*)boundMethod->method);
       markValue(boundMethod->base);
       break;
     }
     case OBJ_INSTANCE: {
       ObjInstance* instance = (ObjInstance*)obj;
-      markObject((Obj *) instance->klass);
+      markObject((Obj*)instance->klass);
       markTable(&instance->properties);
       break;
     }

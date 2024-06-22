@@ -4,13 +4,13 @@ compile:
 	@gcc -o main.run *.c */*.c  -Wall -I .
 
 compile-debug:
-	@gcc -o main.run *.c  -DDEBUG -Wall -I .
+	@gcc -o main.run *.c  */*.c -DDEBUG -Wall -I .
 
 compile-debug-logs:
-	@gcc -o main.run *.c  -DDEBUG_LOGS -Wall -I .
+	@gcc -o main.run *.c  */*.c -DDEBUG_LOGS -Wall -I .
 
 compile-debug-gc:
-	@gcc -o main.run *.c  -DDEBUG_GC -Wall -I .
+	@gcc -o main.run *.c  */*.c -DDEBUG_GC -Wall -I .
 
 run:
 	@./main.run ./simpl.in

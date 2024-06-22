@@ -3,7 +3,16 @@
 
 #include "vm.h"
 
-ObjFunction *compile(const char* source);
+typedef enum {
+  TYPE_SCRIPT,
+  TYPE_MODULE,
+  TYPE_FUNCTION,
+  TYPE_FUNCTION_EXPRESSION,
+  TYPE_CONSTRUCTOR,
+  TYPE_METHOD
+} FunctionType;
+
+ObjFunction* compile(const char* source, FunctionType type);
 void markCompilerRoots();
 
 #endif

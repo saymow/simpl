@@ -9,8 +9,9 @@
 #include "common.h"
 #include "compiler.h"
 #include "debug.h"
-#include "memory.h"
 #include "lib/clock-native.h"
+#include "memory.h"
+#include "utils.h"
 
 VM vm;
 
@@ -40,6 +41,9 @@ void initVM() {
   vm.grayStack = NULL;
   vm.bytesAllocated = 0;
   vm.GCThreshold = 1024 * 1024;
+
+  vm.moduleExportsClass = NULL;
+  vm.moduleExportsClass = newClass(takeString("Exports", 7));
 
   defineNativeFunction("clock", clockNative);
 }
@@ -90,7 +94,7 @@ static void concatenate() {
   push(OBJ_VAL(takeString(buffer, length)));
 }
 
-static bool call(ObjClosure* closure, uint8_t argCount) {
+static bool call(ObjClosure* closure, uint8_t argCount, CallFrameType type) {
   if (closure->function->arity != argCount) {
     runtimeError("Expected %d arguments but got %d.", closure->function->arity,
                  argCount);
@@ -102,9 +106,14 @@ static bool call(ObjClosure* closure, uint8_t argCount) {
   }
 
   CallFrame* frame = &vm.frames[vm.framesCount++];
+  frame->type = type;
   frame->closure = closure;
   frame->ip = closure->function->chunk.code;
   frame->slots = vm.stackTop - argCount - 1;
+
+  if (frame->type == FRAME_TYPE_MODULE) {
+    initTable(&frame->moduleExports);
+  }
 
   return true;
 }
@@ -122,7 +131,7 @@ static bool callConstructor(ObjClass* klass, int argCount) {
 
   Value initializer;
   if (tableGet(&klass->methods, klass->name, &initializer)) {
-    call(AS_CLOSURE(initializer), argCount);
+    call(AS_CLOSURE(initializer), argCount, FRAME_TYPE_NORMAL);
   } else if (argCount != 0) {
     runtimeError("Expected 0 arguments but got %d.", argCount);
     return false;
@@ -131,18 +140,22 @@ static bool callConstructor(ObjClass* klass, int argCount) {
   return true;
 }
 
+static bool callModule(ObjClosure* closure) {
+  return call(closure, 0, FRAME_TYPE_MODULE);
+}
+
 static bool callValue(Value callee, int argCount) {
   if (IS_OBJ(callee)) {
     switch (OBJ_TYPE(callee)) {
       case OBJ_BOUND_METHOD: {
         ObjBoundMethod* boundMethod = AS_BOUND_METHOD(callee);
         vm.stackTop[-(argCount + 1)] = boundMethod->base;
-        return call(boundMethod->method, argCount);
+        return call(boundMethod->method, argCount, FRAME_TYPE_NORMAL);
       }
       case OBJ_CLASS:
         return callConstructor(AS_CLASS(callee), argCount);
       case OBJ_CLOSURE:
-        return call(AS_CLOSURE(callee), argCount);
+        return call(AS_CLOSURE(callee), argCount, FRAME_TYPE_NORMAL);
       case OBJ_NATIVE_FN:
         return callNativeFn(AS_NATIVE_FN(callee), argCount);
       default:
@@ -490,10 +503,36 @@ static InterpretResult run() {
         pop();
         break;
       }
+      case OP_EXPORT: {
+        ObjString* name = READ_STRING();
+        Value value = pop();
+
+        tableSet(&frame->moduleExports, name, value);
+        break;
+      }
+      case OP_IMPORT: {
+        ObjClosure* closure = newClosure(AS_FUNCTION(READ_CONSTANT()));
+
+        push(OBJ_VAL(closure));
+
+        if (!closure || !callModule(closure)) {
+          return INTERPRET_RUNTIME_ERROR;
+        }
+
+        frame = &vm.frames[vm.framesCount - 1];
+        break;
+      }
       case OP_RETURN: {
         Value result = pop();
 
         closeUpValues(frame->slots);
+
+        if (frame->type == FRAME_TYPE_MODULE) {
+          ObjInstance* exports = newInstance(vm.moduleExportsClass);
+          tableAddAll(&frame->moduleExports, &exports->properties);
+          result = OBJ_VAL(exports);
+          freeTable(&frame->moduleExports);
+        }
 
         vm.framesCount--;
         if (vm.framesCount == 0) {
@@ -519,14 +558,16 @@ static InterpretResult run() {
 }
 
 InterpretResult interpret(const char* source) {
-  ObjFunction* function = compile(source);
+  ObjFunction* function = compile(source, TYPE_SCRIPT);
 
   if (function == NULL) {
     return INTERPRET_COMPILE_ERROR;
   }
 
+  // Gargabe Collector 👌
   push(OBJ_VAL(function));
   ObjClosure* closure = newClosure(function);
+  // Gargabe Collector 👌
   pop();
   push(OBJ_VAL(closure));
   callValue(OBJ_VAL(closure), 0);

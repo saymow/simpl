@@ -45,7 +45,6 @@ ObjBoundMethod *newBoundMethod(Value base, ObjClosure *method) {
 ObjInstance *newInstance(ObjClass *klass) {
   ObjInstance *instance = ALLOCATE_OBJ(OBJ_INSTANCE, ObjInstance);
   instance->klass = klass;
-
   initTable(&instance->properties);
 
   return instance;
@@ -147,7 +146,7 @@ static void printFunction(ObjFunction *function) {
 
 void printObject(Value value) {
   switch (AS_OBJ(value)->type) {
-    case OBJ_BOUND_METHOD:
+     case OBJ_BOUND_METHOD:
       printf("%s", AS_BOUND_METHOD(value)->method->function->name->chars);
       break;
     case OBJ_INSTANCE:

@@ -1,0 +1,14 @@
+var lexicalScope = "lexicalScope";
+
+fun handler() {
+    print "handle";
+}
+d
+as
+das´dkasdlçaskdçlasda
+
+dçãlskdlçasdçlaskll
+
+
+export lexicalScope;
+export handler;
