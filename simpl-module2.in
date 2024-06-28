@@ -1,14 +1,14 @@
-var lexicalScope = "lexicalScope";
+class Counter {
+    Counter() {
+        this.count = 0;
+    }
 
-fun handler() {
-    print "handle";
+    increment() {
+        this.count = this.count + 1;
+        return this.count;
+    }
 }
-d
-as
-das´dkasdlçaskdçlasda
 
-dçãlskdlçasdçlaskll
+var counter = Counter();
 
-
-export lexicalScope;
-export handler;
+export counter;

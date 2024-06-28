@@ -6,15 +6,7 @@
 #include "memory.h"
 #include "value.h"
 #include "vm.h"
-
-static uint32_t hashString(const char *key, int length) {
-  uint32_t hash = 2166136261u;
-  for (int i = 0; i < length; i++) {
-    hash ^= key[i];
-    hash *= 16777619;
-  }
-  return hash;
-}
+#include "utils.h"
 
 #define ALLOCATE_OBJ(objectType, type) \
   (type *)allocateObj(objectType, sizeof(type))
@@ -153,7 +145,7 @@ void printObject(Value value) {
       printf("instance of %s", AS_INSTANCE(value)->klass->name->chars);
       break;
     case OBJ_CLASS:
-      printf("%s", AS_CLASS(value)->name->chars);
+      printf("class %s", AS_CLASS(value)->name->chars);
       break;
     case OBJ_STRING:
       printf("%s", AS_CSTRING(value));

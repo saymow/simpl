@@ -10,6 +10,7 @@
 #include "object.h"
 #include "utils.h"
 #include "vm.h"
+#include "modules.h"
 
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
@@ -43,6 +44,7 @@ typedef struct {
 } ParseRule;
 
 typedef struct {
+  ModuleNode* module;
   Token current;
   Token previous;
   bool hadError;
@@ -85,8 +87,8 @@ static void parsePrecedence(Precedence precedence);
 static void namedVariable(Token token, bool canAssign);
 static void string(bool canAssign);
 
+Modules modules;
 Parser parser;
-Chunk* compilingChunk;
 Compiler* current;
 ClassCompiler* currentClass;
 
@@ -616,12 +618,13 @@ static void returnStatement() {
   }
 }
 
-ObjFunction* compileModule(const char* source) {
+ObjFunction* compileModule(ModuleNode* module, const char* source) {
   Compiler compiler;
   Lexer moduleLexer;
   Parser moduleParser;
   Parser previousParser = parser;
 
+  moduleParser.module = module;
   moduleParser.hadError = parser.hadError;
   moduleParser.panicMode = false;
   parser = moduleParser;
@@ -646,7 +649,21 @@ ObjFunction* compileModule(const char* source) {
 }
 
 ObjFunction* resolveModule(const char* source) {
-  return compileModule(source);
+  ModuleNode* module;
+
+  if (addDependency(&modules, parser.module, &module, source)) {
+    // module already compiled and can be reused
+    return module->chunk;
+  } else {
+    // create a module in COMPILING_STATE
+    createModule(&modules, parser.module, &module, source);
+    // compile source code
+    ObjFunction* function = compileModule(module, source);
+    // resolve module to COMPILED_STATE
+    resolveDependency(&modules, module, function);
+
+    return function;
+  }
 }
 
 static void importStatement() {
@@ -722,10 +739,12 @@ static void statement() {
 static void expression() { parsePrecedence(PREC_ASSIGNMENT); }
 
 ObjFunction* compile(const char* source) {
-  initLexer(source);
   Compiler compiler;
+  initLexer(source);
   initCompiler(&compiler, TYPE_SCRIPT);
+  initModules(&modules, source);
 
+  parser.module = modules.root;
   parser.hadError = false;
   parser.panicMode = false;
 
@@ -736,6 +755,10 @@ ObjFunction* compile(const char* source) {
   }
 
   ObjFunction* function = endCompiler();
+  
+  resolveDependency(&modules, modules.root, function);
+  freeModules(&modules);
+
   return parser.hadError ? NULL : function;
 }
 

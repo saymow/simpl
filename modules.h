@@ -1,0 +1,30 @@
+#ifndef modules_h
+#define modules_h
+
+#include "common.h"
+#include "object.h"
+
+typedef uint32_t module_id_t;
+
+typedef enum { COMPILED_STATE, COMPILING_STATE } ModuleState;
+
+typedef struct ModuleNode {
+    uint32_t id;
+    ModuleState state;
+    ObjFunction* chunk; 
+    struct ModuleNode** imports;
+    int importsCount;
+    int importsCapacity;
+} ModuleNode; 
+
+typedef struct {
+    ModuleNode* root; 
+} Modules;
+
+void initModules(Modules* modules, const char* source);
+bool addDependency(Modules* modules, ModuleNode* origin, ModuleNode** module, const char* source); 
+void createModule(Modules* modules, ModuleNode* origin, ModuleNode** module, const char* source);
+void resolveDependency(Modules* modules, ModuleNode* node, ObjFunction* chunk);
+void freeModules(Modules *modules);
+
+#endif

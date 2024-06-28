@@ -1,3 +1,4 @@
-import module from "./simpl-module2.in";
+import module2 from "./simpl-module2.in";
 
-export module;
+print module2.counter.increment();
+print module2.counter.increment();
