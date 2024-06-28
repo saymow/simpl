@@ -12,7 +12,7 @@ typedef enum {
   TYPE_METHOD
 } FunctionType;
 
-ObjFunction* compile(const char* source, FunctionType type);
+ObjFunction* compile(const char* source);
 void markCompilerRoots();
 
 #endif

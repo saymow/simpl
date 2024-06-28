@@ -160,9 +160,10 @@ static void errorAt(Token* token, const char* message) {
 
   parser.panicMode = true;
 
-  if (!parser.hadError) {
-    printf("filename.in\n");
-  }
+  // todo: print module file name 
+  // if (!parser.hadError) {
+  //   printf("filename.in\n");
+  // }
 
   fprintf(stderr, "[line %d] Error", token->line);
 
@@ -454,6 +455,7 @@ static void classDeclaration() {
     method(&name);
   }
   consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
+  emitByte(OP_POP);
 
   currentClass = currentClass->enclosing;
 }
@@ -643,6 +645,10 @@ ObjFunction* compileModule(const char* source) {
   return returnValue;
 }
 
+ObjFunction* resolveModule(const char* source) {
+  return compileModule(source);
+}
+
 static void importStatement() {
   int constant = -1;
 
@@ -655,7 +661,7 @@ static void importStatement() {
   ObjString* path =
       copyString(parser.previous.start + 1, parser.previous.length - 2);
   char* source = readFile(path->chars);
-  ObjFunction* module = compileModule(source);
+  ObjFunction* module = resolveModule(source);
 
   if (module == NULL) {
     error("Cannot compile module.");
@@ -715,10 +721,10 @@ static void statement() {
 
 static void expression() { parsePrecedence(PREC_ASSIGNMENT); }
 
-ObjFunction* compile(const char* source, FunctionType type) {
+ObjFunction* compile(const char* source) {
   initLexer(source);
   Compiler compiler;
-  initCompiler(&compiler, type);
+  initCompiler(&compiler, TYPE_SCRIPT);
 
   parser.hadError = false;
   parser.panicMode = false;
