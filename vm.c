@@ -523,9 +523,12 @@ static InterpretResult run() {
       }
       case OP_EXPORT: {
         ObjString* name = READ_STRING();
-        Value value = pop();
 
-        tableSet(&FRAME_AS_MODULE(frame)->exports, name, value);
+        if (!tableSet(&FRAME_AS_MODULE(frame)->exports, name, pop())) {
+          runtimeError("Already exporting member with name '%s'.", name->chars);
+          return INTERPRET_RUNTIME_ERROR;
+        }
+
         break;
       }
       case OP_IMPORT: {
