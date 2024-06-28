@@ -20,7 +20,7 @@ Obj *allocateObj(ObjType type, size_t size) {
   vm.objects = object;
 
 #ifdef DEBUG_LOG_GC
-  printf("%p allocate %d for %d\n", (void *)object, size, type);
+  printf("%p allocate %lld for %d\n", (void *)object, size, type);
 #endif
 
   return object;
