@@ -618,13 +618,13 @@ static void returnStatement() {
   }
 }
 
-ObjFunction* compileModule(ModuleNode* module, const char* source) {
+ObjModule* compileModule(ModuleNode* node, const char* source) {
   Compiler compiler;
   Lexer moduleLexer;
   Parser moduleParser;
   Parser previousParser = parser;
 
-  moduleParser.module = module;
+  moduleParser.module = node;
   moduleParser.hadError = parser.hadError;
   moduleParser.panicMode = false;
   parser = moduleParser;
@@ -639,8 +639,8 @@ ObjFunction* compileModule(ModuleNode* module, const char* source) {
     declaration();
   }
 
-  ObjFunction* function = endCompiler();
-  ObjFunction* returnValue = parser.hadError ? NULL : function;
+  ObjModule* module = newModule(endCompiler());
+  ObjModule* returnValue = parser.hadError ? NULL : module;
 
   parser = previousParser;
   popLexer();
@@ -648,21 +648,21 @@ ObjFunction* compileModule(ModuleNode* module, const char* source) {
   return returnValue;
 }
 
-ObjFunction* resolveModule(const char* source) {
-  ModuleNode* module;
+ObjModule* resolveModule(const char* source) {
+  ModuleNode* node = NULL;
 
-  if (addDependency(&modules, parser.module, &module, source)) {
+  if (addDependency(&modules, parser.module, &node, source)) {
     // module already compiled and can be reused
-    return module->chunk;
+    return node->module;
   } else {
     // create a module in COMPILING_STATE
-    createModule(&modules, parser.module, &module, source);
+    createModuleNode(&modules, parser.module, &node, source);
     // compile source code
-    ObjFunction* function = compileModule(module, source);
+    ObjModule* module = compileModule(node, source);
     // resolve module to COMPILED_STATE
-    resolveDependency(&modules, module, function);
+    resolveDependency(&modules, node, module);
 
-    return function;
+    return module;
   }
 }
 
@@ -678,7 +678,7 @@ static void importStatement() {
   ObjString* path =
       copyString(parser.previous.start + 1, parser.previous.length - 2);
   char* source = readFile(path->chars);
-  ObjFunction* module = resolveModule(source);
+  ObjModule* module = resolveModule(source);
 
   if (module == NULL) {
     error("Cannot compile module.");
@@ -687,7 +687,7 @@ static void importStatement() {
 
   uint8_t moduleConstant = makeConstant(OBJ_VAL(module));
 
-  module->name = path;
+  module->function->name = path;
 
   emitBytes(OP_IMPORT, moduleConstant);
   if (constant != -1) {
@@ -754,9 +754,10 @@ ObjFunction* compile(const char* source) {
     declaration();
   }
 
+
   ObjFunction* function = endCompiler();
-  
-  resolveDependency(&modules, modules.root, function);
+
+  resolveDependency(&modules, modules.root, newModule(function));
   freeModules(&modules);
 
   return parser.hadError ? NULL : function;

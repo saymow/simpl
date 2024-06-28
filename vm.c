@@ -140,7 +140,9 @@ static bool callConstructor(ObjClass* klass, int argCount) {
   return true;
 }
 
-static bool callModule(ObjClosure* closure) {
+static bool callModule(ObjModule* module) {
+  ObjClosure* closure = newClosure(module->function);
+
   return call(closure, 0, FRAME_TYPE_MODULE);
 }
 
@@ -511,11 +513,11 @@ static InterpretResult run() {
         break;
       }
       case OP_IMPORT: {
-        ObjClosure* closure = newClosure(AS_FUNCTION(READ_CONSTANT()));
+        ObjModule* module = AS_MODULE(READ_CONSTANT());
 
-        push(OBJ_VAL(closure));
+        push(OBJ_VAL(module->function));
 
-        if (!closure || !callModule(closure)) {
+        if (!module || !callModule(module)) {
           return INTERPRET_RUNTIME_ERROR;
         }
 

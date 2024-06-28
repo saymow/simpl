@@ -14,7 +14,8 @@ typedef enum {
   OBJ_UPVALUE,
   OBJ_CLASS,
   OBJ_INSTANCE,
-  OBJ_BOUND_METHOD
+  OBJ_BOUND_METHOD,
+  OBJ_MODULE
 } ObjType;
 
 struct Obj {
@@ -77,14 +78,22 @@ typedef struct ObjBoundMethod {
   ObjClosure *method;
 } ObjBoundMethod;
 
+typedef struct ObjModule {
+  ObjFunction *function;
+  bool evaluated;
+  Table exports;
+} ObjModule;
+
 #define OBJ_TYPE(value) (AS_OBJ(value)->type)
 
+#define IS_MODULE(value) (isObjType(value, OBJ_MODULE))
 #define IS_BOUND_METHOD(value) (isObjType(value, OBJ_BOUND_METHOD))
 #define IS_INSTANCE(value) (isObjType(value, OBJ_INSTANCE))
 #define IS_CLASS(value) (isObjType(value, OBJ_CLASS))
 #define IS_STRING(value) (isObjType(value, OBJ_STRING))
 #define IS_FUNCTION(value) (isObjType(value, OBJ_FUNCTION))
 
+#define AS_MODULE(value) ((ObjModule *)AS_OBJ(value))
 #define AS_BOUND_METHOD(value) ((ObjBoundMethod *)AS_OBJ(value))
 #define AS_INSTANCE(value) ((ObjInstance *)AS_OBJ(value))
 #define AS_CLASS(value) ((ObjClass *)AS_OBJ(value))
@@ -94,6 +103,7 @@ typedef struct ObjBoundMethod {
 #define AS_CLOSURE(value) ((ObjClosure *)AS_OBJ(value))
 #define AS_NATIVE_FN(value) (((ObjNativeFn *)AS_OBJ(value))->function)
 
+ObjModule *newModule(ObjFunction *function);
 ObjBoundMethod *newBoundMethod(Value base, ObjClosure *method);
 ObjInstance *newInstance(ObjClass *klass);
 ObjClass *newClass(ObjString *name);

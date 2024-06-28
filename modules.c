@@ -6,6 +6,19 @@
 #include "memory.h"
 #include "utils.h"
 
+// todo: implement some hashset for O(1) perfomance
+typedef struct {
+    int count;
+    int capacity;
+    ModuleNode** list; 
+} SeenNodes;
+
+typedef struct {
+    int count;
+    int capacity;
+    ModuleNode** list; 
+} NodesStack;
+
 static ModuleNode* allocateNode(module_id_t id) {
     ModuleNode* node = malloc(sizeof(ModuleNode));
 
@@ -14,6 +27,7 @@ static ModuleNode* allocateNode(module_id_t id) {
     node->imports = NULL;
     node->importsCount = 0;    
     node->importsCapacity = 0;
+    node->module = NULL;
 
     return node;
 }
@@ -37,11 +51,11 @@ static bool searchNode(ModuleNode* origin, module_id_t moduleId, ModuleNode** no
     return false;   
 }
 
-bool addDependency(Modules* modules, ModuleNode* origin, ModuleNode** module, const char* source) {
+bool addDependency(Modules* modules, ModuleNode* origin, ModuleNode** node, const char* source) {
     module_id_t targetId = hashString(source, strlen(source));
     ModuleNode *target = NULL;
 
-    // module not found, i.e, you have to create a module 
+    // module not found, you have to create a module 
     if (!searchNode(modules->root, targetId, &target)) {
         return false;
     } 
@@ -50,12 +64,21 @@ bool addDependency(Modules* modules, ModuleNode* origin, ModuleNode** module, co
         printf("Unexpected modules cyclic dependency.\n");
         exit(1);
     }
+    
+    *node = target;
 
-    *module = target;
+    if (origin->importsCapacity < origin->importsCount + 1) {
+        int oldCapacity = origin->importsCapacity;
+        origin->importsCapacity = GROW_CAPACITY(oldCapacity);
+        origin->imports = GROW_ARRAY(ModuleNode*, origin->imports, oldCapacity, origin->importsCapacity);
+    }
+
+    origin->imports[origin->importsCount++] = target;
+
     return true;
 }
 
-void createModule(Modules* modules, ModuleNode* origin, ModuleNode** module, const char* source) {
+void createModuleNode(Modules* modules, ModuleNode* origin, ModuleNode** moduleNode, const char* source) {
     module_id_t targetId = hashString(source, strlen(source));
     ModuleNode* node = allocateNode(targetId);
 
@@ -67,23 +90,99 @@ void createModule(Modules* modules, ModuleNode* origin, ModuleNode** module, con
 
     origin->imports[origin->importsCount++] = node;
 
-    *module = node;
+    *moduleNode = node;
 }
 
-void resolveDependency(Modules* modules, ModuleNode* node, ObjFunction* chunk) {
-    node->chunk = chunk;
+void resolveDependency(Modules* modules, ModuleNode* node, ObjModule* module) {
+    node->module = module;
     node->state = COMPILED_STATE;
 }
 
-static void freeNode(ModuleNode* node) {
-    for (int idx = 0; idx < node->importsCount; idx++) {
-        freeNode(node->imports[idx]);
+static void initNodesStack(NodesStack* nodesStack) {
+    nodesStack->count = 0;
+    nodesStack->capacity = 0;
+    nodesStack->list = NULL;
+}
+
+static void pushNodesStack(NodesStack* nodesStack, ModuleNode* moduleNode) {
+    if (nodesStack->capacity < nodesStack->count + 1) {
+        int oldCapacity = nodesStack->capacity;
+        nodesStack->capacity = GROW_CAPACITY(nodesStack->capacity);
+        nodesStack->list = GROW_ARRAY(ModuleNode*, nodesStack->list, oldCapacity, nodesStack->capacity);
     }
 
-    FREE_ARRAY(ModuleNode*, node->imports, node->importsCount);
+    nodesStack->list[nodesStack->count++] = moduleNode;
+}
+
+static ModuleNode* popNodesStack(NodesStack* nodesStack) {
+    return nodesStack->list[--nodesStack->count];
+}
+
+static void freeNodesStack(NodesStack* nodesStack) {
+    FREE_ARRAY(ModuleNode*, nodesStack->list, nodesStack->capacity);    
+}
+
+
+static void initSeenNodes(SeenNodes* seenNodes) {
+    seenNodes->count = 0;
+    seenNodes->capacity = 0;
+    seenNodes->list = NULL;
+}
+
+static void insertSeenNodes(SeenNodes* seenNodes, ModuleNode* moduleNode) {
+    if (seenNodes->capacity < seenNodes->count + 1) {
+        int oldCapacity = seenNodes->capacity;
+        seenNodes->capacity = GROW_CAPACITY(seenNodes->capacity);
+        seenNodes->list = GROW_ARRAY(ModuleNode*, seenNodes->list, oldCapacity, seenNodes->capacity);
+    }
+
+    seenNodes->list[seenNodes->count++] = moduleNode;
+}
+
+static bool hasSeenNode(SeenNodes* seenNodes, ModuleNode* moduleNode) {
+    for (int idx = 0; idx < seenNodes->count; idx++) {
+        if (seenNodes->list[idx]->id == moduleNode->id) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static void freeSeenNodes(SeenNodes* seenNodes) {
+    FREE_ARRAY(ModuleNode*, seenNodes->list, seenNodes->capacity);    
+}
+
+static void freeNode(ModuleNode* node) {
+    FREE_ARRAY(ModuleNode*, node->imports, node->importsCapacity);
     free(node);
 }
 
 void freeModules(Modules *modules) {
-    freeNode(modules->root);
+    NodesStack nodesStack;
+    SeenNodes seenNodes;
+
+    initNodesStack(&nodesStack);
+    initSeenNodes(&seenNodes);
+
+    insertSeenNodes(&seenNodes, modules->root);
+    pushNodesStack(&nodesStack, modules->root);
+
+    while (nodesStack.count > 0) {
+        ModuleNode* node = popNodesStack(&nodesStack);
+        
+        for (int idx = 0; idx < node->importsCount; idx++) {
+            if (!hasSeenNode(&seenNodes, node->imports[idx])) {
+                insertSeenNodes(&seenNodes, node->imports[idx]);
+                pushNodesStack(&nodesStack, node->imports[idx]);
+            }
+        }
+    }
+
+    for (int idx = 0; idx < seenNodes.count; idx++) {
+        freeNode(seenNodes.list[idx]);
+    }
+
+    freeNodesStack(&nodesStack);
+    freeSeenNodes(&seenNodes);
 }

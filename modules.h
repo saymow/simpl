@@ -11,7 +11,7 @@ typedef enum { COMPILED_STATE, COMPILING_STATE } ModuleState;
 typedef struct ModuleNode {
     uint32_t id;
     ModuleState state;
-    ObjFunction* chunk; 
+    ObjModule* module; 
     struct ModuleNode** imports;
     int importsCount;
     int importsCapacity;
@@ -22,9 +22,9 @@ typedef struct {
 } Modules;
 
 void initModules(Modules* modules, const char* source);
-bool addDependency(Modules* modules, ModuleNode* origin, ModuleNode** module, const char* source); 
-void createModule(Modules* modules, ModuleNode* origin, ModuleNode** module, const char* source);
-void resolveDependency(Modules* modules, ModuleNode* node, ObjFunction* chunk);
+bool addDependency(Modules* modules, ModuleNode* origin, ModuleNode** node, const char* source); 
+void createModuleNode(Modules* modules, ModuleNode* origin, ModuleNode** node, const char* source);
+void resolveDependency(Modules* modules, ModuleNode* node, ObjModule* module);
 void freeModules(Modules *modules);
 
 #endif

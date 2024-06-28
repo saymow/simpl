@@ -1,3 +1,5 @@
+import "./simpl-module3.in";
+
 class Counter {
     Counter() {
         this.count = 0;

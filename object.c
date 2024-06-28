@@ -26,6 +26,13 @@ Obj *allocateObj(ObjType type, size_t size) {
   return object;
 }
 
+ObjModule *newModule(ObjFunction *function) {
+  ObjModule *module = ALLOCATE_OBJ(OBJ_MODULE, ObjModule);
+  module->function = function;
+ 
+  return module;
+}
+
 ObjBoundMethod *newBoundMethod(Value base, ObjClosure *method) {
   ObjBoundMethod *boundMethod = ALLOCATE_OBJ(OBJ_BOUND_METHOD, ObjBoundMethod);
   boundMethod->base = base;
@@ -138,7 +145,10 @@ static void printFunction(ObjFunction *function) {
 
 void printObject(Value value) {
   switch (AS_OBJ(value)->type) {
-     case OBJ_BOUND_METHOD:
+    case OBJ_MODULE:
+      printf("<module %s>", AS_MODULE(value)->function->name->chars);
+      break;
+    case OBJ_BOUND_METHOD:
       printf("%s", AS_BOUND_METHOD(value)->method->function->name->chars);
       break;
     case OBJ_INSTANCE:

@@ -4,6 +4,7 @@
 
 #include "compiler.h"
 #include "vm.h"
+#include <stdio.h>
 
 #ifdef DEBUG_LOG_GC
 #include <stdio.h>
@@ -44,6 +45,12 @@ static void freeObject(Obj* object) {
 #endif
 
   switch (object->type) {
+    case OBJ_MODULE: {
+      ObjModule* module = (ObjModule*)object;
+      freeTable(&module->exports);
+      FREE(ObjModule, module);
+      break;
+    }
     case OBJ_BOUND_METHOD: {
       ObjBoundMethod* boundMethod = (ObjBoundMethod*)object;
       FREE(ObjBoundMethod, boundMethod);
@@ -161,6 +168,12 @@ static void blackenObject(Obj* obj) {
 #endif
 
   switch (obj->type) {
+    case OBJ_MODULE: {
+      ObjModule* module = (ObjModule*)obj;
+      markTable(&module->exports);
+      markObject((Obj* )module->function);
+      break;
+    }
     case OBJ_BOUND_METHOD: {
       ObjBoundMethod* boundMethod = (ObjBoundMethod*)obj;
       markObject((Obj*)boundMethod->method);
