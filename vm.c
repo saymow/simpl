@@ -359,7 +359,7 @@ static InterpretResult run() {
       case OP_INVOKE: {
         ObjString* name = READ_STRING();
         uint8_t argCount = READ_BYTE();
-        Value base = pop();
+        Value base = peek(argCount);
 
         if (!invokeMethod(base, name, argCount)) {
           return INTERPRET_RUNTIME_ERROR;
