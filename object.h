@@ -79,6 +79,7 @@ typedef struct ObjBoundMethod {
 } ObjBoundMethod;
 
 typedef struct ObjModule {
+  Obj obj;
   ObjFunction *function;
   bool evaluated;
   Table exports;
