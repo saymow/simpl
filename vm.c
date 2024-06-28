@@ -63,7 +63,9 @@ static void runtimeError(const char* format, ...) {
 
   for (int idx = vm.framesCount - 1; idx >= 0; idx--) {
     CallFrame* frame = &vm.frames[idx];
-    ObjFunction* function = frame->closure->function;
+    ObjFunction* function = IS_FRAME_MODULE(frame) ? 
+      FRAME_AS_MODULE(frame)->function : 
+      FRAME_AS_CLOSURE(frame)->function;
     size_t instruction = frame->ip - function->chunk.code - 1;
 
     fprintf(stderr, "[line %d] in ", function->chunk.lines[instruction]);
@@ -94,7 +96,7 @@ static void concatenate() {
   push(OBJ_VAL(takeString(buffer, length)));
 }
 
-static bool call(ObjClosure* closure, uint8_t argCount, CallFrameType type) {
+static bool call(ObjClosure* closure, uint8_t argCount) {
   if (closure->function->arity != argCount) {
     runtimeError("Expected %d arguments but got %d.", closure->function->arity,
                  argCount);
@@ -106,14 +108,10 @@ static bool call(ObjClosure* closure, uint8_t argCount, CallFrameType type) {
   }
 
   CallFrame* frame = &vm.frames[vm.framesCount++];
-  frame->type = type;
-  frame->closure = closure;
+  frame->type = FRAME_TYPE_CLOSURE;
+  frame->as.closure = closure;
   frame->ip = closure->function->chunk.code;
   frame->slots = vm.stackTop - argCount - 1;
-
-  if (frame->type == FRAME_TYPE_MODULE) {
-    initTable(&frame->moduleExports);
-  }
 
   return true;
 }
@@ -131,7 +129,7 @@ static bool callConstructor(ObjClass* klass, int argCount) {
 
   Value initializer;
   if (tableGet(&klass->methods, klass->name, &initializer)) {
-    call(AS_CLOSURE(initializer), argCount, FRAME_TYPE_NORMAL);
+    call(AS_CLOSURE(initializer), argCount);
   } else if (argCount != 0) {
     runtimeError("Expected 0 arguments but got %d.", argCount);
     return false;
@@ -141,9 +139,18 @@ static bool callConstructor(ObjClass* klass, int argCount) {
 }
 
 static bool callModule(ObjModule* module) {
-  ObjClosure* closure = newClosure(module->function);
+  if (vm.framesCount == FRAMES_MAX) {
+    runtimeError("Stack overflow.");
+    return false;
+  }
 
-  return call(closure, 0, FRAME_TYPE_MODULE);
+  CallFrame* frame = &vm.frames[vm.framesCount++];
+  frame->type = FRAME_TYPE_MODULE;
+  frame->as.module = module;
+  frame->ip = module->function->chunk.code;
+  frame->slots = vm.stackTop - 1;
+
+  return true;
 }
 
 static bool callValue(Value callee, int argCount) {
@@ -152,12 +159,12 @@ static bool callValue(Value callee, int argCount) {
       case OBJ_BOUND_METHOD: {
         ObjBoundMethod* boundMethod = AS_BOUND_METHOD(callee);
         vm.stackTop[-(argCount + 1)] = boundMethod->base;
-        return call(boundMethod->method, argCount, FRAME_TYPE_NORMAL);
+        return call(boundMethod->method, argCount);
       }
       case OBJ_CLASS:
         return callConstructor(AS_CLASS(callee), argCount);
       case OBJ_CLOSURE:
-        return call(AS_CLOSURE(callee), argCount, FRAME_TYPE_NORMAL);
+        return call(AS_CLOSURE(callee), argCount);
       case OBJ_NATIVE_FN:
         return callNativeFn(AS_NATIVE_FN(callee), argCount);
       default:
@@ -258,8 +265,7 @@ static InterpretResult run() {
   CallFrame* frame = &vm.frames[vm.framesCount - 1];
 
 #define READ_BYTE() (*frame->ip++)
-#define READ_CONSTANT() \
-  (frame->closure->function->chunk.constants.values[READ_BYTE()])
+#define READ_CONSTANT() (IS_FRAME_MODULE(frame) ? FRAME_AS_MODULE(frame)->function->chunk.constants.values[READ_BYTE()] : FRAME_AS_CLOSURE(frame)->function->chunk.constants.values[READ_BYTE()]) 
 #define READ_SHORT() \
   (frame->ip += 2, (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1]))
 #define READ_STRING() (AS_STRING(READ_CONSTANT()))
@@ -283,9 +289,16 @@ static InterpretResult run() {
       printf(" ]");
     }
     printf("\n");
-    disassembleInstruction(
-        &frame->closure->function->chunk,
-        (int)(frame->ip - frame->closure->function->chunk.code));
+    
+    if (IS_FRAME_MODULE(frame)) {
+      disassembleInstruction(
+        &FRAME_AS_MODULE(frame)->function->chunk,
+        (int)(frame->ip - FRAME_AS_MODULE(frame)->function->chunk.code));
+    } else {
+      disassembleInstruction(
+        &FRAME_AS_CLOSURE(frame)->function->chunk,
+        (int)(frame->ip - FRAME_AS_CLOSURE(frame)->function->chunk.code));
+    }
 #endif
 
     uint8_t instruction;
@@ -332,12 +345,12 @@ static InterpretResult run() {
       }
       case OP_GET_UPVALUE: {
         uint8_t slot = READ_BYTE();
-        push(*frame->closure->upvalues[slot]->location);
+        push(*FRAME_AS_CLOSURE(frame)->upvalues[slot]->location);
         break;
       }
       case OP_SET_UPVALUE: {
         uint8_t slot = READ_BYTE();
-        *frame->closure->upvalues[slot]->location = peek(0);
+        *FRAME_AS_CLOSURE(frame)->upvalues[slot]->location = peek(0);
         break;
       }
       case OP_GET_PROPERTY: {
@@ -487,7 +500,10 @@ static InterpretResult run() {
           if (isLocal) {
             closure->upvalues[idx] = captureUpvalue(frame->slots + index);
           } else {
-            closure->upvalues[idx] = frame->closure->upvalues[index];
+            // todo: maybe we dont need this if
+            if (IS_FRAME_CLOSURE(frame)) {
+              closure->upvalues[idx] = FRAME_AS_CLOSURE(frame)->upvalues[index];
+            }
           }
         }
         break;
@@ -509,19 +525,26 @@ static InterpretResult run() {
         ObjString* name = READ_STRING();
         Value value = pop();
 
-        tableSet(&frame->moduleExports, name, value);
+        tableSet(&FRAME_AS_MODULE(frame)->exports, name, value);
         break;
       }
       case OP_IMPORT: {
         ObjModule* module = AS_MODULE(READ_CONSTANT());
 
-        push(OBJ_VAL(module->function));
+        if (!module->evaluated) {
+          push(OBJ_VAL(module->function));
 
-        if (!module || !callModule(module)) {
-          return INTERPRET_RUNTIME_ERROR;
+          if (!module || !callModule(module)) {
+            return INTERPRET_RUNTIME_ERROR;
+          }
+
+          frame = &vm.frames[vm.framesCount - 1];
+        } else {
+          ObjInstance* exports = newInstance(vm.moduleExportsClass);
+          tableAddAll(&module->exports, &exports->properties);
+          push(OBJ_VAL(exports));
         }
 
-        frame = &vm.frames[vm.framesCount - 1];
         break;
       }
       case OP_RETURN: {
@@ -529,11 +552,12 @@ static InterpretResult run() {
 
         closeUpValues(frame->slots);
 
-        if (frame->type == FRAME_TYPE_MODULE) {
+        if (IS_FRAME_MODULE(frame)) {
           ObjInstance* exports = newInstance(vm.moduleExportsClass);
-          tableAddAll(&frame->moduleExports, &exports->properties);
+          tableAddAll(&FRAME_AS_MODULE(frame)->exports, &exports->properties);
           result = OBJ_VAL(exports);
-          freeTable(&frame->moduleExports);
+          FRAME_AS_MODULE(frame)->evaluated = true;
+          // freeTable(&frame->moduleExports);
         }
 
         vm.framesCount--;

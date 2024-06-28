@@ -147,7 +147,11 @@ static void markRoots() {
   }
 
   for (int idx = 0; idx < vm.framesCount; idx++) {
-    markObject((Obj*)vm.frames[idx].closure);
+    if (vm.frames[idx].type == FRAME_TYPE_MODULE) {
+      markObject((Obj*) vm.frames[idx].as.module);
+    } else {
+      markObject((Obj*) vm.frames[idx].as.closure);
+    }
   }
 
   for (ObjUpValue* upvalue = vm.upvalues; upvalue != NULL;

@@ -1,5 +1,7 @@
 import "./simpl-module3.in";
 
+print "module 2 evaluated";
+
 class Counter {
     Counter() {
         this.count = 0;

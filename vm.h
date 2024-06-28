@@ -9,14 +9,16 @@
 #define FRAMES_MAX 64
 #define STACK_MAX (FRAMES_MAX * UINT8_COUNT)
 
-typedef enum { FRAME_TYPE_NORMAL, FRAME_TYPE_MODULE } CallFrameType;
+typedef enum { FRAME_TYPE_CLOSURE, FRAME_TYPE_MODULE } CallFrameType;
 
 typedef struct {
-  ObjClosure* closure;
   uint8_t* ip;
   Value* slots;
   CallFrameType type;
-  Table moduleExports;
+  union {
+    ObjClosure* closure;
+    ObjModule* module;
+  } as;
 } CallFrame;
 
 typedef struct {
@@ -48,6 +50,12 @@ typedef enum {
 } InterpretResult;
 
 extern VM vm;
+
+#define IS_FRAME_MODULE(frame) ((frame)->type == FRAME_TYPE_MODULE)
+#define IS_FRAME_CLOSURE(frame) ((frame)->type == FRAME_TYPE_CLOSURE)
+
+#define FRAME_AS_MODULE(frame) ((frame)->as.module)
+#define FRAME_AS_CLOSURE(frame) ((frame)->as.closure)
 
 void initVM();
 void freeVM();

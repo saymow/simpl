@@ -6,7 +6,7 @@
 #include "memory.h"
 #include "utils.h"
 
-// todo: implement some hashset for O(1) perfomance
+// todo: implement hashset for O(1) lookup perfomance
 typedef struct {
     int count;
     int capacity;
@@ -170,8 +170,6 @@ void resolveDependency(Modules* modules, ModuleNode* node, ObjModule* module) {
     node->module = module;
     node->state = COMPILED_STATE;
 }
-
-
 
 static void freeNode(ModuleNode* node) {
     FREE_ARRAY(ModuleNode*, node->imports, node->importsCapacity);

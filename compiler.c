@@ -757,7 +757,6 @@ ObjFunction* compile(const char* source) {
 
   ObjFunction* function = endCompiler();
 
-  resolveDependency(&modules, modules.root, newModule(function));
   freeModules(&modules);
 
   return parser.hadError ? NULL : function;

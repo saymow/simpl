@@ -29,7 +29,9 @@ Obj *allocateObj(ObjType type, size_t size) {
 ObjModule *newModule(ObjFunction *function) {
   ObjModule *module = ALLOCATE_OBJ(OBJ_MODULE, ObjModule);
   module->function = function;
- 
+  module->evaluated = false;
+  initTable(&module->exports);
+
   return module;
 }
 
