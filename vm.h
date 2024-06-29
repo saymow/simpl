@@ -41,6 +41,7 @@ typedef struct {
   size_t GCThreshold;
 
   ObjClass* moduleExportsClass;
+  ObjClass* arrayClass;
 } VM;
 
 typedef enum {

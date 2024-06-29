@@ -45,6 +45,17 @@ static void freeObject(Obj* object) {
 #endif
 
   switch (object->type) {
+    case OBJ_BOUND_NATIVE_FN: {
+      ObjBoundNativeFn* boundNativeFn = (ObjBoundNativeFn*)object;
+      FREE(ObjBoundNativeFn, boundNativeFn);
+      break;
+    }
+    case OBJ_ARRAY: {
+      ObjArray* array = (ObjArray*)object;
+      freeValueArray(&array->list);
+      FREE(ObjArray, array);
+      break;
+    }
     case OBJ_MODULE: {
       ObjModule* module = (ObjModule*)object;
       freeTable(&module->exports);
@@ -160,6 +171,7 @@ static void markRoots() {
   }
 
   markObject((Obj*)&vm.moduleExportsClass);
+  markObject((Obj*)&vm.arrayClass);
   markTable(&vm.global);
   markCompilerRoots();
 }
@@ -172,6 +184,17 @@ static void blackenObject(Obj* obj) {
 #endif
 
   switch (obj->type) {
+    case OBJ_BOUND_NATIVE_FN: {
+      ObjBoundNativeFn* boundNativeFn = (ObjBoundNativeFn*)obj;
+      markValue(boundNativeFn->base);
+      markObject((Obj* )boundNativeFn->native);
+      break;
+    }
+    case OBJ_ARRAY: {
+      ObjArray* array = (ObjArray*)obj;
+      markArray(&array->list);
+      break;
+    }
     case OBJ_MODULE: {
       ObjModule* module = (ObjModule*)obj;
       markTable(&module->exports);

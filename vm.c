@@ -12,16 +12,18 @@
 #include "lib/clock-native.h"
 #include "memory.h"
 #include "utils.h"
+#include "value.h"
+#include "array.h"
 
 VM vm;
 
 void push(Value value);
 Value pop();
 
-static void defineNativeFunction(const char* name, NativeFn function) {
+static void defineNativeFunction(Table* methods, const char* name, NativeFn function) {
   push(OBJ_VAL(copyString(name, strlen(name))));
   push(OBJ_VAL(newNativeFunction(function)));
-  tableSet(&vm.global, AS_STRING(vm.stack[0]), vm.stack[1]);
+  tableSet(methods, AS_STRING(vm.stack[0]), vm.stack[1]);
   pop();
   pop();
 }
@@ -44,8 +46,11 @@ void initVM() {
 
   vm.moduleExportsClass = NULL;
   vm.moduleExportsClass = newClass(takeString("Exports", 7));
+  vm.arrayClass = NULL;
+  vm.arrayClass = newClass(takeString("Array", 5));
 
-  defineNativeFunction("clock", clockNative);
+  defineNativeFunction(&vm.global, "clock", clockNative);
+  defineNativeFunction(&vm.arrayClass->methods, "length", length);
 }
 
 void freeVM() {
@@ -156,8 +161,17 @@ static bool callModule(ObjModule* module) {
 static bool callValue(Value callee, int argCount) {
   if (IS_OBJ(callee)) {
     switch (OBJ_TYPE(callee)) {
+      case OBJ_BOUND_NATIVE_FN: {
+        ObjBoundNativeFn* boundNativeFn = AS_BOUND_NATIVE_FN(callee);
+        // The first item of the stack is initilized with a copy of the base object
+        // Native class methods expects to always receive at least one argument.
+        // This first argument is the callee object.
+        vm.stackTop[-(++argCount)] = boundNativeFn->base;
+        return callNativeFn(boundNativeFn->native->function, argCount);
+      }
       case OBJ_BOUND_METHOD: {
         ObjBoundMethod* boundMethod = AS_BOUND_METHOD(callee);
+        // The first item of the stack is initilized with the this keyword pointing to the base object
         vm.stackTop[-(argCount + 1)] = boundMethod->base;
         return call(boundMethod->method, argCount);
       }
@@ -234,28 +248,46 @@ static void defineMethod(ObjString* name) {
   pop();
 }
 
-static bool bindMethod(Value base, ObjString* name, Value* value) {
+static bool classMethod(Value base, ObjClass* klass, ObjString* name, Value* value) {
   Value method;
 
-  if (tableGet(&AS_INSTANCE(base)->klass->methods, name, &method)) {
+  if (tableGet(&klass->methods, name, &method)) {
     *value = OBJ_VAL(newBoundMethod(base, AS_CLOSURE(method)));
     return true;
-  };
+  }
+
+  return false;
+}
+
+static bool nativeClassMethod(Value base, ObjClass* klass, ObjString* name, Value* value) {
+  Value method;
+
+  if (tableGet(&klass->methods, name, &method)) {
+    *value = OBJ_VAL(newBoundNativeFn(base, AS_NATIVE(method)));
+    return true;
+  }
 
   return false;
 }
 
 static bool invokeMethod(Value base, ObjString* name, uint8_t argCount) {
-  if (!IS_INSTANCE(base)) {
+  if (!(IS_INSTANCE(base) || IS_ARRAY(base))) {
     runtimeError("Cannot invoke property '%s'.", name->chars);
     return false;
   }
 
   Value value;
-  if (!(tableGet(&AS_INSTANCE(base)->properties, name, &value) ||
-        bindMethod(base, name, &value))) {
-    runtimeError("Undefined property '%s'.", name->chars);
-    return false;
+  if (IS_INSTANCE(base)) {
+    if (!(tableGet(&AS_INSTANCE(base)->properties, name, &value) ||
+          classMethod(base, AS_INSTANCE(base)->klass, name, &value))) {
+      runtimeError("Undefined property '%s'.", name->chars);
+      return false;
+    }
+  } else {
+    if (!nativeClassMethod(base, AS_ARRAY(base)->klass, name, &value)) {
+      runtimeError("Undefined property '%s'.", name->chars);
+      return false;
+    }
   }
 
   return callValue(value, argCount);
@@ -308,6 +340,22 @@ static InterpretResult run() {
         push(constant);
         break;
       }
+      case OP_ARRAY: {
+        uint8_t length = READ_BYTE();
+        ObjArray* array = newArray();
+  
+        for (int idx = 0; idx < length; idx++) {
+          writeValueArray(&array->list, peek(length - 1 - idx));
+        }
+
+        while (length > 0) {
+          pop();
+          length--;
+        }
+        push(OBJ_VAL(array));
+
+        break;
+      }
       case OP_DEFINE_GLOBAL: {
         tableSet(&vm.global, READ_STRING(), pop());
         break;
@@ -358,16 +406,24 @@ static InterpretResult run() {
         ObjString* name = READ_STRING();
         Value value;
 
-        if (!IS_INSTANCE(base)) {
+        if (!(IS_INSTANCE(base) || IS_ARRAY(base))) {
           runtimeError("Cannot access property '%s'.", name->chars);
           return INTERPRET_RUNTIME_ERROR;
         }
 
-        if (tableGet(&AS_INSTANCE(base)->properties, name, &value) ||
-            bindMethod(base, name, &value)) {
-          push(value);
+        if (IS_INSTANCE(base)) {
+          if (tableGet(&AS_INSTANCE(base)->properties, name, &value) ||
+              classMethod(base, AS_INSTANCE(base)->klass, name, &value)) {
+            push(value);
+          } else {
+            push(NIL_VAL);
+          }
         } else {
-          push(NIL_VAL);
+          if (nativeClassMethod(base, AS_ARRAY(base)->klass, name, &value)) {
+            push(value);
+          } else {
+            push(NIL_VAL);
+          }
         }
         break;
       }

@@ -26,6 +26,22 @@ Obj *allocateObj(ObjType type, size_t size) {
   return object;
 }
 
+ObjBoundNativeFn *newBoundNativeFn(Value base, ObjNativeFn* native) {
+  ObjBoundNativeFn *boundNativeFn = ALLOCATE_OBJ(OBJ_BOUND_NATIVE_FN, ObjBoundNativeFn);
+  boundNativeFn->base = base;
+  boundNativeFn->native = native;
+
+  return boundNativeFn;
+}
+
+ObjArray *newArray() {
+  ObjArray *array = ALLOCATE_OBJ(OBJ_ARRAY, ObjArray);
+  initValueArray(&array->list);
+  array->klass = vm.arrayClass;
+
+  return array;
+}
+
 ObjModule *newModule(ObjFunction *function) {
   ObjModule *module = ALLOCATE_OBJ(OBJ_MODULE, ObjModule);
   module->function = function;
@@ -145,8 +161,27 @@ static void printFunction(ObjFunction *function) {
   }
 }
 
+static void printValueArray(ValueArray* array) {
+  printf("[");
+  
+  for (int idx = 0; idx < array->count; idx++) {
+    printfValue(array->values[idx]);
+    if (idx < array->count - 1) {
+      printf(", ");
+    }
+  }
+  
+  printf("]");
+}
+
 void printObject(Value value) {
   switch (AS_OBJ(value)->type) {
+    case OBJ_BOUND_NATIVE_FN:
+      printf("<native fn>");
+      break;
+    case OBJ_ARRAY:
+      printValueArray(&AS_ARRAY(value)->list);
+      break;
     case OBJ_MODULE:
       printf("<module %s>", AS_MODULE(value)->function->name->chars);
       break;

@@ -15,7 +15,9 @@ typedef enum {
   OBJ_CLASS,
   OBJ_INSTANCE,
   OBJ_BOUND_METHOD,
-  OBJ_MODULE
+  OBJ_MODULE,
+  OBJ_ARRAY,
+  OBJ_BOUND_NATIVE_FN
 } ObjType;
 
 struct Obj {
@@ -85,15 +87,33 @@ typedef struct ObjModule {
   Table exports;
 } ObjModule;
 
+typedef struct ObjArray {
+  Obj obj;
+  ObjClass *klass;
+  ValueArray list;
+} ObjArray;
+
+typedef struct ObjBoundNativeFn {
+  Obj obj;
+  Value base;
+  ObjNativeFn *native;
+} ObjBoundNativeFn;
+
 #define OBJ_TYPE(value) (AS_OBJ(value)->type)
 
+#define IS_BOUND_NATIVE_FN(value) (isObjType(value, OBJ_BOUND_NATIVE_FN))
+#define IS_ARRAY(value) (isObjType(value, OBJ_ARRAY))
 #define IS_MODULE(value) (isObjType(value, OBJ_MODULE))
 #define IS_BOUND_METHOD(value) (isObjType(value, OBJ_BOUND_METHOD))
 #define IS_INSTANCE(value) (isObjType(value, OBJ_INSTANCE))
 #define IS_CLASS(value) (isObjType(value, OBJ_CLASS))
 #define IS_STRING(value) (isObjType(value, OBJ_STRING))
 #define IS_FUNCTION(value) (isObjType(value, OBJ_FUNCTION))
+#define IS_NATIVE_FUNCTION(value) (isObjType(value, OBJ_NATIVE_FN))
 
+#define AS_BOUND_NATIVE_FN(value) ((ObjBoundNativeFn*)AS_OBJ(value))
+#define AS_ARRAY_LIST(value) (((ObjArray *)AS_OBJ(value))->list)
+#define AS_ARRAY(value) ((ObjArray *)AS_OBJ(value))
 #define AS_MODULE(value) ((ObjModule *)AS_OBJ(value))
 #define AS_BOUND_METHOD(value) ((ObjBoundMethod *)AS_OBJ(value))
 #define AS_INSTANCE(value) ((ObjInstance *)AS_OBJ(value))
@@ -102,8 +122,11 @@ typedef struct ObjModule {
 #define AS_CSTRING(value) (((ObjString *)AS_OBJ(value))->chars)
 #define AS_FUNCTION(value) ((ObjFunction *)AS_OBJ(value))
 #define AS_CLOSURE(value) ((ObjClosure *)AS_OBJ(value))
+#define AS_NATIVE(value) (((ObjNativeFn *)AS_OBJ(value)))
 #define AS_NATIVE_FN(value) (((ObjNativeFn *)AS_OBJ(value))->function)
 
+ObjBoundNativeFn *newBoundNativeFn(Value base, ObjNativeFn* native);
+ObjArray *newArray();
 ObjModule *newModule(ObjFunction *function);
 ObjBoundMethod *newBoundMethod(Value base, ObjClosure *method);
 ObjInstance *newInstance(ObjClass *klass);
