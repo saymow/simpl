@@ -1,5 +1,9 @@
-var arr = ["test", 1, 2];
+var arr = [];
 
-while (arr.length() > 0) {
-    print arr.pop();
+for (var idx = 0; idx < 1000; idx = idx + 1) {
+    arr.push(idx);
 }
+
+while (arr.length() > 0) arr.pop();
+
+print arr;

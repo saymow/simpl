@@ -40,6 +40,14 @@ Value arrayPop(int argCount, Value* args) {
     arityCheck(0, argCount);
 
     ObjArray* array = AS_ARRAY(*args);
+    Value value = array->list.values[--array->list.count];
 
-    return array->list.values[--array->list.count]; 
+    // todo: idk if this should be handled by the garbage collector
+    if (array->list.capacity > ARRAY_INITIAL_CAPACITY && array->list.count / (double) array->list.capacity  < ARRAY_MIN_CAPACITY_RATIO) {
+        int oldCapacity = array->list.capacity;
+        array->list.capacity = SHRINK_CAPACITY(array->list.capacity);
+        array->list.values = GROW_ARRAY(Value, array->list.values, oldCapacity, array->list.capacity);
+    }
+
+    return value; 
 }
