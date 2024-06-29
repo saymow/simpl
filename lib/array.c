@@ -15,7 +15,7 @@ Value arrayLength(int argCount, Value* args) {
     arityCheck(0, argCount);
 
     ObjArray* array = AS_ARRAY(*args);
-    
+
     return NUMBER_VAL(array->list.count);
 }
 
@@ -34,4 +34,12 @@ Value arrayPush(int argCount, Value* args) {
     array->list.values[array->list.count++] = value;
 
     return NUMBER_VAL(array->list.count);
+}
+
+Value arrayPop(int argCount, Value* args) {
+    arityCheck(0, argCount);
+
+    ObjArray* array = AS_ARRAY(*args);
+
+    return array->list.values[--array->list.count]; 
 }

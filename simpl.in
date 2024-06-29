@@ -1,8 +1,5 @@
 var arr = ["test", 1, 2];
 
-for (var idx = 0; idx < 10; idx = idx + 1) {
-    print arr.push(idx);
+while (arr.length() > 0) {
+    print arr.pop();
 }
-
-print arr.length();
-print arr;
