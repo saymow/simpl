@@ -1,3 +1,8 @@
 var arr = ["test", 1, 2];
 
-print clock(1);
+for (var idx = 0; idx < 10; idx = idx + 1) {
+    print arr.push(idx);
+}
+
+print arr.length();
+print arr;

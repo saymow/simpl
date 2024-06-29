@@ -4,6 +4,7 @@
 #include "common.h"
 #include "value.h"
 
-Value length(int argCount, Value* args);
+Value arrayLength(int argCount, Value* args);
+Value arrayPush(int argCount, Value* args);
 
 #endif

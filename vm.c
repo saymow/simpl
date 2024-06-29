@@ -50,7 +50,8 @@ void initVM() {
   vm.arrayClass = newClass(takeString("Array", 5));
 
   defineNativeFunction(&vm.global, "clock", clockNative);
-  defineNativeFunction(&vm.arrayClass->methods, "length", length);
+  defineNativeFunction(&vm.arrayClass->methods, "length", arrayLength);
+  defineNativeFunction(&vm.arrayClass->methods, "push", arrayPush);
 }
 
 void freeVM() {
