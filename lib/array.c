@@ -40,6 +40,11 @@ Value arrayPop(int argCount, Value* args) {
     arityCheck(0, argCount);
 
     ObjArray* array = AS_ARRAY(*args);
+
+    if (array->list.count == 0) {
+        return NIL_VAL;
+    }
+    
     Value value = array->list.values[--array->list.count];
 
     // todo: idk if this should be handled by the garbage collector
@@ -77,6 +82,11 @@ Value arrayShift(int argCount, Value* args) {
     arityCheck(0, argCount);
 
     ObjArray* array = AS_ARRAY(*args);
+
+    if (array->list.count == 0) {
+        return NIL_VAL;
+    }
+
     Value value = array->list.values[0];
     array->list.count--;
 
