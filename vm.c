@@ -121,8 +121,10 @@ static bool call(ObjClosure* closure, uint8_t argCount) {
   return true;
 }
 
-static bool callNativeFn(NativeFn function, int argCount) {
-  Value result = function(argCount, vm.stackTop - argCount);
+static bool callNativeFn(NativeFn function, int argCount, bool isMethod) {
+  // If this is a method, then the callee is part of the arguments
+  // We properly handle that by leveraging the bool type
+  Value result = function(argCount + isMethod, vm.stackTop - argCount - isMethod);
   vm.stackTop -= argCount + 1;
   push(result);
   return true;
@@ -163,11 +165,9 @@ static bool callValue(Value callee, int argCount) {
     switch (OBJ_TYPE(callee)) {
       case OBJ_BOUND_NATIVE_FN: {
         ObjBoundNativeFn* boundNativeFn = AS_BOUND_NATIVE_FN(callee);
-        // The first item of the stack is initilized with a copy of the base object
-        // Native class methods expects to always receive at least one argument.
-        // This first argument is the callee object.
-        vm.stackTop[-(++argCount)] = boundNativeFn->base;
-        return callNativeFn(boundNativeFn->native->function, argCount);
+        // Native class methods expects to receive the callee as the first argument.
+        vm.stackTop[-(argCount + 1)] = boundNativeFn->base;
+        return callNativeFn(boundNativeFn->native->function, argCount, true);
       }
       case OBJ_BOUND_METHOD: {
         ObjBoundMethod* boundMethod = AS_BOUND_METHOD(callee);
@@ -180,7 +180,7 @@ static bool callValue(Value callee, int argCount) {
       case OBJ_CLOSURE:
         return call(AS_CLOSURE(callee), argCount);
       case OBJ_NATIVE_FN:
-        return callNativeFn(AS_NATIVE_FN(callee), argCount);
+        return callNativeFn(AS_NATIVE_FN(callee), argCount, false);
       default:
         break;
     }
@@ -292,6 +292,33 @@ static bool invokeMethod(Value base, ObjString* name, uint8_t argCount) {
 
   return callValue(value, argCount);
 }
+
+static bool getArrayItem(ObjArray* arr, Value index, Value* value) {
+  if (!IS_NUMBER(index)) {
+    runtimeError("Array index must be a number.");
+    return false;
+  } else if (AS_NUMBER(index) < 0 || AS_NUMBER(index) >= arr->list.count) {
+    // todo: should it be a runtime error?
+    *value = NIL_VAL;
+    return true;
+  }
+
+  *value = arr->list.values[(int) AS_NUMBER(index)];
+  return true; 
+}
+
+static bool setArrayItem(ObjArray* arr, Value index, Value value) {
+  if (!IS_NUMBER(index)) {
+    runtimeError("Array index must be a number.");
+    return false;
+  } else if (AS_NUMBER(index) < 0 || AS_NUMBER(index) >= arr->list.count) {
+    runtimeError("Array index out of bounds.");
+    return false;
+  }
+
+  arr->list.values[(int) AS_NUMBER(index)] = value;
+  return true; 
+} 
 
 static InterpretResult run() {
   CallFrame* frame = &vm.frames[vm.framesCount - 1];
@@ -451,6 +478,43 @@ static InterpretResult run() {
 
         tableSet(&AS_INSTANCE(base)->properties, name, value);
         push(value);
+        break;
+      }
+      case OP_GET_ITEM: {
+        Value identifier = pop();
+        Value base = pop();
+
+        Value value;
+        if (IS_ARRAY(base)) {
+          if (!getArrayItem(AS_ARRAY(base), identifier, &value)) {
+            return INTERPRET_RUNTIME_ERROR;
+          }
+
+          push(value);
+        } else if (IS_OBJ(base)) {
+          // todo
+        } else {
+          runtimeError("Cannot access property.");
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        break;
+      }
+      case OP_SET_ITEM: {
+        Value value = pop();
+        Value identifier = pop();
+        Value base = pop();
+
+        if (IS_ARRAY(base)) {
+          if (!setArrayItem(AS_ARRAY(base), identifier, value)) {
+            return INTERPRET_RUNTIME_ERROR;
+          }
+          push(value);
+        } else if (IS_OBJ(base)) {
+          // todo
+        } else {
+          runtimeError("Cannot access property");
+          return INTERPRET_RUNTIME_ERROR;
+        }
         break;
       }
       case OP_JUMP: {

@@ -4,6 +4,10 @@
 #include "array.h"
 #include "object.h"
 
+/*
+    For class native methods, there i
+ */
+
 Value length(int argCount, Value* args) {
     if (argCount != 1) {
         // todo arity resolution

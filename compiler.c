@@ -1039,10 +1039,23 @@ static void array(bool canAssign) {
   consume(TOKEN_RIGHT_BRACKET, "Expect ']' at end of array expression.");
 }
 
+static void arrayGetOrSet(bool canAssign) {
+  expression();
+  consume(TOKEN_RIGHT_BRACKET, "Expect ']' at end of array access.");
+
+  // Should array item invocation be optimized? 
+  if (match(TOKEN_EQUAL) && canAssign) {
+    expression();
+    emitByte(OP_SET_ITEM);
+  } else {
+    emitByte(OP_GET_ITEM);
+  }
+}
+
 ParseRule rules[] = {
     [TOKEN_LEFT_PAREN] = {grouping, call, PREC_CALL},
     [TOKEN_RIGHT_PAREN] = {NULL, NULL, PREC_NONE},
-    [TOKEN_LEFT_BRACKET] = {array, NULL, PREC_PRIMARY},
+    [TOKEN_LEFT_BRACKET] = {array, arrayGetOrSet, PREC_PRIMARY},
     [TOKEN_RIGHT_BRACKET] = {NULL, NULL, PREC_NONE},
     [TOKEN_LEFT_BRACE] = {NULL, NULL, PREC_NONE},
     [TOKEN_RIGHT_BRACE] = {NULL, NULL, PREC_NONE},

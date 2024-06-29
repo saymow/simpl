@@ -1,7 +1,7 @@
-var myVar = 6;
+fun hello() {
+    print "hello world";
+}
 
-var arr = ["test", myVar, 1, 2];
+var arr = ["test", 1, 2, hello];
 
-var method = arr.length;
-
-print method();
+arr[3]();

@@ -97,6 +97,10 @@ int disassembleInstruction(Chunk* chunk, int offset) {
                index);
       }
     }
+    case OP_GET_ITEM:
+      return simpleInstruction("OP_GET_ITEM", offset);
+    case OP_SET_ITEM:
+      return simpleInstruction("OP_SET_ITEM", offset);
     case OP_POP:
       return simpleInstruction("OP_POP", offset);
     case OP_CLOSE_UPVALUE:
