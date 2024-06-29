@@ -7,7 +7,7 @@
 #include "../memory.h"
 
 /*
- * Class native methods always receive the calle as the first argument.
+ * Class native methods always receive the callee as the first argument.
  * But the ArgCount IS NOT CHANGED 
  */
 
@@ -44,7 +44,7 @@ Value arrayPop(int argCount, Value* args) {
     if (array->list.count == 0) {
         return NIL_VAL;
     }
-    
+
     Value value = array->list.values[--array->list.count];
 
     // todo: idk if this should be handled by the garbage collector

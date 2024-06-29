@@ -165,14 +165,30 @@ static TokenType identifierType() {
       if (lexer->current - lexer->start > 1) {
         switch (lexer->start[1]) {
           case 'r':
-            return checkKeyword(2, 2, "ue", TOKEN_TRUE);
+            if (lexer->current - lexer->start > 2) {
+              switch(lexer->start[2]) {
+                case 'y':
+                  return checkKeyword(3, 0, "", TOKEN_TRY);
+                case 'u':
+                  return checkKeyword(3, 1, "e", TOKEN_TRUE); 
+              }
+              break;
+            }
           case 'h':
             return checkKeyword(2, 2, "is", TOKEN_THIS);
         }
         break;
       }
     case 'c':
-      return checkKeyword(1, 4, "lass", TOKEN_CLASS);
+      if (lexer->current - lexer->start > 1) {
+        switch (lexer->start[1]) {
+          case 'l':
+            return checkKeyword(2, 3, "ass", TOKEN_CLASS);
+          case 'a':
+            return checkKeyword(2, 3, "tch", TOKEN_CATCH); 
+        }
+        break;
+      }
     case 'f':
       if (lexer->current - lexer->start > 1) {
         switch (lexer->start[1]) {

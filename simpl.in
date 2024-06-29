@@ -1,7 +1,0 @@
-var arr = [];
-
-print arr.shift();
-print arr.shift();
-print arr.shift();
-print arr.shift();
-
