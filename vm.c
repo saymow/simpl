@@ -13,7 +13,7 @@
 #include "memory.h"
 #include "utils.h"
 #include "value.h"
-#include "array.h"
+#include "lib/array.h"
 
 VM vm;
 
@@ -122,9 +122,9 @@ static bool call(ObjClosure* closure, uint8_t argCount) {
 }
 
 static bool callNativeFn(NativeFn function, int argCount, bool isMethod) {
-  // If this is a method, then the callee is part of the arguments
-  // We properly handle that by leveraging the bool type
-  Value result = function(argCount + isMethod, vm.stackTop - argCount - isMethod);
+  // If this is a method, then handlers expects to receive the callee as argument.
+  // We properly handle that by leveraging the bool type.
+  Value result = function(argCount, vm.stackTop - argCount - isMethod);
   vm.stackTop -= argCount + 1;
   push(result);
   return true;

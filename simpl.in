@@ -1,7 +1,3 @@
-fun hello() {
-    print "hello world";
-}
+var arr = ["test", 1, 2];
 
-var arr = ["test", 1, 2, hello];
-
-arr[3]();
+print clock(1);
