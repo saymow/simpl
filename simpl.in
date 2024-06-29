@@ -1,7 +1,12 @@
 var arr = [];
 
-for (var idx = 0; idx < 10; idx = idx + 1) {
+for (var idx = 0; idx < 100; idx = idx + 1) {
     arr.unshift(idx);
 }
 
 print arr;
+
+while (arr.length() > 0) {
+    print arr.shift();
+    print arr;
+}

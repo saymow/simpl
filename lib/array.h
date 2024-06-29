@@ -8,5 +8,6 @@ Value arrayLength(int argCount, Value* args);
 Value arrayPush(int argCount, Value* args);
 Value arrayPop(int argCount, Value* args);
 Value arrayUnshift(int argCount, Value* args);
+Value arrayShift(int argCount, Value* args);
 
 #endif

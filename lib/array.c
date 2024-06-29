@@ -72,3 +72,24 @@ Value arrayUnshift(int argCount, Value* args) {
 
     return NUMBER_VAL(++array->list.count); 
 }
+
+Value arrayShift(int argCount, Value* args) {
+    arityCheck(0, argCount);
+
+    ObjArray* array = AS_ARRAY(*args);
+    Value value = array->list.values[0];
+    array->list.count--;
+
+    for (int idx = 0; idx < array->list.count; idx++) {
+        array->list.values[idx] = array->list.values[idx + 1];
+    }
+
+    // todo: idk if this should be handled by the garbage collector
+    if (array->list.capacity > ARRAY_INITIAL_CAPACITY && array->list.count / (double) array->list.capacity  < ARRAY_MIN_CAPACITY_RATIO) {
+        int oldCapacity = array->list.capacity;
+        array->list.capacity = SHRINK_CAPACITY(array->list.capacity);
+        array->list.values = GROW_ARRAY(Value, array->list.values, oldCapacity, array->list.capacity);
+    }
+
+    return value; 
+}
