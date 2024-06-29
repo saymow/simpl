@@ -7,6 +7,7 @@
 typedef enum {
   OP_POP,
   OP_CONSTANT,
+  OP_ARRAY,
   OP_DEFINE_GLOBAL,
   OP_GET_GLOBAL,
   OP_SET_GLOBAL,

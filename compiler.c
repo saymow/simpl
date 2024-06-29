@@ -1020,9 +1020,30 @@ static void _this(bool canAssign) {
   variable(false);
 }
 
+static void array(bool canAssign) {
+  int length = 0;
+
+  if (!check(TOKEN_RIGHT_BRACKET)) {
+    do {
+      expression();
+      
+      if (length > 255) {
+        error("Can't initialize array with more than 255 elements.");
+      }
+
+      length++;
+    } while(match(TOKEN_COMMA));
+  }
+
+  emitBytes(OP_ARRAY, length);
+  consume(TOKEN_RIGHT_BRACKET, "Expect ']' at end of array expression.");
+}
+
 ParseRule rules[] = {
     [TOKEN_LEFT_PAREN] = {grouping, call, PREC_CALL},
     [TOKEN_RIGHT_PAREN] = {NULL, NULL, PREC_NONE},
+    [TOKEN_LEFT_BRACKET] = {array, NULL, PREC_PRIMARY},
+    [TOKEN_RIGHT_BRACKET] = {NULL, NULL, PREC_NONE},
     [TOKEN_LEFT_BRACE] = {NULL, NULL, PREC_NONE},
     [TOKEN_RIGHT_BRACE] = {NULL, NULL, PREC_NONE},
     [TOKEN_COMMA] = {NULL, NULL, PREC_NONE},
@@ -1059,6 +1080,9 @@ ParseRule rules[] = {
     [TOKEN_TRUE] = {literal, NULL, PREC_NONE},
     [TOKEN_VAR] = {NULL, NULL, PREC_NONE},
     [TOKEN_WHILE] = {NULL, NULL, PREC_NONE},
+    [TOKEN_IMPORT] = {NULL, NULL, PREC_NONE},
+    [TOKEN_FROM] = {NULL, NULL, PREC_NONE},
+    [TOKEN_EXPORT] = {NULL, NULL, PREC_NONE},
     [TOKEN_ERROR] = {NULL, NULL, PREC_NONE},
     [TOKEN_EOF] = {NULL, NULL, PREC_NONE},
 };
