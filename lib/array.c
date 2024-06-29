@@ -51,3 +51,24 @@ Value arrayPop(int argCount, Value* args) {
 
     return value; 
 }
+
+Value arrayUnshift(int argCount, Value* args) {
+    arityCheck(1, argCount);
+
+    ObjArray* array = AS_ARRAY(*args);
+    Value value = *(++args);
+
+    if (array->list.capacity < array->list.count + 1) {
+        int oldCapacity = array->list.capacity;
+        array->list.capacity = GROW_CAPACITY(oldCapacity);
+        array->list.values = GROW_ARRAY(Value, array->list.values, oldCapacity, array->list.capacity);
+    }
+
+    for (int idx = array->list.count; idx > 0; idx--) {
+        array->list.values[idx] = array->list.values[idx - 1];
+    }
+    
+    array->list.values[0] = value;
+
+    return NUMBER_VAL(++array->list.count); 
+}

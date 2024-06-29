@@ -53,6 +53,7 @@ void initVM() {
   defineNativeFunction(&vm.arrayClass->methods, "length", arrayLength);
   defineNativeFunction(&vm.arrayClass->methods, "push", arrayPush);
   defineNativeFunction(&vm.arrayClass->methods, "pop", arrayPop);
+  defineNativeFunction(&vm.arrayClass->methods, "unshift", arrayUnshift);
 }
 
 void freeVM() {
