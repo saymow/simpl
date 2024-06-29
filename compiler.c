@@ -689,13 +689,13 @@ static void importStatement() {
 
   module->function->name = path;
 
+  free(source);
   emitBytes(OP_IMPORT, moduleConstant);
   if (constant != -1) {
     defineVariable(constant);
   } else {
     emitByte(OP_POP);
   }
-
   consume(TOKEN_SEMICOLON, "Expect ';' after import statement.");
 }
 
