@@ -44,7 +44,8 @@ static int tryCatchInstruction(const char* name, Chunk* chunk, int offset) {
   catchJump |= chunk->code[offset + 2];
   uint16_t outJump = (uint16_t)(chunk->code[offset + 3] << 8);
   outJump |= chunk->code[offset + 4];
-  printf("%-16s %d -> CATCH START: %d | BLOCK END: %d\n", name, offset, offset + catchJump + 6, offset + outJump + 6);
+  bool hasCatchParameter = chunk->code[offset + 5];
+  printf("%-16s %d ->  %d | %d | %d \n", name, offset, offset + catchJump + 6, offset + outJump + 6, hasCatchParameter);
 
   return offset + 6;
 }

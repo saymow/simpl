@@ -4,7 +4,7 @@ import module from "./simpl-module.in";
 try {
     module.test();
 }
-catch (err) {
+catch {
     var a = 50;
     var b = 50;
     var c = 50;
@@ -14,7 +14,6 @@ catch (err) {
     var g = 50;
     var h = 50;
     var i = 50;
-    print err();
 }
 
 print "end";
