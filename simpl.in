@@ -1,0 +1,13 @@
+import module from "./simpl-module.in";
+
+
+try {
+    print "before throw 1";
+    module.test();
+    print "after throw 2";
+}
+catch {
+    print "catch";
+}
+
+print "end";

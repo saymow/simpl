@@ -12,6 +12,7 @@
 typedef enum { FRAME_TYPE_CLOSURE, FRAME_TYPE_MODULE } CallFrameType;
 
 typedef struct {
+  uint8_t* start;
   uint8_t* ip;
   Value* slots;
   CallFrameType type;
@@ -20,6 +21,15 @@ typedef struct {
     ObjModule* module;
   } as;
 } CallFrame;
+
+typedef struct TryCatch {
+  CallFrame* frame;
+  Value* frameStackTop;
+  int start;
+  uint16_t catchOffset;
+  uint16_t outOffset;
+  struct TryCatch* next;  
+} TryCatch;
 
 typedef struct {
   CallFrame frames[FRAMES_MAX];
@@ -42,6 +52,8 @@ typedef struct {
 
   ObjClass* moduleExportsClass;
   ObjClass* arrayClass;
+
+  TryCatch* tryCatch;
 } VM;
 
 typedef enum {

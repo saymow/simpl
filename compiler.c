@@ -495,13 +495,33 @@ static int emitJump(OpCode instruction) {
   return currentChunk()->count - 2;
 }
 
-static void patchJump(int jmp) {
-  int offset = currentChunk()->count - jmp - 2;
+/*
+* The majority of jumps are like this:
+* "
+* OP_CODE
+* 0xff      
+* 0xff  
+* "
+* That is, the instruction and one 16 bits offset which means padding = 1
+* Instructions like OP_TRYCATCH are like:
+* "
+* OP_CODE
+* 0xff      
+* 0xff
+* 0xff      
+* 0xff  
+* "
+* That is, it uses two 16 bits offset. In order to correctly calculate the offset
+* of the first 16 bits operand, we need the padding = 2
+*/
+static int patchJump(int jmp, uint8_t instructionPadding) {
+  int offset = currentChunk()->count - jmp - (instructionPadding * 2);
   if (offset > UINT16_MAX) {
     error("To much code to jump over.");
   }
   currentChunk()->code[jmp] = (offset >> 8) & 0xff;
   currentChunk()->code[jmp + 1] = offset & 0xff;
+  return jmp + 2;
 }
 
 static void ifStatement() {
@@ -516,13 +536,13 @@ static void ifStatement() {
 
   int elseJmp = emitJump(OP_JUMP);
 
-  patchJump(thenJmp);
+  patchJump(thenJmp, 1);
   emitByte(OP_POP);
 
   if (match(TOKEN_ELSE)) {
     statement();
   }
-  patchJump(elseJmp);
+  patchJump(elseJmp, 1);
 }
 
 static void emitLoop(int beforeLoop) {
@@ -550,7 +570,7 @@ static void whileStatement() {
   statement();
   emitLoop(loopStart);
 
-  patchJump(exitLoop);
+  patchJump(exitLoop, 1);
   emitByte(OP_POP);
 }
 
@@ -586,14 +606,14 @@ static void forStatement() {
 
     emitLoop(loopStart);
     loopStart = incrementStart;
-    patchJump(bodyJmp);
+    patchJump(bodyJmp, 1);
   }
 
   statement();
   emitLoop(loopStart);
 
   if (exitJmp != -1) {
-    patchJump(exitJmp);
+    patchJump(exitJmp, 1);
     emitByte(OP_POP);
   }
 
@@ -712,8 +732,43 @@ static void exportStatement() {
   consume(TOKEN_SEMICOLON, "Expect ';' after export statement.");
 }
 
+static int emitTryCatchStart() {
+  writeChunk(currentChunk(), OP_TRYCATCH, parser.previous.line);
+  // catch offset 
+  writeChunk(currentChunk(), 0xff, parser.previous.line);
+  writeChunk(currentChunk(), 0xff, parser.previous.line);
+  // outside block offset
+  writeChunk(currentChunk(), 0xff, parser.previous.line);
+  writeChunk(currentChunk(), 0xff, parser.previous.line);
+  return currentChunk()->count - 4;
+}
+
+
+static void tryStatement() {
+  int tryCatch = emitTryCatchStart(OP_TRYCATCH);
+
+  statement();
+  emitByte(OP_TRYCATCH_TRY_END);
+
+  tryCatch = patchJump(tryCatch, 2);
+
+  consume(TOKEN_CATCH, "Expect 'catch' after try statement."); 
+  statement();
+
+  patchJump(tryCatch, 1);
+}
+
+static void throwStatement() {
+  emitByte(OP_THROW);
+  consume(TOKEN_SEMICOLON, "Expect ';' after throw statement.");
+}
+
 static void statement() {
-  if (match(TOKEN_IMPORT)) {
+  if (match(TOKEN_THROW)) {
+    return throwStatement();
+  } else if (match(TOKEN_TRY)) {
+    return tryStatement();  
+  } else if (match(TOKEN_IMPORT)) {
     importStatement();
   } else if (match(TOKEN_EXPORT)) {
     exportStatement();
@@ -952,19 +1007,19 @@ static void _and(bool canAssign) {
   emitByte(OP_POP);
   parsePrecedence(PREC_AND);
 
-  patchJump(shortCircuitJump);
+  patchJump(shortCircuitJump, 1);
 }
 
 static void _or(bool canAssign) {
   int shortCircuitJump = emitJump(OP_JUMP_IF_FALSE);
   int jump = emitJump(OP_JUMP);
 
-  patchJump(shortCircuitJump);
+  patchJump(shortCircuitJump, 1);
 
   emitByte(OP_POP);
   parsePrecedence(PREC_OR);
 
-  patchJump(jump);
+  patchJump(jump, 1);
 }
 
 static uint8_t argumentsList() {

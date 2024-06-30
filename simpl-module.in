@@ -1,5 +1,18 @@
-import "./simpl-module3.in";
-import module2 from "./simpl-module2.in";
+fun test() {
+    fun lol() {
+        var a = 1;
+        var b = 2;
 
-print module2.counter.increment();
-print module2.counter.increment();
+        print "before throw 2";
+        throw;
+        print "after throw 1";
+    }
+
+    try {
+        lol();
+    } catch {
+        print "we should keep things going";
+    }
+}
+
+export test;

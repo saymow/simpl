@@ -51,6 +51,7 @@ typedef enum {
   TOKEN_EXPORT,
   TOKEN_TRY,
   TOKEN_CATCH,
+  TOKEN_THROW,
   TOKEN_ERROR,
   TOKEN_EOF
 } TokenType;

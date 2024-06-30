@@ -175,7 +175,15 @@ static TokenType identifierType() {
               break;
             }
           case 'h':
-            return checkKeyword(2, 2, "is", TOKEN_THIS);
+            if (lexer->current - lexer->start > 2) {
+              switch(lexer->start[2]) {
+                case 'i':
+                  return checkKeyword(3, 0, "s", TOKEN_THIS);
+                case 'r':
+                  return checkKeyword(3, 2, "ow", TOKEN_THROW); 
+              }
+              break;
+            }
         }
         break;
       }

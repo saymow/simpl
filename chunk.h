@@ -43,6 +43,9 @@ typedef enum {
   OP_METHOD,
   OP_EXPORT,
   OP_IMPORT,
+  OP_TRYCATCH,
+  OP_TRYCATCH_TRY_END,
+  OP_THROW,
   OP_RETURN,
 } OpCode;
 

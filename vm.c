@@ -49,6 +49,8 @@ void initVM() {
   vm.arrayClass = NULL;
   vm.arrayClass = newClass(takeString("Array", 5));
 
+  vm.tryCatch = NULL;
+
   defineNativeFunction(&vm.global, "clock", clockNative);
   defineNativeFunction(&vm.arrayClass->methods, "length", arrayLength);
   defineNativeFunction(&vm.arrayClass->methods, "push", arrayPush);
@@ -119,6 +121,7 @@ static bool call(ObjClosure* closure, uint8_t argCount) {
   CallFrame* frame = &vm.frames[vm.framesCount++];
   frame->type = FRAME_TYPE_CLOSURE;
   frame->as.closure = closure;
+  frame->start = closure->function->chunk.code;
   frame->ip = closure->function->chunk.code;
   frame->slots = vm.stackTop - argCount - 1;
 
@@ -158,6 +161,7 @@ static bool callModule(ObjModule* module) {
   CallFrame* frame = &vm.frames[vm.framesCount++];
   frame->type = FRAME_TYPE_MODULE;
   frame->as.module = module;
+  frame->start = module->function->chunk.code;
   frame->ip = module->function->chunk.code;
   frame->slots = vm.stackTop - 1;
 
@@ -534,6 +538,58 @@ static InterpretResult run() {
       case OP_LOOP: {
         uint16_t offset = READ_SHORT();
         frame->ip -= offset;
+        break;
+      }
+      case OP_TRYCATCH: {
+        TryCatch* tryCatch = malloc(sizeof(TryCatch));
+
+        tryCatch->frame = frame;
+        tryCatch->frameStackTop = vm.stackTop;
+        tryCatch->catchOffset = READ_SHORT();
+        tryCatch->outOffset = READ_SHORT();
+        tryCatch->start = frame->ip - frame->start; 
+
+        if (vm.tryCatch == NULL) {
+          tryCatch->next = NULL;
+        } else {
+          tryCatch->next = vm.tryCatch;
+        }
+
+        vm.tryCatch = tryCatch;
+        break;  
+      }
+      case OP_TRYCATCH_TRY_END: {
+        /*
+        * We are always gonna reach this intruction inside the same frame the try-catch-block was created.
+        * If we dont reach any throw statement. Hence, no need to use the vm.tryCatch->frame.
+        */ 
+        frame->ip = frame->start;
+        frame->ip += vm.tryCatch->start + vm.tryCatch->outOffset;
+
+        TryCatch* tmp = vm.tryCatch;
+        vm.tryCatch = vm.tryCatch->next;
+        free(tmp);
+        break;
+      }
+      case OP_THROW: {
+        if (vm.tryCatch == NULL) {
+          runtimeError("Exception");
+          return INTERPRET_RUNTIME_ERROR;
+        }
+
+        /**
+         * Get back to the closest try-catch-block frame and move ip to the start of the catch block. 
+         */
+        vm.framesCount = vm.tryCatch->frame - vm.frames + 1;
+        vm.stackTop = vm.tryCatch->frameStackTop;
+        frame = vm.tryCatch->frame;
+        frame->ip = vm.tryCatch->frame->start;
+        frame->ip += vm.tryCatch->start + vm.tryCatch->catchOffset;
+        
+        // discard try catch block
+        TryCatch* tmp = vm.tryCatch;
+        vm.tryCatch = vm.tryCatch->next;
+        free(tmp);
         break;
       }
       case OP_TRUE:

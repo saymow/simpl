@@ -32,6 +32,23 @@ static int invokeInstruction(const char* name, Chunk* chunk, int offset) {
   return offset + 3;
 }
 
+static int jumpInstruction(const char* name, int sign, Chunk* chunk, int offset) {
+  uint16_t jump = (uint16_t)(chunk->code[offset + 1] << 8);
+  jump |= chunk->code[offset + 2];
+  printf("%-16s %4d -> %d\n", name, offset, offset + 3 + sign * jump);
+  return offset + 3;
+}
+
+static int tryCatchInstruction(const char* name, Chunk* chunk, int offset) {
+  uint16_t catchJump = (uint16_t)(chunk->code[offset + 1] << 8);
+  catchJump |= chunk->code[offset + 2];
+  uint16_t outJump = (uint16_t)(chunk->code[offset + 3] << 8);
+  outJump |= chunk->code[offset + 4];
+  printf("%-16s %d -> CATCH START: %d | BLOCK END: %d\n", name, offset, offset + catchJump + 5, offset + outJump + 5);
+
+  return offset + 5;
+}
+
 static int constantInstruction(const char* name, Chunk* chunk, int offset) {
   uint8_t constantIdx = chunk->code[offset + 1];
   printf("%-16s %4d '", name, constantIdx);
@@ -96,6 +113,7 @@ int disassembleInstruction(Chunk* chunk, int offset) {
         printf("%04d    | %s %d\n", offset - 2, isLocal ? "local" : "upvalue",
                index);
       }
+      return offset;
     }
     case OP_GET_ITEM:
       return simpleInstruction("OP_GET_ITEM", offset);
@@ -130,11 +148,17 @@ int disassembleInstruction(Chunk* chunk, int offset) {
     case OP_NOT:
       return simpleInstruction("OP_NOT", offset);
     case OP_JUMP:
-      return simpleInstruction("OP_JUMP", offset);
+      return jumpInstruction("OP_JUMP", 1, chunk, offset);
     case OP_JUMP_IF_FALSE:
-      return simpleInstruction("OP_JUMP_IF_FALSE", offset);
+      return jumpInstruction("OP_JUMP_IF_FALSE", 1, chunk, offset);
     case OP_LOOP:
-      return simpleInstruction("OP_LOOP", offset);
+      return jumpInstruction("OP_LOOP", -1, chunk, offset);
+    case OP_TRYCATCH:
+      return tryCatchInstruction("OP_TRYCATCH", chunk, offset);
+    case OP_TRYCATCH_TRY_END:
+      return simpleInstruction("OP_TRYCATCH_TRY_END", offset);
+    case OP_THROW:
+      return simpleInstruction("OP_THROW", offset);
     case OP_PRINT:
       return simpleInstruction("OP_PRINT", offset);
     case OP_IMPORT:
