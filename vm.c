@@ -121,7 +121,6 @@ static bool call(ObjClosure* closure, uint8_t argCount) {
   CallFrame* frame = &vm.frames[vm.framesCount++];
   frame->type = FRAME_TYPE_CLOSURE;
   frame->as.closure = closure;
-  frame->start = closure->function->chunk.code;
   frame->ip = closure->function->chunk.code;
   frame->slots = vm.stackTop - argCount - 1;
 
@@ -161,7 +160,6 @@ static bool callModule(ObjModule* module) {
   CallFrame* frame = &vm.frames[vm.framesCount++];
   frame->type = FRAME_TYPE_MODULE;
   frame->as.module = module;
-  frame->start = module->function->chunk.code;
   frame->ip = module->function->chunk.code;
   frame->slots = vm.stackTop - 1;
 
@@ -540,53 +538,56 @@ static InterpretResult run() {
         frame->ip -= offset;
         break;
       }
-      case OP_TRYCATCH: {
+      case OP_TRY_CATCH: {
+        uint16_t catchOffset = READ_SHORT();
+        uint16_t outOffset = READ_SHORT();
         TryCatch* tryCatch = malloc(sizeof(TryCatch));
 
         tryCatch->frame = frame;
         tryCatch->frameStackTop = vm.stackTop;
-        tryCatch->catchOffset = READ_SHORT();
-        tryCatch->outOffset = READ_SHORT();
-        tryCatch->start = frame->ip - frame->start; 
+        tryCatch->catchIp = frame->ip + catchOffset;
+        tryCatch->outIp = frame->ip + outOffset;
 
+        // Push try-catch-block to the stack
         if (vm.tryCatch == NULL) {
           tryCatch->next = NULL;
         } else {
           tryCatch->next = vm.tryCatch;
         }
-
         vm.tryCatch = tryCatch;
         break;  
       }
-      case OP_TRYCATCH_TRY_END: {
+      case OP_TRY_CATCH_TRY_END: {
         /*
-        * We are always gonna reach this intruction inside the same frame the try-catch-block was created.
-        * If we dont reach any throw statement. Hence, no need to use the vm.tryCatch->frame.
+        * Move to the end of the try-catch-block and skip catch statement
+        * We are always gonna reach this intruction inside the same frame the try-catch-block was created,
+        * if we dont reach any throw statement. Hence, no need to use the vm.tryCatch->frame.
         */ 
-        frame->ip = frame->start;
-        frame->ip += vm.tryCatch->start + vm.tryCatch->outOffset;
+        frame->ip = vm.tryCatch->outIp;
 
+        // Pop TryCatch from the try-catch-block stack and then free the memory 
         TryCatch* tmp = vm.tryCatch;
         vm.tryCatch = vm.tryCatch->next;
         free(tmp);
         break;
       }
       case OP_THROW: {
+        // Throw outside of any try-catch-block 
         if (vm.tryCatch == NULL) {
-          runtimeError("Exception");
+          runtimeError("Unhandled Exception.");
           return INTERPRET_RUNTIME_ERROR;
         }
 
-        /**
-         * Get back to the closest try-catch-block frame and move ip to the start of the catch block. 
-         */
+        // Get back to the closest try-catch-block frame and move ip to the start of the catch block statement. 
         vm.framesCount = vm.tryCatch->frame - vm.frames + 1;
         vm.stackTop = vm.tryCatch->frameStackTop;
         frame = vm.tryCatch->frame;
-        frame->ip = vm.tryCatch->frame->start;
-        frame->ip += vm.tryCatch->start + vm.tryCatch->catchOffset;
+        frame->ip = vm.tryCatch->catchIp;
+
+        // This seems to be an extreme corner case where we throw an enclosed function in a nested scope.
+        closeUpValues(vm.stackTop - 1);
         
-        // discard try catch block
+        // Pop TryCatch from the try-catch-block stack and then free the memory
         TryCatch* tmp = vm.tryCatch;
         vm.tryCatch = vm.tryCatch->next;
         free(tmp);

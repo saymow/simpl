@@ -503,7 +503,7 @@ static int emitJump(OpCode instruction) {
 * 0xff  
 * "
 * That is, the instruction and one 16 bits offset which means padding = 1
-* Instructions like OP_TRYCATCH are like:
+* Instructions like OP_TRY_CATCH are like:
 * "
 * OP_CODE
 * 0xff      
@@ -733,7 +733,7 @@ static void exportStatement() {
 }
 
 static int emitTryCatchStart() {
-  writeChunk(currentChunk(), OP_TRYCATCH, parser.previous.line);
+  writeChunk(currentChunk(), OP_TRY_CATCH, parser.previous.line);
   // catch offset 
   writeChunk(currentChunk(), 0xff, parser.previous.line);
   writeChunk(currentChunk(), 0xff, parser.previous.line);
@@ -743,18 +743,14 @@ static int emitTryCatchStart() {
   return currentChunk()->count - 4;
 }
 
-
 static void tryStatement() {
-  int tryCatch = emitTryCatchStart(OP_TRYCATCH);
-
+  int tryCatch = emitTryCatchStart(OP_TRY_CATCH);
   statement();
-  emitByte(OP_TRYCATCH_TRY_END);
-
+  emitByte(OP_TRY_CATCH_TRY_END);
   tryCatch = patchJump(tryCatch, 2);
 
   consume(TOKEN_CATCH, "Expect 'catch' after try statement."); 
   statement();
-
   patchJump(tryCatch, 1);
 }
 

@@ -8,11 +8,7 @@ fun test() {
         print "after throw 1";
     }
 
-    try {
-        lol();
-    } catch {
-        print "we should keep things going";
-    }
+    lol();
 }
 
 export test;
