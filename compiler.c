@@ -502,20 +502,21 @@ static int emitJump(OpCode instruction) {
 * 0xff      
 * 0xff  
 * "
-* That is, the instruction and one 16 bits offset which means padding = 1
+* That is, the instruction and two bytes of offset which means padding = 2.
 * Instructions like OP_TRY_CATCH are like:
 * "
 * OP_CODE
 * 0xff      
 * 0xff
 * 0xff      
+* 0xff
 * 0xff  
 * "
-* That is, it uses two 16 bits offset. In order to correctly calculate the offset
-* of the first 16 bits operand, we need the padding = 2
+* That is, after the OP_CODE, there are 5 bytes of padding.
+* In order to correctly calculate the offset we need the padding = 5.
 */
 static int patchJump(int jmp, uint8_t instructionPadding) {
-  int offset = currentChunk()->count - jmp - (instructionPadding * 2);
+  int offset = currentChunk()->count - jmp - instructionPadding;
   if (offset > UINT16_MAX) {
     error("To much code to jump over.");
   }
@@ -536,13 +537,13 @@ static void ifStatement() {
 
   int elseJmp = emitJump(OP_JUMP);
 
-  patchJump(thenJmp, 1);
+  patchJump(thenJmp, 2);
   emitByte(OP_POP);
 
   if (match(TOKEN_ELSE)) {
     statement();
   }
-  patchJump(elseJmp, 1);
+  patchJump(elseJmp, 2);
 }
 
 static void emitLoop(int beforeLoop) {
@@ -570,7 +571,7 @@ static void whileStatement() {
   statement();
   emitLoop(loopStart);
 
-  patchJump(exitLoop, 1);
+  patchJump(exitLoop, 2);
   emitByte(OP_POP);
 }
 
@@ -606,14 +607,14 @@ static void forStatement() {
 
     emitLoop(loopStart);
     loopStart = incrementStart;
-    patchJump(bodyJmp, 1);
+    patchJump(bodyJmp, 2);
   }
 
   statement();
   emitLoop(loopStart);
 
   if (exitJmp != -1) {
-    patchJump(exitJmp, 1);
+    patchJump(exitJmp, 2);
     emitByte(OP_POP);
   }
 
@@ -732,7 +733,7 @@ static void exportStatement() {
   consume(TOKEN_SEMICOLON, "Expect ';' after export statement.");
 }
 
-static int emitTryCatchStart() {
+static int emitTryCatch() {
   writeChunk(currentChunk(), OP_TRY_CATCH, parser.previous.line);
   // catch offset 
   writeChunk(currentChunk(), 0xff, parser.previous.line);
@@ -740,21 +741,43 @@ static int emitTryCatchStart() {
   // outside block offset
   writeChunk(currentChunk(), 0xff, parser.previous.line);
   writeChunk(currentChunk(), 0xff, parser.previous.line);
-  return currentChunk()->count - 4;
+  // bool that indicates if catch expects to receive a parameter 
+  writeChunk(currentChunk(), 0xff, parser.previous.line);
+  return currentChunk()->count - 5;
+}
+
+static void patchTryCatchParameter(int parameter, bool shouldReceive) {
+  // patch bool that indicates if catch expects to receive a parameter 
+  currentChunk()->code[parameter] = shouldReceive;
 }
 
 static void tryStatement() {
-  int tryCatch = emitTryCatchStart(OP_TRY_CATCH);
+  int tryCatch = emitTryCatch(OP_TRY_CATCH);
+  int catchParameterConstant = -1;
+
   statement();
   emitByte(OP_TRY_CATCH_TRY_END);
-  tryCatch = patchJump(tryCatch, 2);
 
-  consume(TOKEN_CATCH, "Expect 'catch' after try statement."); 
-  statement();
-  patchJump(tryCatch, 1);
+  tryCatch = patchJump(tryCatch, 5);
+
+  consume(TOKEN_CATCH, "Expect 'catch' after try statement.");
+  beginScope();
+  if (match(TOKEN_LEFT_PAREN)) {
+    catchParameterConstant = parseVariable("Expect catch parameter.");
+    defineVariable(catchParameterConstant);
+    consume(TOKEN_RIGHT_PAREN, "Expect ')' after catch parameter.");
+  }
+  consume(TOKEN_LEFT_BRACE, "Expect '{' after 'catch' statement.");
+
+  block();
+  endScope();
+
+  tryCatch = patchJump(tryCatch, 3);
+  patchTryCatchParameter(tryCatch, catchParameterConstant != -1);
 }
 
 static void throwStatement() {
+  expression();
   emitByte(OP_THROW);
   consume(TOKEN_SEMICOLON, "Expect ';' after throw statement.");
 }
@@ -1003,19 +1026,19 @@ static void _and(bool canAssign) {
   emitByte(OP_POP);
   parsePrecedence(PREC_AND);
 
-  patchJump(shortCircuitJump, 1);
+  patchJump(shortCircuitJump, 2);
 }
 
 static void _or(bool canAssign) {
   int shortCircuitJump = emitJump(OP_JUMP_IF_FALSE);
   int jump = emitJump(OP_JUMP);
 
-  patchJump(shortCircuitJump, 1);
+  patchJump(shortCircuitJump, 2);
 
   emitByte(OP_POP);
   parsePrecedence(PREC_OR);
 
-  patchJump(jump, 1);
+  patchJump(jump, 2);
 }
 
 static uint8_t argumentsList() {

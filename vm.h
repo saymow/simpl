@@ -26,6 +26,7 @@ typedef struct TryCatch {
   Value* frameStackTop;
   uint8_t* catchIp;
   uint8_t* outIp;
+  bool hasCatchParameter;
   struct TryCatch* next;  
 } TryCatch;
 

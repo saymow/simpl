@@ -541,12 +541,14 @@ static InterpretResult run() {
       case OP_TRY_CATCH: {
         uint16_t catchOffset = READ_SHORT();
         uint16_t outOffset = READ_SHORT();
+        bool hasCatchParameter = READ_BYTE();
         TryCatch* tryCatch = malloc(sizeof(TryCatch));
 
         tryCatch->frame = frame;
         tryCatch->frameStackTop = vm.stackTop;
         tryCatch->catchIp = frame->ip + catchOffset;
         tryCatch->outIp = frame->ip + outOffset;
+        tryCatch->hasCatchParameter = hasCatchParameter;
 
         // Push try-catch-block to the stack
         if (vm.tryCatch == NULL) {
@@ -578,13 +580,19 @@ static InterpretResult run() {
           return INTERPRET_RUNTIME_ERROR;
         }
 
+        Value value = pop();
+
         // Get back to the closest try-catch-block frame and move ip to the start of the catch block statement. 
         vm.framesCount = vm.tryCatch->frame - vm.frames + 1;
         vm.stackTop = vm.tryCatch->frameStackTop;
         frame = vm.tryCatch->frame;
         frame->ip = vm.tryCatch->catchIp;
 
-        // This seems to be an extreme corner case where we throw an enclosed function in a nested scope.
+        if (vm.tryCatch->hasCatchParameter) {
+          push(value);
+        }
+
+        // This cover an extreme corner case where we throw an enclosed function in a nested scope.
         closeUpValues(vm.stackTop - 1);
         
         // Pop TryCatch from the try-catch-block stack and then free the memory

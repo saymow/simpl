@@ -3,9 +3,11 @@ fun test() {
         var a = 1;
         var b = 2;
 
-        print "before throw 2";
-        throw;
-        print "after throw 1";
+        fun enclosured() {
+            return a + b;
+        }
+
+        throw enclosured;
     }
 
     lol();

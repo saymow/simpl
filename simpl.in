@@ -2,12 +2,19 @@ import module from "./simpl-module.in";
 
 
 try {
-    print "before throw 1";
     module.test();
-    print "after throw 2";
 }
-catch {
-    print "catch";
+catch (err) {
+    var a = 50;
+    var b = 50;
+    var c = 50;
+    var d = 50;
+    var e = 50;
+    var f = 50;
+    var g = 50;
+    var h = 50;
+    var i = 50;
+    print err();
 }
 
 print "end";
