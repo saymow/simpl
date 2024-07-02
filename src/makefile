@@ -29,3 +29,6 @@ exec-debug-logs:
 
 exec-debug-gc:
 	@make compile-debug-gc --no-print-directory && make run --no-print-directory
+
+build:
+	@make compile && cp ./main.run ../build/simpl.exe

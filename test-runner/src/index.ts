@@ -1,28 +1,31 @@
-import FilesReader from "./file-reader";
 import path from "path";
-import { exec } from "child_process";
-import fs from "fs";
+import FilesReader from "./files-reader";
+import TestSuiteReader, { TestSuite } from "./expectations-reader";
+import TestRunner from "./test-suite-runner";
 
 const TESTS_DIR = path.resolve(__dirname, ..."../../tests".split("/"));
 const VM_PATH = path.resolve(__dirname, ..."../../build/simpl.exe".split("/"));
 
-new FilesReader(TESTS_DIR).execute().then((paths) => {
-  console.log(`${VM_PATH} ${paths[0]}`);
-  console.log(process.cwd())
+const run = async (testSuites: TestSuite[]) => {
+  for (const testSuite of testSuites) {
+    await new TestRunner(VM_PATH, testSuite).execute();
+  }
+};
 
-  exec(`"${VM_PATH}" "${paths[0]}"`, (error, stdout, stderr) => {
-    if (error) {
-      console.error(`Execution error: ${error.message}`);
-      console.error(`Error code: ${error.code}`);
-      console.error(`Signal received: ${error.signal}`);
-      return;
-    }
+const main = async () => {
+  try {
+    const filesReader = new FilesReader(TESTS_DIR);
+    const testFiles = await filesReader.execute();
+    const testSuites = testFiles.map((testFile) => {
+      const testSuitesReader = new TestSuiteReader(testFile);
+      return testSuitesReader.execute();
+    });
 
-    if (stderr) {
-      console.error(`stderr: ${stderr}`);
-      return;
-    }
+    await run(testSuites);
+  } catch (err) {
+    console.error(err);
+    process.exit(1);
+  }
+};
 
-    console.log(`stdout: ${stdout}`);
-  });
-});
+main();
