@@ -1,0 +1,20 @@
+// What is truthiness?
+
+class myClass {}
+
+fun myFun() {}
+
+print !!0;                                      // expect true
+print !!1;                                      // expect true
+print !!99;                                     // expect true
+
+print !!"";                                     // expect true
+print !!"abc";                                  // expect true
+
+print !!"abc";                                  // expect true
+print !!myClass;                                // expect true
+print !!myFun;                                  // expect true
+
+print !!true;                                   // expect true
+print !!nil;                                    // expect false
+print !!false;                                  // expect false
