@@ -1,0 +1,81 @@
+// Logical expressions
+
+// Test ">"
+print 5 > 3;                                                                        // expect true
+print 2 > 2;                                                                        // expect false
+print 7 > 4;                                                                        // expect true
+print 1 > 2;                                                                        // expect false
+print 6 > 5;                                                                        // expect true
+
+// Test "<"
+print 5 < 3;                                                                        // expect false
+print 2 < 2;                                                                        // expect false
+print 7 < 10;                                                                       // expect true
+print 1 < 2;                                                                        // expect true
+print 6 < 5;                                                                        // expect false
+
+// Test "<="
+print 5 <= 5;                                                                       // expect true
+print 2 <= 3;                                                                       // expect true
+print 7 <= 7;                                                                       // expect true
+print 1 <= 0;                                                                       // expect false
+print 6 <= 6;                                                                       // expect true
+
+// Test ">="
+print 5 >= 5;                                                                       // expect true
+print 2 >= 3;                                                                       // expect false
+print 7 >= 7;                                                                       // expect true
+print 1 >= 0;                                                                       // expect true
+print 6 >= 6;                                                                       // expect true
+
+// Test "=="
+print 5 == 5;                                                                       // expect true
+print 2 == 3;                                                                       // expect false
+print 7 == 7;                                                                       // expect true
+print 1 == 0;                                                                       // expect false
+print 6 == 6;                                                                       // expect true
+
+// Test "!="
+print 5 != 5;                                                                       // expect false
+print 2 != 3;                                                                       // expect true
+print 7 != 7;                                                                       // expect false
+print 1 != 0;                                                                       // expect true
+print 6 != 6;                                                                       // expect false
+
+// Test "and"
+print true and true;                                                                // expect true
+print true and false;                                                               // expect false
+print false and true;                                                               // expect false
+print false and false;                                                              // expect false
+print (5 > 3) and (2 < 4);                                                          // expect true
+
+// Test "or"
+print true or true;                                                                 // expect true
+print true or false;                                                                // expect true
+print false or true;                                                                // expect true
+print false or false;                                                               // expect false
+print (5 < 3) or (2 < 4);                                                           // expect true
+
+// Test "not"
+print !true;                                                                        // expect false
+print !false;                                                                       // expect true
+print !(5 > 3);                                                                     // expect false
+print !(2 < 4);                                                                     // expect false
+print !(5 < 3);                                                                     // expect true
+
+// Test complex logical expressions
+print (5 > 3) and (2 < 4) or !(1 == 1);                                             // expect true
+print (10 / 2 == 5) or (3 * 3 != 9) and (5 - 2 > 2);                                // expect true
+print !(6 / 2 != 3) and (8 > 5) or (4 * 2 == 8);                                    // expect true
+print (7 + 3) > (4 * 2) and (10 - 5) < 3 or !(1 < 2);                               // expect false
+print ((5 + 3) > 6) and (7 - 2 < 5) or (10 / 2 == 5);                               // expect true
+print (2 * (5 - 3)) > 4 and (6 / 2) < 3 or !(3 == 3);                               // expect false
+print (5 + (2 * 3)) > 10 or (8 - 4) < 5 and (3 * 2 == 6);                           // expect true
+print ((7 - 3) * 2) < 10 and (8 / 2) > 3 or (5 + 5 == 10);                          // expect true
+print (10 / (2 + 3)) == 2 and !(6 / 2 != 3) or (4 > 5);                             // expect true
+print ((9 - 3) == 6) and (2 * 2) == 4 or !(8 / 4 == 2);                             // expect true
+print ((5 > 3) and true) or (2 < 4 and false) or (10 == 10 and !false);             // expect true
+print (!(6 / 2 == 3) or (8 > 5 and true)) and (4 * 2 == 8 or false);                // expect true
+print ((7 + 3) > (4 * 2) and true or (10 - 5) < 3) and (!(1 < 2) or true);          // expect true
+print ((5 + 3) > 6 and (7 - 2 < 5 or true)) or (10 / 2 == 5 and false);             // expect true
+print ((2 * (5 - 3)) > 4 and (6 / 2) < 3 or !(3 == 3) and (true or false));         // expect false
