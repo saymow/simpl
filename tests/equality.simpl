@@ -1,0 +1,37 @@
+// Equality
+
+class ClassA {}
+class ClassB {}
+
+var object1 = ClassA();
+var object2 = ClassA();
+var object3 = ClassB();
+
+var arr1 = [1, 2, 3];
+var arr2 = [1, 2, 3];
+var arr3 = ["test"];
+
+fun fun1() {}
+fun fun2() {}
+
+print true != false;                    // expect true
+print true != nil;                      // expect true
+print nil != false;                     // expect true
+print false != 0;                       // expect true
+
+print "str" == "str";                   // expect true
+print 100 == 100;                       // expect true
+
+print ClassA == ClassA;                 // expect true
+print ClassA != ClassB;                 // expect true
+
+print object1 == object1;               // expect true
+print object1 != object2;               // expect true
+print object2 != object3;               // expect true
+
+print arr1 == arr1;                     // expect true
+print arr1 != arr2;                     // expect true
+print arr2 != arr3;                     // expect true
+
+print fun1 == fun1;                     // expect true
+print fun1 != fun2;                     // expect true
