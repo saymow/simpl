@@ -1,0 +1,14 @@
+var num1 = 1;
+var num2 = 2;
+var num3 = num1 + num2;
+var str1 = "test";
+var str2 = "something";
+var str3 = str1 + str2;
+
+
+print num1;                                         // expect 1
+print num2;                                         // expect 2
+print num3;                                         // expect 3
+print str1;                                         // expect test
+print str2;                                         // expect something
+print str3;                                         // expect testsomething
