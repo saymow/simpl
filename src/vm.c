@@ -45,9 +45,9 @@ void initVM() {
   vm.GCThreshold = 1024 * 1024;
 
   vm.moduleExportsClass = NULL;
-  vm.moduleExportsClass = newClass(takeString("Exports", 7));
+  vm.moduleExportsClass = newClass(copyString("Exports", 7));
   vm.arrayClass = NULL;
-  vm.arrayClass = newClass(takeString("Array", 5));
+  vm.arrayClass = newClass(copyString("Array", 5));
 
   vm.tryCatch = NULL;
 
