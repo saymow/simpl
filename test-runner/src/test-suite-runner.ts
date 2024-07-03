@@ -50,7 +50,7 @@ class TestRunner {
           } else {
             this.assertionError(
               expects[idx].line,
-              `Expected ${expects[idx].data} but received ${stdOutLines[idx]}.`
+              `Expected "${expects[idx].data}" but received "${stdOutLines[idx]}".`
             );
             this.fails++;
           }

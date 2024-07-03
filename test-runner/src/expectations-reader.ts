@@ -2,7 +2,7 @@ import { TestFile } from "./files-reader";
 import { LINE_TERMINATOR_REGEX } from "./utils";
 
 const COMMENTARY_REGEX = /(?<=\/\/\s).+/;
-const EXPECT_REGEX = /(?<=\/\/\sexpect\s).+?(?=\s|$)/;
+const EXPECT_REGEX = /(?<=\/\/\sexpect\s).+/;
 const ERROR_REGEX = /(?<=\/\/\serror\s).+?(?=\s|$)/;
 
 export enum VmErrors {

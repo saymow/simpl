@@ -32,6 +32,6 @@ print multBy5(3);                                                               
 print multBy5(9);                                                                // expect 45
 print multBy5(-5);                                                               // expect -25
 
-print concatenateByHello("-world");                                              // expect Hello-world   
-print concatenateByHello("-earth");                                              // expect Hello-earth   
-print concatenateByHello("-lng");                                                // expect Hello-lng   
+print concatenateByHello(" World");                                              // expect Hello World
+print concatenateByHello(" Earth");                                              // expect Hello Earth
+print concatenateByHello(" Lng");                                                // expect Hello Lng
