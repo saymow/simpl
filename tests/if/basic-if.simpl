@@ -1,0 +1,71 @@
+// Test if statements
+
+if (true) {
+    print "ran";                                        // expect ran
+}
+print "after";                                          // expect after
+
+if (false) {
+    print "did not run";                                        
+}
+print "after";                                          // expect after
+
+if (2 > 1) {
+    print "ran";                                        // expect ran
+}
+print "after";                                          // expect after
+
+if (1 > 2) {
+    print "did not run";                                        
+}
+print "after";                                          // expect after
+
+if (3 == 3) {
+    print "ran";                                        // expect ran
+}
+print "after";                                          // expect after
+
+if (3 != 3) {
+    print "did not run";                                        
+}
+print "after";                                          // expect after
+
+if (4 >= 4) {
+    print "ran";                                        // expect ran
+}
+print "after";                                          // expect after
+
+if (4 < 4) {
+    print "did not run";                                        
+}
+print "after";                                          // expect after
+
+if (true and true) {
+    print "ran";                                        // expect ran
+}
+print "after";                                          // expect after
+
+if (true and false) {
+    print "did not run";                                        
+}
+print "after";                                          // expect after
+
+if (true or false) {
+    print "ran";                                        // expect ran
+}
+print "after";                                          // expect after
+
+if (false or false) {
+    print "did not run";                                        
+}
+print "after";                                          // expect after
+
+if (!false) {
+    print "ran";                                        // expect ran
+}
+print "after";                                          // expect after
+
+if (!true) {
+    print "did not run";                                        
+}
+print "after";                                          // expect after

@@ -1,0 +1,99 @@
+// Test if and else statements
+
+if (true) {
+    print "if-ran";                                        // expect if-ran
+} else {
+    print "else-ran";
+}
+print "after";                                             // expect after
+
+if (false) {
+    print "if-ran";                                        
+} else {
+    print "else-ran";                                      // expect else-ran
+}
+print "after";                                             // expect after
+
+if (2 > 1) {
+    print "if-ran";                                        // expect if-ran
+} else {
+    print "else-ran";
+}
+print "after";                                             // expect after
+
+if (1 > 2) {
+    print "if-ran";                                        
+} else {
+    print "else-ran";                                      // expect else-ran
+}
+print "after";                                             // expect after
+
+if (3 == 3) {
+    print "if-ran";                                        // expect if-ran
+} else {
+    print "else-ran";
+}
+print "after";                                             // expect after
+
+if (3 != 3) {
+    print "if-ran";                                        
+} else {
+    print "else-ran";                                      // expect else-ran
+}
+print "after";                                             // expect after
+
+if (4 >= 4) {
+    print "if-ran";                                        // expect if-ran
+} else {
+    print "else-ran";
+}
+print "after";                                             // expect after
+
+if (4 < 4) {
+    print "if-ran";                                        
+} else {
+    print "else-ran";                                      // expect else-ran
+}
+print "after";                                             // expect after
+
+if (true and true) {
+    print "if-ran";                                        // expect if-ran
+} else {
+    print "else-ran";
+}
+print "after";                                             // expect after
+
+if (true and false) {
+    print "if-ran";                                        
+} else {
+    print "else-ran";                                      // expect else-ran
+}
+print "after";                                             // expect after
+
+if (true or false) {
+    print "if-ran";                                        // expect if-ran
+} else {
+    print "else-ran";
+}
+print "after";                                             // expect after
+
+if (false or false) {
+    print "if-ran";                                        
+} else {
+    print "else-ran";                                      // expect else-ran
+}
+print "after";                                             // expect after
+
+if (!false) {
+    print "if-ran";                                        // expect if-ran
+} else {
+    print "else-ran";
+}
+print "after";                                             // expect after
+
+if (!true) {
+    print "if-ran";                                        
+} else {
+    print "else-ran";                                      // expect else-ran
+}
+print "after";                                             // expect after
