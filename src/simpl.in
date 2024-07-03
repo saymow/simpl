@@ -1,19 +1,13 @@
-import module from "./simpl-module.in";
+// Class static-ish methods
 
-
-try {
-    module.test();
-}
-catch {
-    var a = 50;
-    var b = 50;
-    var c = 50;
-    var d = 50;
-    var e = 50;
-    var f = 50;
-    var g = 50;
-    var h = 50;
-    var i = 50;
+class Math {
+    exp() {
+        for (var idx = 0; idx < 3; idx = idx + 1) {
+            print idx;
+        }
+    }
 }
 
-print "end";
+var math = Math(); 
+
+print math.exp();                                                  // expect 8

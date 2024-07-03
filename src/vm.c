@@ -421,7 +421,7 @@ static InterpretResult run() {
         break;
       }
       case OP_SET_LOCAL: {
-        vm.stack[READ_BYTE()] = peek(0);
+        frame->slots[READ_BYTE()] = peek(0);
         break;
       }
       case OP_GET_UPVALUE: {
