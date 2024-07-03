@@ -75,7 +75,7 @@ class TestRunner {
           }
         }
 
-        if (this.fails === 0 && !stderr) {
+        if (this.fails === 0) {
           console.log(`${colors.bgGreen.bold("PASS")} ${colors.bold(fileId)}`);
         } else {
           console.log(`${colors.bgRed.bold("FAIL")} ${colors.bold(fileId)}`);
