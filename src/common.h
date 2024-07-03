@@ -5,6 +5,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define IS_WINDOWS defined(_WIN32) || defined(_WIN64)
+
 #ifdef DEBUG
     #define DEBUG_LOGS
     #define DEBUG_GC

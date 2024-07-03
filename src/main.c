@@ -18,14 +18,17 @@ static void repl() {
       break;
     }
 
-    interpret(line);
+    interpret(line, NULL);
   }
 }
 
 static void runFile(const char *path) {
+  char *absPath = getFileAbsPath(path);
   char *source = readFile(path);
-  InterpretResult result = interpret(source);
+
+  InterpretResult result = interpret(source, absPath);
   free(source);
+  free(absPath);
 
   if (result == INTERPRET_COMPILE_ERROR) {
     exit(65);

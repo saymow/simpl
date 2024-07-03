@@ -1,16 +1,16 @@
 all: compile
 
 compile:
-	@gcc -o main.run *.c */*.c  -Wall -I .
+	@gcc -o main.run *.c */*.c  -Wall -I . -lshlwapi
 
 compile-debug:
-	@gcc -o main.run *.c  */*.c -DDEBUG -Wall -I .
+	@gcc -o main.run *.c  */*.c -DDEBUG -Wall -I . -lshlwapi
 
 compile-debug-logs:
-	@gcc -o main.run *.c  */*.c -DDEBUG_LOGS -Wall -I .
+	@gcc -o main.run *.c  */*.c -DDEBUG_LOGS -Wall -I . -lshlwapi
 
 compile-debug-gc:
-	@gcc -o main.run *.c  */*.c -DDEBUG_GC -Wall -I .
+	@gcc -o main.run *.c  */*.c -DDEBUG_GC -Wall -I . -lshlwapi
 
 run:
 	@./main.run ./simpl.in

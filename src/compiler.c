@@ -11,6 +11,7 @@
 #include "utils.h"
 #include "vm.h"
 #include "modules.h"
+#include "utils.h"
 
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
@@ -63,6 +64,7 @@ typedef struct {
 } UpValue;
 
 typedef struct Compiler {
+  char* absPath;
   ObjFunction* function;
   FunctionType type;
 
@@ -91,13 +93,15 @@ Modules modules;
 Parser parser;
 Compiler* current;
 ClassCompiler* currentClass;
+char* basePath;
 
 #define GLOBAL_VARIABLES() \
   (current->scopeDepth == 0 && current->type != TYPE_MODULE)
 
 static Chunk* currentChunk() { return &current->function->chunk; }
 
-static void initCompiler(Compiler* compiler, FunctionType type) {
+static void initCompiler(Compiler* compiler, char* absPath, FunctionType type) {
+  compiler->absPath = absPath;
   compiler->enclosing = current;
   compiler->semanticallyEnclosing = type == TYPE_MODULE ? NULL : current;
   compiler->function = newFunction();
@@ -112,11 +116,16 @@ static void initCompiler(Compiler* compiler, FunctionType type) {
   }
 
   if (type != TYPE_SCRIPT) {
-    compiler->function->name =
+    if (type != TYPE_MODULE) {
+      compiler->function->name =
         copyString(parser.previous.start, parser.previous.length);
+    } else {
+      compiler->function->name = takeString(absPath, strlen(absPath));
+    }
   }
 
   current = compiler;
+
 
   Local* local = &current->locals[current->localCount++];
   local->depth = 0;
@@ -161,11 +170,6 @@ static void errorAt(Token* token, const char* message) {
   if (parser.panicMode) return;
 
   parser.panicMode = true;
-
-  // todo: print module file name 
-  // if (!parser.hadError) {
-  //   printf("filename.in\n");
-  // }
 
   fprintf(stderr, "[line %d] Error", token->line);
 
@@ -390,7 +394,7 @@ static void block() {
 
 static void function(FunctionType type) {
   Compiler compiler;
-  initCompiler(&compiler, type);
+  initCompiler(&compiler, current->absPath, type);
   beginScope();
 
   consume(TOKEN_LEFT_PAREN, "Expect '(' after function name.");
@@ -639,11 +643,13 @@ static void returnStatement() {
   }
 }
 
-ObjModule* compileModule(ModuleNode* node, const char* source) {
+ObjModule* compileModule(ModuleNode* node, char *absPath, const char* source) {
   Compiler compiler;
   Lexer moduleLexer;
   Parser moduleParser;
   Parser previousParser = parser;
+
+  initCompiler(&compiler, absPath, TYPE_MODULE);
 
   moduleParser.module = node;
   moduleParser.hadError = parser.hadError;
@@ -651,7 +657,6 @@ ObjModule* compileModule(ModuleNode* node, const char* source) {
   parser = moduleParser;
 
   stackLexer(&moduleLexer, source);
-  initCompiler(&compiler, TYPE_MODULE);
   beginScope();
 
   advance();
@@ -663,13 +668,18 @@ ObjModule* compileModule(ModuleNode* node, const char* source) {
   ObjModule* module = newModule(endCompiler());
   ObjModule* returnValue = parser.hadError ? NULL : module;
 
+  if (parser.hadError) {
+    fprintf(stderr,"at file: %s\n", absPath);
+  }
+
   parser = previousParser;
   popLexer();
+  
 
   return returnValue;
 }
 
-ObjModule* resolveModule(const char* source) {
+ObjModule* resolveModule(char* absPath, const char* source) {
   ModuleNode* node = NULL;
 
   if (addDependency(&modules, parser.module, &node, source)) {
@@ -679,7 +689,7 @@ ObjModule* resolveModule(const char* source) {
     // create a module in COMPILING_STATE
     createModuleNode(&modules, parser.module, &node, source);
     // compile source code
-    ObjModule* module = compileModule(node, source);
+    ObjModule* module = compileModule(node, absPath, source);
     // resolve module to COMPILED_STATE
     resolveDependency(&modules, node, module);
 
@@ -696,10 +706,10 @@ static void importStatement() {
   }
   consume(TOKEN_STRING, "Expect import path.");
 
-  ObjString* path =
-      copyString(parser.previous.start + 1, parser.previous.length - 2);
-  char* source = readFile(path->chars);
-  ObjModule* module = resolveModule(source);
+  ObjString* importPath = copyString(parser.previous.start + 1, parser.previous.length - 2);
+  char* absPath = resolvePath(basePath, current->absPath, importPath->chars);
+  char* source = readFile(absPath);
+  ObjModule* module = resolveModule(absPath, source);
 
   if (module == NULL) {
     error("Cannot compile module.");
@@ -708,9 +718,8 @@ static void importStatement() {
 
   uint8_t moduleConstant = makeConstant(OBJ_VAL(module));
 
-  module->function->name = path;
-
   free(source);
+  
   emitBytes(OP_IMPORT, moduleConstant);
   if (constant != -1) {
     defineVariable(constant);
@@ -812,12 +821,13 @@ static void statement() {
 
 static void expression() { parsePrecedence(PREC_ASSIGNMENT); }
 
-ObjFunction* compile(const char* source) {
+ObjFunction* compile(const char* source, char* absPath) {
   Compiler compiler;
   initLexer(source);
-  initCompiler(&compiler, TYPE_SCRIPT);
+  initCompiler(&compiler, absPath, TYPE_SCRIPT);
   initModules(&modules, source);
 
+  basePath = absPath;
   parser.module = modules.root;
   parser.hadError = false;
   parser.panicMode = false;
@@ -828,12 +838,16 @@ ObjFunction* compile(const char* source) {
     declaration();
   }
 
-
   ObjFunction* function = endCompiler();
 
   freeModules(&modules);
 
-  return parser.hadError ? NULL : function;
+  if (parser.hadError) {
+    fprintf(stderr,"at file: %s\n", basePath);
+    return NULL;
+  }
+
+  return function;
 }
 
 void markCompilerRoots() {

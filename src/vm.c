@@ -83,7 +83,11 @@ static void runtimeError(const char* format, ...) {
     if (function->name == NULL) {
       fprintf(stderr, "script\n");
     } else {
-      fprintf(stderr, "%s()\n", function->name->chars);
+      if (IS_FRAME_MODULE(frame)) {
+        fprintf(stderr, "file %s\n", function->name->chars);
+      } else {
+        fprintf(stderr, "%s()\n", function->name->chars);
+      }
     }
   }
 
@@ -775,8 +779,8 @@ static InterpretResult run() {
 #undef READ_BYTE
 }
 
-InterpretResult interpret(const char* source) {
-  ObjFunction* function = compile(source);
+InterpretResult interpret(const char* source, char* absPath) {
+  ObjFunction* function = compile(source, absPath);
 
   if (function == NULL) {
     return INTERPRET_COMPILE_ERROR;
