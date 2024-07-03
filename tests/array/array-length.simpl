@@ -1,0 +1,5 @@
+// Array.length
+
+var arr = [1, 2, 3];
+
+print arr.length();                                                                         // expect 3

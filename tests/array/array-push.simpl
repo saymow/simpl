@@ -1,0 +1,8 @@
+// Array.push
+
+var arr = [1, 2, 3];
+
+print arr.push("d");                                                                         // expect 4
+print arr.push("e");                                                                         // expect 5
+print arr.push("f");                                                                         // expect 6
+print arr;                                                                                   // expect [1, 2, 3, d, e, f]

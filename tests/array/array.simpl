@@ -1,0 +1,21 @@
+// Array declaration, get, and assignment
+
+var arr = [1, fun () { print "funExpr";}, nil, "str"];
+
+print arr;                                                                          // expect [1, <fn fun>, nil, str]
+print arr[0];                                                                       // expect 1
+print arr[2];                                                                       // expect nil
+print arr[-1];                                                                      // expect nil
+print arr[99];                                                                      // expect nil
+arr[1]();                                                                           // expect funExpr
+
+arr[0] = "a";
+arr[1] = "b";
+arr[2] = "c";
+arr[3] = "d";
+
+print arr;                                                                          // expect [a, b, c, d]
+print arr[0];                                                                       // expect a
+print arr[1];                                                                       // expect b
+print arr[2];                                                                       // expect c
+print arr[3];                                                                       // expect d

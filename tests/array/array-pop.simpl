@@ -1,0 +1,8 @@
+// Array.pop
+
+var arr = [1, 2, 3, "d", "e", "f"];
+
+print arr.pop();                                                                         // expect f
+print arr.pop();                                                                         // expect e
+print arr.pop();                                                                         // expect d
+print arr;                                                                               // expect [1, 2, 3]
