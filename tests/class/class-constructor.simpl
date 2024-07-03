@@ -1,0 +1,29 @@
+// Class constructor
+
+class Person {
+    Person(name, lastname, age) {
+        this.name = name;
+        this.lastname = lastname;
+        this.age = age;
+    }
+
+    sayName() {
+        print "my name is " + this.name + " " + this.lastname;
+    }
+
+    incrementAge() {
+        this.age = this.age + 1;
+    }
+}
+
+var person = Person("John", "Doe", 47); 
+
+person.sayName();                                                     // expect my name is John Doe
+print person.age;                                                     // expect 47
+
+person.incrementAge();
+person.incrementAge();
+person.incrementAge();
+
+person.sayName();                                                     // expect my name is John Doe
+print person.age;                                                     // expect 50

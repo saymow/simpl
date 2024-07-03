@@ -1,0 +1,21 @@
+// Class polymorphism
+
+class Person {
+    Person(name, lastname, age) {
+        this.name = name;
+        this.lastname = lastname;
+        this.age = age;
+    }
+}
+
+fun presentPerson(person) {
+    print "Hi, i'm " + person.name + " " + person.lastname + ".";  
+}
+
+var person1 = Person("John", "Doe", 47);
+var person2 = Person("Michael", "Potter", 23);
+var person3 = Person("Jane", "Doe", 42);
+
+presentPerson(person1);                                                         // expect Hi, i'm John Doe.
+presentPerson(person2);                                                         // expect Hi, i'm Michael Potter.
+presentPerson(person3);                                                         // expect Hi, i'm Jane Doe.

@@ -1,0 +1,14 @@
+// Class this keyword
+
+class Person {
+    sayName() {
+        print "my name is " + this.name + " " + this.lastname;
+    }
+}
+
+var person = Person(); 
+
+person.name = "John";
+person.lastname = "Doe";
+
+person.sayName();                                                     // expect my name is John Doe

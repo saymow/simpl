@@ -1,0 +1,31 @@
+// Class declaration, properties define and assignment
+
+class MyClass {}
+
+var myObject = MyClass(); 
+
+print MyClass;                                                                // expect class MyClass
+print myObject;                                                               // expect instance of MyClass
+
+myObject.name = "Simpl";
+myObject.version = 0;
+myObject.funExpr = fun () {
+    return "funExpr";
+};
+
+print myObject.name;                                                          // expect Simpl
+print myObject.version;                                                       // expect 0
+print myObject.funExpr();                                                     // expect funExpr
+print myObject.defNotAProperty;                                               // expect nil
+
+myObject.name = "Simpler";                                                    
+myObject.version = 1;                                                         
+myObject.funExpr = fun () {                                                   
+    return "funExpr is cool";
+};
+myObject.defNotAProperty = "something";
+
+print myObject.name;                                                          // expect Simpler
+print myObject.version;                                                       // expect 1
+print myObject.funExpr();                                                     // expect funExpr is cool
+print myObject.defNotAProperty;                                               // expect something

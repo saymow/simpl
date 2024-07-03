@@ -1,0 +1,30 @@
+// Class static-ish methods
+
+class Math {
+    exp(a, b) {
+        var result = a;
+
+        for (var idx = 0; idx < b - 1; idx = idx + 1) {
+            result = result * a;
+        }
+
+        return result;
+    }
+
+    abs(a) {
+        if (a < 0) {
+            return -a;
+        }
+        return a;
+    }
+}
+
+var math = Math(); 
+
+print math.abs(0);                                                     // expect 0
+print math.abs(1);                                                     // expect 1
+print math.abs(-5);                                                    // expect 5
+
+print math.exp(0, 0);                                                  // expect 0
+print math.exp(2, 3);                                                  // expect 8
+print math.exp(-2, 3);                                                 // expect -8
