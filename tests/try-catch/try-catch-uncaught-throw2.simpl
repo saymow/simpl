@@ -1,0 +1,10 @@
+
+// Unhandled exception 2
+
+try {
+    throw "something";
+} catch(err) {
+    throw err; 
+}
+
+// error SOFTWARE_ERR

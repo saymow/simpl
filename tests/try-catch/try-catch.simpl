@@ -1,0 +1,32 @@
+// Try catch
+
+try {
+    print "try";                                                                // expect try
+} catch {
+    print "never";
+}
+print "after";                                                                  // expect after
+
+try {
+    print "try";                                                                // expect try
+    throw "error";
+} catch {
+    print "never";                                                              // expect never
+}
+print "after";                                                                  // expect after
+
+try {
+    throw "error";
+    print "try";                                                                
+} catch {
+    print "never";                                                              // expect never
+}
+print "after";                                                                  // expect after
+
+try {
+    throw "error message";
+    print "try";                                                                
+} catch(err) {
+    print err;                                                                  // expect error message
+}
+print "after";                                                                  // expect after

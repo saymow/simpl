@@ -1,0 +1,5 @@
+// Unhandled exception 1
+
+throw "what"; 
+
+// error SOFTWARE_ERR

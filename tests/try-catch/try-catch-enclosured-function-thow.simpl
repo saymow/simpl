@@ -1,0 +1,29 @@
+// Try catch when enclosured function is thrown
+// 
+// This test is placed to guarantee that closed upvalues are correctly 
+// handled by enclosured functions thrown. 
+
+fun shouldThrowEnclosuredFn() {
+    var a = 1;
+    var b = 2;
+
+    throw fun () {
+        return a + b;
+    };
+}
+
+fun stackFiller(calls) {
+    var a = 1;
+    var b = 2;
+    var c = 3;
+
+    if (calls <= 1) return;
+    stackFiller(calls - 1);
+}
+
+try {
+    shouldThrowEnclosuredFn();
+} catch(enclosured) {
+    stackFiller(10);                                                                   // this ensure the stack is filled with garbage and test closed upvalues 
+    print enclosured();                                                                // expect 3
+}

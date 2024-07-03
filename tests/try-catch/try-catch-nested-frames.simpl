@@ -1,0 +1,81 @@
+// Try catch with nested frames
+
+fun throwAt(num, message) {
+    if (num == 1) {
+        if (true) {
+            if (false) {
+
+            } else {
+                while (true) {
+                    for (;;) {
+                        throw message;
+                    }
+                }
+            }
+        }
+    }
+    throwAt(num - 1, message);
+}
+
+try {
+    throwAt(1, "Throwing after 1 fun frames");
+} catch (message) {
+    print message;                                                              // expect Throwing after 1 fun frames
+}
+print "after";                                                                  // expect after
+
+try {
+    throwAt(6, "Throwing after 6 fun frames");
+} catch (message) {
+    print message;                                                              // expect Throwing after 6 fun frames
+}
+print "after";                                                                  // expect after
+
+
+try throwAt(10, "Throwing after 10 fun frames");
+catch (message) {
+    print message;                                                              // expect Throwing after 10 fun frames
+}
+print "after";                                                                  // expect after
+
+
+try {
+    try {
+        throwAt(10, "Throwing after 10 fun frames");
+    } catch (message) {
+        print message;                                                          // expect Throwing after 10 fun frames
+    }
+} catch (message) {
+    print "never";
+    print message;                                                              
+}
+print "after";                                                                  // expect after
+
+
+try {
+    try {
+        throwAt(10, "Throwing after 10 fun frames");
+    } catch (message) {
+        throw message;                                                          
+    }
+} catch (message) {
+    print message;                                                              // expect Throwing after 10 fun frames
+}
+print "after";                                                                  // expect after
+
+try {
+    try {
+        throwAt(10, "Throwing after 10 fun frames");
+    } catch (message) {
+        print message;                                                          // expect Throwing after 10 fun frames
+        try {
+            throwAt(5, "Throwing after 5 fun frames");
+        } catch (message) {
+            print message;                                                      // expect Throwing after 5 fun frames
+        }
+    }
+} catch (message) {
+    print "never";
+    print message;                                                              
+}
+print "after";                                                                  // expect after
