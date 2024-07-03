@@ -1,0 +1,9 @@
+// Function declaration
+
+fun helloWorld() {
+    print "hello-world";                                                         
+}
+
+helloWorld();                                                               // expect hello-world
+helloWorld();                                                               // expect hello-world
+helloWorld();                                                               // expect hello-world

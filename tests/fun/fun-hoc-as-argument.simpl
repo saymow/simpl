@@ -1,0 +1,13 @@
+// Function HOC as argument
+
+fun callback() {
+    print "callback";
+}
+
+fun hoc(callback) {
+    callback();
+}
+
+hoc(callback);                                                                   // expect callback
+hoc(fun () { print "callback-expr"; });                                          // expect callback-expr
+hoc(fun () { callback(); });                                                     // expect callback

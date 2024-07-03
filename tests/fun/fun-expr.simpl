@@ -1,0 +1,9 @@
+// Function expression
+
+var funExpr = fun () {
+    print "hello-world";
+};
+
+funExpr();                                                               // expect hello-world
+funExpr();                                                               // expect hello-world
+funExpr();                                                               // expect hello-world

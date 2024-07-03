@@ -1,0 +1,20 @@
+// Function nested
+
+fun withNested1() {
+    fun nested() {
+        print "nested";
+    }
+
+    nested();                                                         
+}
+
+fun withNested2() {
+    fun nested() {
+        print "nested";
+    }
+
+    return nested;                                                         
+}
+
+withNested1();                                                                 // expect nested
+withNested2()();                                                               // expect nested

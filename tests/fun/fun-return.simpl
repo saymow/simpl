@@ -1,0 +1,18 @@
+// Function with return
+
+fun mult(a, b) {
+    return a * b;
+}
+
+fun division(a, b) {
+    return a / b;
+    print "unreachable";
+}
+
+print mult(1, 2);                                                          // expect 2
+print mult(3, 5);                                                          // expect 15
+print mult(5, -2);                                                         // expect -10
+
+print division(1, 2);                                                      // expect 0.5
+print division(3, 5);                                                      // expect 0.6
+print division(5, -2);                                                     // expect -2.5

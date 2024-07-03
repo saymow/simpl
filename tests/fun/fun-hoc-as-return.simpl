@@ -1,0 +1,24 @@
+// Function HOC as return
+
+fun callback() {
+    print "callback";
+}
+
+fun hoc1() {
+    return callback;
+}
+
+fun hoc2() {
+    return fun () {
+        print "callback-expr";
+    };
+}
+
+fun hoc3(callback) {
+    return callback;
+}
+
+hoc1()();                                                                   // expect callback
+hoc2()();                                                                   // expect callback-expr
+hoc3(callback)();                                                           // expect callback  
+hoc3(fun () { print "callback-expr"; })();                                  // expect callback-expr  

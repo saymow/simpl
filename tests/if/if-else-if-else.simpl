@@ -1,4 +1,4 @@
-// Test if, else if, and else statements
+// If, else if, and else statements
 
 if (true) {
     print "if-ran";                                        // expect if-ran

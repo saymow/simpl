@@ -1,4 +1,4 @@
-// Basic While loop
+// While loop
 
 var idx = 0;
 

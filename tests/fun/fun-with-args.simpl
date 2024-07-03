@@ -1,0 +1,9 @@
+// Function with arguments
+
+fun sum(a, b) {
+    print a + b;
+}
+
+sum(1, 2);                                                          // expect 3
+sum(3, 5);                                                          // expect 8
+sum(5, -2);                                                         // expect 3
