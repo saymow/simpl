@@ -14,24 +14,65 @@ var arr3 = ["test"];
 fun fun1() {}
 fun fun2() {}
 
+// Primitive values
+print true == true;                     // expect true
 print true != false;                    // expect true
 print true != nil;                      // expect true
 print nil != false;                     // expect true
 print false != 0;                       // expect true
-
+print 0 == 0;                           // expect true
+print 1 != 0;                           // expect true
 print "str" == "str";                   // expect true
+print "str" != "other";                 // expect true
 print 100 == 100;                       // expect true
+print 100 != 101;                       // expect true
+print 3.14 == 3.14;                     // expect true
+print 3.14 != 2.71;                     // expect true
 
+// Classes and instances
 print ClassA == ClassA;                 // expect true
 print ClassA != ClassB;                 // expect true
-
 print object1 == object1;               // expect true
 print object1 != object2;               // expect true
 print object2 != object3;               // expect true
 
+// Arrays
 print arr1 == arr1;                     // expect true
 print arr1 != arr2;                     // expect true
 print arr2 != arr3;                     // expect true
+print [1, 2] == [1, 2];                 // expect false
+print [1, 2] != [2, 1];                 // expect true
 
+// Functions
 print fun1 == fun1;                     // expect true
 print fun1 != fun2;                     // expect true
+
+// Mixed comparisons
+print 1 == 1.0;                         // expect true
+print "1" != 1;                         // expect true
+print nil == nil;                       // expect true
+print nil != 0;                         // expect true
+
+// Nested structures
+var nestedArr1 = [[1, 2], [3, 4]];
+var nestedArr2 = [[1, 2], [3, 4]];
+var nestedArr3 = [[1, 2], [4, 3]];
+
+print nestedArr1 == nestedArr1;         // expect true
+print nestedArr1 != nestedArr2;         // expect true
+print nestedArr2 != nestedArr3;         // expect true
+
+// Comparing objects with arrays
+print object1 != arr1;                  // expect true
+print object2 != arr2;                  // expect true
+print object3 != arr3;                  // expect true
+
+// Comparing functions with objects
+print fun1 != object1;                  // expect true
+print fun2 != object2;                  // expect true
+print fun1 != arr1;                     // expect true
+
+// Boolean comparisons with objects and arrays
+print true != object1;                  // expect true
+print false != arr1;                    // expect true
+print true != fun1;                     // expect true
