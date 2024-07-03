@@ -3,6 +3,11 @@ import { TestSuite, VmErrors } from "./expectations-reader";
 import { LINE_TERMINATOR_REGEX } from "./utils";
 import colors from "colors";
 
+export interface TestRunnerResult {
+  successes: number;
+  fails: number;
+}
+
 class TestRunner {
   private successes: number = 0;
   private fails: number = 0;
@@ -21,14 +26,14 @@ class TestRunner {
     this.errorMessages.push(`${this.testSuite.testFile.id}: ${message}`);
   }
 
-  async execute(): Promise<void> {
+  async execute(): Promise<TestRunnerResult> {
     const paths = `"${this.vmPath}" "${this.testSuite.testFile.path}"`;
     const testTitle = this.testSuite.title;
     const fileId = this.testSuite.testFile.id;
     const expects = this.testSuite.expectation.expects;
     const expectedError = this.testSuite.expectation.error;
 
-    await new Promise<void>((resolve, reject) => {
+    return new Promise<TestRunnerResult>((resolve, reject) => {
       exec(paths, (error, stdout, stderr) => {
         if (error && this.parseErrorCode(error.code ?? -1) == null) {
           console.error(`Unexpected Execution error: ${error.message}`);
@@ -92,7 +97,7 @@ class TestRunner {
           }
         }
 
-        resolve();
+        resolve({ successes: this.successes, fails: this.fails });
       });
     });
   }
