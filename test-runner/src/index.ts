@@ -74,10 +74,17 @@ const main = async () => {
     runStopwatch();
     const filesReader = new FilesReader(TESTS_DIR);
     const testFiles = await filesReader.execute();
-    const testSuites = testFiles.map((testFile) => {
+    const testSuites: TestSuite[] = []; 
+    
+    for (const testFile of testFiles) { 
       const testSuitesReader = new TestSuiteReader(testFile);
-      return testSuitesReader.execute();
-    });
+      const testSuite = testSuitesReader.execute();
+
+      // File is flagged to be skiped
+      if (testSuite == null) continue;
+      
+      testSuites.push(testSuite);
+    }
 
     await run(testSuites);
   } catch (err) {

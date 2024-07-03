@@ -2,6 +2,7 @@ import { TestFile } from "./files-reader";
 import { LINE_TERMINATOR_REGEX } from "./utils";
 
 const COMMENTARY_REGEX = /(?<=\/\/\s).+/;
+const SKIP_FILE_TITLE_REGEX = /!skip/;
 const EXPECT_REGEX = /(?<=\/\/\sexpect\s).+/;
 const ERROR_REGEX = /(?<=\/\/\serror\s).+?(?=\s|$)/;
 
@@ -37,7 +38,7 @@ class TestSuiteReader {
     return new Error(`${this.testFile.id} [line ${line}]: ${message}`);
   }
 
-  execute(): TestSuite {
+  execute(): TestSuite | null {
     const lines = this.testFile.source.split(LINE_TERMINATOR_REGEX);
     let idx = 0;
 
@@ -45,6 +46,12 @@ class TestSuiteReader {
       const testTitle = COMMENTARY_REGEX.exec(lines[idx]);
 
       if (testTitle) {
+        const skipFileTitle = SKIP_FILE_TITLE_REGEX.exec(testTitle[0]);
+
+        if (skipFileTitle) {
+          return null;
+        }
+
         this.title = testTitle[0];
         idx++;
       }
