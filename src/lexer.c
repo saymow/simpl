@@ -126,6 +126,8 @@ static TokenType identifierType() {
   switch (lexer->start[0]) {
     case 'a':
       return checkKeyword(1, 2, "nd", TOKEN_AND);
+    case 'b':
+      return checkKeyword(1, 4, "reak", TOKEN_BREAK);
     case 'e':
       if (lexer->current - lexer->start > 1) {
         switch (lexer->start[1]) {
