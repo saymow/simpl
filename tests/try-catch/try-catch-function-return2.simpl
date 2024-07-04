@@ -1,0 +1,18 @@
+// Return statement should pop existing try-catch blocks
+
+fun returnAfter3TryCatchBlocks() {
+    try {
+        try {
+            try {
+                throw "something";
+            } catch {
+                return "return inside try-catch block";
+            }
+        } catch {}
+    } catch {}
+}
+
+returnAfter3TryCatchBlocks();
+throw "try-catch block should be popped";
+
+// error SOFTWARE_ERR Uncaught Exception.
