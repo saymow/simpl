@@ -747,7 +747,11 @@ static InterpretResult run() {
           tableAddAll(&FRAME_AS_MODULE(frame)->exports, &exports->properties);
           result = OBJ_VAL(exports);
           FRAME_AS_MODULE(frame)->evaluated = true;
-          // freeTable(&frame->moduleExports);
+        } 
+
+        // Ensure try-catch blocks are popped if returned inside them 
+        while(vm.tryCatchStackCount > 0 && vm.tryCatchStack[vm.tryCatchStackCount - 1].frame == frame) {
+          vm.tryCatchStackCount--;
         }
 
         vm.framesCount--;
