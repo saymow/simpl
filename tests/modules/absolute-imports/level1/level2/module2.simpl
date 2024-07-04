@@ -1,0 +1,5 @@
+// !skip
+
+import "/level1/module1.simpl";
+
+print "module2.simpl";

@@ -1,0 +1,6 @@
+// Ensure module is evaluated once
+
+import "module1.simpl";                                             // expect module1.simpl
+import "module1.simpl";                                             // expect !void
+import "module1.simpl";                                             // expect !void
+import "module1.simpl";                                             // expect !void

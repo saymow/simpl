@@ -1,0 +1,5 @@
+// Ensure cyclic dependencies are gracefully handled 
+
+import "module1.simpl";
+
+// error ERR Unexpected modules cyclic dependency.

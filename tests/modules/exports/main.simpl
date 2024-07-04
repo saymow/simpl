@@ -1,0 +1,8 @@
+// Ensure module exports is resolved
+
+import module from "module1.simpl";                                             
+
+var person = module.Person("John");
+
+module.greetings();                                                                 // expect Hello world!
+person.sayName();                                                                   // expect My name is John

@@ -1,0 +1,3 @@
+// Import a module
+
+import "module1.simpl";                                             // expect module1.simpl

@@ -1,0 +1,9 @@
+// !skip
+
+print "module1.simpl";
+
+fun showSecret() {
+    print "secret";
+}
+
+export showSecret;

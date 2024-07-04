@@ -1,0 +1,7 @@
+// !skip
+
+import module2 from "/level1/level2/module2.simpl";
+
+print "module3.simpl";
+
+export module2;

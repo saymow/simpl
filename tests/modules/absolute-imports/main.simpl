@@ -1,0 +1,5 @@
+import "/level1/level2/level3/module3.simpl";
+
+// expect module1.simpl
+// expect module2.simpl
+// expect module3.simpl

@@ -1,0 +1,18 @@
+// !skip
+
+fun greetings() {
+    print "Hello world!";
+}
+
+class Person {
+    Person(name) {
+        this.name = name;
+    }
+
+    sayName() {
+        print "My name is " + this.name;
+    }
+}
+
+export greetings;
+export Person;
