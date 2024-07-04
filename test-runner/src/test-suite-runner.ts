@@ -83,6 +83,7 @@ class TestRunner {
           }
         }
 
+
         if (error) {
           const vmError = this.parseErrorCode(error.code ?? -1);
 
@@ -112,6 +113,12 @@ class TestRunner {
             this.fails++;
             this.error(`Unhandled error ${vmError}.`);
           }
+        } else if (expectedError) {
+          this.fails++;
+          this.assertionError(
+            expectedError,
+            `Expected ${expectedError.data.error} but did not receive error.`
+          );
         }
 
         if (this.fails === 0) {
