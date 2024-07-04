@@ -4,6 +4,7 @@ import { LINE_TERMINATOR_REGEX } from "./utils";
 const COMMENTARY_REGEX = /(?<=\/\/\s).+/;
 const SKIP_FILE_TITLE_REGEX = /!skip/;
 const EXPECT_REGEX = /(?<=\/\/\sexpect\s).+/;
+const EXPECT_VOID_REGEX = /(?<=\s*)!void/;
 const ERROR_REGEX = /(?<=\/\/\serror\s).+?(?=\s|$)/;
 
 export enum VmErrors {
@@ -17,8 +18,10 @@ interface Assertion<T> {
   data: T;
 }
 
+export type ExpectAssertion = Assertion<string | null>;
+
 interface Expectations {
-  expects: Assertion<string>[];
+  expects: ExpectAssertion[];
   error?: Assertion<VmErrors>;
 }
 
@@ -64,6 +67,13 @@ class TestSuiteReader {
       const expectTest = EXPECT_REGEX.exec(text);
 
       if (expectTest) {
+        const voidTest = EXPECT_VOID_REGEX.test(expectTest[0]);
+
+        if (voidTest) {
+          this.expectations.expects.push({ data: null, line });
+          continue;
+        }
+
         this.expectations.expects.push({ data: expectTest[0], line });
         continue;
       }

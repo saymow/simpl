@@ -1,5 +1,5 @@
 import { exec } from "child_process";
-import { TestSuite, VmErrors } from "./expectations-reader";
+import { ExpectAssertion, TestSuite, VmErrors } from "./expectations-reader";
 import { LINE_TERMINATOR_REGEX } from "./utils";
 import colors from "colors";
 
@@ -18,12 +18,32 @@ class TestRunner {
     private readonly testSuite: TestSuite
   ) {}
 
-  private assertionError(line: number, message: string) {
-    this.errorMessages.push(`[line ${line}]: ${message}`);
-  }
-
   private error(message: string) {
     this.errorMessages.push(`${this.testSuite.testFile.id}: ${message}`);
+  }
+
+  private expectAssertionError(assertion: ExpectAssertion, stdOutline: string) {
+    let message;
+
+    if (assertion.data !== null && stdOutline !== undefined) {
+      message = `Expected "${assertion.data}" but received "${stdOutline}".`;
+    } else if (assertion.data === null) {
+      message = `Expected to not receive but received "${stdOutline}"`;
+    } else {
+      message = `Expected "${assertion.data}" but did not receive.`;
+    }
+
+    this.errorMessages.push(`[line ${assertion.line}]: ${message}`);
+  }
+
+  private assertionError(assertion: ExpectAssertion, message: string) {
+    this.errorMessages.push(`[line ${assertion.line}]: ${message}`);
+  }
+
+  private evalute(assertion: ExpectAssertion, stdOutline: string) {
+    if (assertion.data === null && stdOutline === undefined) return true;
+
+    return assertion.data === stdOutline;
   }
 
   async execute(): Promise<TestRunnerResult> {
@@ -44,14 +64,14 @@ class TestRunner {
 
         const stdOutLines = stdout.split(LINE_TERMINATOR_REGEX);
 
+        // Remove trailing line terminator
+        stdOutLines.pop();
+
         for (let idx = 0; idx < expects.length; idx++) {
-          if (expects[idx].data === stdOutLines[idx]) {
+          if (this.evalute(expects[idx], stdOutLines[idx])) {
             this.successes++;
           } else {
-            this.assertionError(
-              expects[idx].line,
-              `Expected "${expects[idx].data}" but received "${stdOutLines[idx]}".`
-            );
+            this.expectAssertionError(expects[idx], stdOutLines[idx]);
             this.fails++;
           }
         }
@@ -65,7 +85,7 @@ class TestRunner {
             } else {
               this.fails++;
               this.assertionError(
-                expectedError.line,
+                expectedError,
                 `Expected ${expectedError.data} but received ${vmError}.`
               );
             }
