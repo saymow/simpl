@@ -89,10 +89,23 @@ char *removePathLastFragment(const char* path) {
   return newPath;
 }
 
+bool isWindowsDiskLetter(char character) {
+  return (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z');
+}
+
+bool isPathRelative(const char* path) {
+  if (isWindowsDiskLetter(path[0]) && path[1] == ':') {
+    fprintf(stderr, "Invalid import path \"%s\"\n", path);
+    exit(1);
+  }
+
+  return path[0] == '.' && (path[1] == '/' || (path[1] == '.' && path[2] == '/'));
+}
+
 char *resolvePath(const char* entryFilePath, const char* filePath, const char* importPath) {
    #if IS_WINDOWS
     char* absPath = (char*) malloc(sizeof(char) * MAX_PATH);
-    char* basePath = removePathLastFragment(PathIsRelativeA(importPath) ? entryFilePath : filePath);
+    char* basePath = removePathLastFragment(isPathRelative(importPath) ? filePath : entryFilePath);
 
     if (!PathCombineA(absPath, basePath, importPath)) {
       fprintf(stderr, "Error combining paths.\n");
