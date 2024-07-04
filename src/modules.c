@@ -134,7 +134,7 @@ bool addDependency(Modules* modules, ModuleNode* origin, ModuleNode** node, cons
     } 
     // import a module that is still compiling seems to be equivalent to cyclic dependency
     if (target->state == COMPILING_STATE) {
-        printf("Unexpected modules cyclic dependency.\n");
+        fprintf(stderr,"Unexpected modules cyclic dependency.\n");
         exit(1);
     }
     
