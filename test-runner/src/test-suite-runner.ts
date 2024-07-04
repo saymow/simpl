@@ -1,5 +1,10 @@
 import { exec } from "child_process";
-import { ExpectAssertion, TestSuite, VmErrors } from "./expectations-reader";
+import {
+  Assertion,
+  ExpectAssertion,
+  TestSuite,
+  VmErrors,
+} from "./expectations-reader";
 import { LINE_TERMINATOR_REGEX } from "./utils";
 import colors from "colors";
 
@@ -36,7 +41,7 @@ class TestRunner {
     this.errorMessages.push(`[line ${assertion.line}]: ${message}`);
   }
 
-  private assertionError(assertion: ExpectAssertion, message: string) {
+  private assertionError(assertion: Assertion<any>, message: string) {
     this.errorMessages.push(`[line ${assertion.line}]: ${message}`);
   }
 
@@ -63,9 +68,11 @@ class TestRunner {
         }
 
         const stdOutLines = stdout.split(LINE_TERMINATOR_REGEX);
+        const stdErrLines = stderr.split(LINE_TERMINATOR_REGEX);
 
         // Remove trailing line terminator
         stdOutLines.pop();
+        stdErrLines.pop();
 
         for (let idx = 0; idx < expects.length; idx++) {
           if (this.evalute(expects[idx], stdOutLines[idx])) {
@@ -80,13 +87,25 @@ class TestRunner {
           const vmError = this.parseErrorCode(error.code ?? -1);
 
           if (expectedError) {
-            if (expectedError.data === vmError) {
-              this.successes++;
+            if (expectedError.data.error === vmError) {
+              if (expectedError.data.message) {
+                if (expectedError.data.message === stdErrLines[0]) {
+                  this.successes++;
+                } else {
+                  this.fails++;
+                  this.assertionError(
+                    expectedError,
+                    `Expected "${expectedError.data.message}" error message but received "${stdErrLines[0]}".`
+                  );
+                }
+              } else {
+                this.successes++;
+              }
             } else {
               this.fails++;
               this.assertionError(
                 expectedError,
-                `Expected ${expectedError.data} but received ${vmError}.`
+                `Expected ${expectedError.data.error} but received ${vmError}.`
               );
             }
           } else {

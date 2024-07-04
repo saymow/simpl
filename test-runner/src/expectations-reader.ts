@@ -5,7 +5,7 @@ const COMMENTARY_REGEX = /(?<=\/\/\s).+/;
 const SKIP_FILE_TITLE_REGEX = /!skip/;
 const EXPECT_REGEX = /(?<=\/\/\sexpect\s).+/;
 const EXPECT_VOID_REGEX = /(?<=\s*)!void/;
-const ERROR_REGEX = /(?<=\/\/\serror\s).+?(?=\s|$)/;
+const ERROR_REGEX = /(?<=\/\/\serror\s).+(\s)?.*/;
 
 export enum VmErrors {
   ERR = "ERR", // exit code: 1
@@ -13,16 +13,21 @@ export enum VmErrors {
   SOFTWARE_ERR = "SOFTWARE_ERR", // exit code: 70
 }
 
-interface Assertion<T> {
+export interface Assertion<T> {
   line: number;
   data: T;
 }
 
 export type ExpectAssertion = Assertion<string | null>;
 
+export type ErrorAssertion = Assertion<{
+  error: VmErrors;
+  message?: string;
+}>;
+
 interface Expectations {
   expects: ExpectAssertion[];
-  error?: Assertion<VmErrors>;
+  error?: ErrorAssertion;
 }
 
 export interface TestSuite {
@@ -39,6 +44,25 @@ class TestSuiteReader {
 
   private error(line: number, message: string): Error {
     return new Error(`${this.testFile.id} [line ${line}]: ${message}`);
+  }
+
+  private resolveErrorTest(
+    line: number,
+    expectMessage: string
+  ): ErrorAssertion {
+    const [error, ...message] = expectMessage.split(" ");
+
+    if (!Object.values(VmErrors).includes(error as any)) {
+      throw this.error(line, "invalid error type.");
+    }
+    if (this.expectations.error) {
+      throw this.error(line, "can only test for error once.");
+    }
+
+    return {
+      line,
+      data: { error: error as VmErrors, message: message.join(" ") },
+    };
   }
 
   execute(): TestSuite | null {
@@ -81,14 +105,7 @@ class TestSuiteReader {
       const errorTest = ERROR_REGEX.exec(text);
 
       if (errorTest) {
-        if (!Object.values(VmErrors).includes(errorTest[0] as any)) {
-          throw this.error(line, "invalid error type.");
-        }
-        if (this.expectations.error) {
-          throw this.error(line, "can only test for error once.");
-        }
-
-        this.expectations.error = { data: errorTest[0] as VmErrors, line };
+        this.expectations.error = this.resolveErrorTest(line, errorTest[0]);
         continue;
       }
     }
