@@ -49,7 +49,7 @@ void initVM() {
   vm.arrayClass = NULL;
   vm.arrayClass = newClass(copyString("Array", 5));
 
-  vm.tryCatch = NULL;
+  vm.tryCatchStackCount = 0;
 
   defineNativeFunction(&vm.global, "clock", clockNative);
   defineNativeFunction(&vm.arrayClass->methods, "length", arrayLength);
@@ -543,66 +543,60 @@ static InterpretResult run() {
         break;
       }
       case OP_TRY_CATCH: {
+        if (vm.tryCatchStackCount + 1 == TRY_CATCH_STACK_MAX) {
+          runtimeError("Cant stack more than %d try-catch blocks.", TRY_CATCH_STACK_MAX);
+          return INTERPRET_RUNTIME_ERROR;
+        }
+
         uint16_t catchOffset = READ_SHORT();
         uint16_t outOffset = READ_SHORT();
         bool hasCatchParameter = READ_BYTE();
-        TryCatch* tryCatch = malloc(sizeof(TryCatch));
+        
+        // push try-catch block
+        TryCatch* tryCatch = &vm.tryCatchStack[vm.tryCatchStackCount++];
 
         tryCatch->frame = frame;
         tryCatch->frameStackTop = vm.stackTop;
         tryCatch->catchIp = frame->ip + catchOffset;
         tryCatch->outIp = frame->ip + outOffset;
         tryCatch->hasCatchParameter = hasCatchParameter;
-
-        // Push try-catch-block to the stack
-        if (vm.tryCatch == NULL) {
-          tryCatch->next = NULL;
-        } else {
-          tryCatch->next = vm.tryCatch;
-        }
-        vm.tryCatch = tryCatch;
         break;  
       }
       case OP_TRY_CATCH_TRY_END: {
-        /*
-        * Move to the end of the try-catch-block and skip catch statement
-        * We are always gonna reach this intruction inside the same frame the try-catch-block was created,
-        * if we dont reach any throw statement. Hence, no need to use the vm.tryCatch->frame.
-        */ 
-        frame->ip = vm.tryCatch->outIp;
+        // Pop try-catch block
+        TryCatch *tryCatch = &vm.tryCatchStack[--vm.tryCatchStackCount];
 
-        // Pop TryCatch from the try-catch-block stack and then free the memory 
-        TryCatch* tmp = vm.tryCatch;
-        vm.tryCatch = vm.tryCatch->next;
-        free(tmp);
+        /*
+        * Move to the end of the try-catch block and skip catch statement
+        * We are always gonna reach this intruction inside the same frame the try-catch block was created,
+        * if we dont reach any throw statement. Hence, no need to update the current frame.
+        */ 
+        frame->ip = tryCatch->outIp;
         break;
       }
       case OP_THROW: {
-        // Throw outside of any try-catch-block 
-        if (vm.tryCatch == NULL) {
-          runtimeError("Unhandled Exception.");
+        // Throw outside of any try-catch block 
+        if (vm.tryCatchStackCount == 0) {
+          runtimeError("Uncaught Exception.");
           return INTERPRET_RUNTIME_ERROR;
         }
-
+      
+        // Pop try-catch block
+        TryCatch *tryCatch = &vm.tryCatchStack[--vm.tryCatchStackCount]; 
         Value value = pop();
 
         // Get back to the closest try-catch-block frame and move ip to the start of the catch block statement. 
-        vm.framesCount = vm.tryCatch->frame - vm.frames + 1;
-        vm.stackTop = vm.tryCatch->frameStackTop;
-        frame = vm.tryCatch->frame;
-        frame->ip = vm.tryCatch->catchIp;
+        vm.framesCount = tryCatch->frame - vm.frames + 1;
+        vm.stackTop = tryCatch->frameStackTop;
+        frame = tryCatch->frame;
+        frame->ip = tryCatch->catchIp;
 
-        if (vm.tryCatch->hasCatchParameter) {
+        if (tryCatch->hasCatchParameter) {
           push(value);
         }
 
         // This cover an extreme corner case where we throw an enclosed function in a nested scope.
-        closeUpValues(vm.stackTop - 1);
-        
-        // Pop TryCatch from the try-catch-block stack and then free the memory
-        TryCatch* tmp = vm.tryCatch;
-        vm.tryCatch = vm.tryCatch->next;
-        free(tmp);
+        closeUpValues(tryCatch->frameStackTop - 1);
         break;
       }
       case OP_TRUE:
