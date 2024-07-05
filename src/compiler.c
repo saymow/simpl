@@ -565,7 +565,7 @@ static void emitLoop(int beforeLoop) {
   emitByte(offset & 0xff);
 }
 
-static void startLoop() {
+static void beginLoop() {
   current->loopCount++;
 }
 
@@ -574,10 +574,11 @@ static void endLoop() {
 }
 
 static void whileStatement() {
+  beginLoop();
+  
   int loopGuard = emitJump(OP_LOOP_GUARD);
   int loopStart = currentChunk()->count;
 
-  startLoop();
   consume(TOKEN_LEFT_PAREN, "Expect '(' before if expresion");
   expression();
   consume(TOKEN_RIGHT_PAREN, "Expect ')' after if expresion");
@@ -593,11 +594,14 @@ static void whileStatement() {
 
   emitByte(OP_LOOP_GUARD_END);
   emitByte(OP_POP);
+
   endLoop();
 }
 
 static void forStatement() {
+  beginLoop();
   beginScope();
+
   consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
 
   if (match(TOKEN_SEMICOLON)) {
@@ -607,6 +611,7 @@ static void forStatement() {
     expressionStatement();
   }
 
+  int loopGuard = emitJump(OP_LOOP_GUARD);
   int loopStart = currentChunk()->count;
 
   int exitJmp = -1;
@@ -633,13 +638,15 @@ static void forStatement() {
 
   statement();
   emitLoop(loopStart);
-
+  patchJump(loopGuard, 2);
   if (exitJmp != -1) {
     patchJump(exitJmp, 2);
-    emitByte(OP_POP);
   }
+  emitByte(OP_LOOP_GUARD_END);
+  emitByte(OP_POP);
 
   endScope();
+  endLoop();
 }
 
 static void returnStatement() {
