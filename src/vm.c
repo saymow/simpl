@@ -755,14 +755,8 @@ static InterpretResult run() {
           uint8_t index = READ_BYTE();
           uint8_t isLocal = READ_BYTE();
 
-          if (isLocal) {
-            closure->upvalues[idx] = captureUpvalue(frame->slots + index);
-          } else {
-            // todo: maybe we dont need this if
-            if (IS_FRAME_CLOSURE(frame)) {
-              closure->upvalues[idx] = FRAME_AS_CLOSURE(frame)->upvalues[index];
-            }
-          }
+          if (isLocal) closure->upvalues[idx] = captureUpvalue(frame->slots + index);
+          else closure->upvalues[idx] = FRAME_AS_CLOSURE(frame)->upvalues[index];
         }
         break;
       }
