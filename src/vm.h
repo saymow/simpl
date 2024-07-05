@@ -9,6 +9,7 @@
 #define FRAMES_MAX 64
 #define STACK_MAX (FRAMES_MAX * UINT8_COUNT)
 #define TRY_CATCH_STACK_MAX 8
+#define LOOP_STACK_MAX 8
 
 typedef enum { FRAME_TYPE_CLOSURE, FRAME_TYPE_MODULE } CallFrameType;
 
@@ -25,10 +26,18 @@ typedef struct {
 typedef struct TryCatch {
   CallFrame* frame;
   Value* frameStackTop;
+  uint8_t* startIp;
   uint8_t* catchIp;
   uint8_t* outIp;
   bool hasCatchParameter;
 } TryCatch;
+
+typedef struct Loop {
+  CallFrame* frame;
+  Value* frameStackTop;
+  uint8_t* startIp;
+  uint8_t* outIp;
+} Loop;
 
 typedef struct {
   CallFrame frames[FRAMES_MAX];
@@ -52,6 +61,8 @@ typedef struct {
   ObjClass* moduleExportsClass;
   ObjClass* arrayClass;
 
+  Loop loopStack[LOOP_STACK_MAX];
+  int loopStackCount;
   TryCatch tryCatchStack[TRY_CATCH_STACK_MAX];
   int tryCatchStackCount; 
 } VM;

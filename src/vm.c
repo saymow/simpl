@@ -50,6 +50,7 @@ void initVM() {
   vm.arrayClass = newClass(copyString("Array", 5));
 
   vm.tryCatchStackCount = 0;
+  vm.loopStackCount = 0;
 
   defineNativeFunction(&vm.global, "clock", clockNative);
   defineNativeFunction(&vm.arrayClass->methods, "length", arrayLength);
@@ -542,6 +543,49 @@ static InterpretResult run() {
         frame->ip -= offset;
         break;
       }
+      case OP_LOOP_GUARD: {
+        if (vm.loopStackCount + 1 == LOOP_STACK_MAX) {
+          runtimeError("Cant stack more than %d loops.", LOOP_STACK_MAX);
+          return INTERPRET_RUNTIME_ERROR;
+        }
+
+        uint16_t outOffset = READ_SHORT();
+
+        // push loop
+        Loop* loop = &vm.loopStack[vm.loopStackCount++];
+
+        loop->frame = frame;
+        loop->frameStackTop = vm.stackTop;
+        loop->startIp = frame->ip;
+        loop->outIp = frame->ip + outOffset; 
+        break;
+      }
+      case OP_LOOP_BREAK: {
+        Loop* loop = &vm.loopStack[vm.loopStackCount - 1];
+
+        // Pop any existing try-catch block inside loop block 
+        while (
+          vm.tryCatchStackCount > 0 &&
+          vm.tryCatchStack[vm.tryCatchStackCount - 1].frame == frame &&
+          vm.tryCatchStack[vm.tryCatchStackCount - 1].outIp > loop->startIp &&
+          vm.tryCatchStack[vm.tryCatchStackCount - 1].outIp < loop->outIp 
+        ) {
+          vm.tryCatchStackCount--;
+        }
+
+        frame->ip = loop->outIp;
+        // Since we are jumping to the OP_LOOP_GUARD_END and right after that we have a OP_POP,
+        // we need to increment one on the stackTop.
+        vm.stackTop = loop->frameStackTop + 1;
+
+        closeUpValues(loop->frameStackTop - 1);
+        break;
+      }
+      case OP_LOOP_GUARD_END: {
+        // pop loop
+        vm.loopStackCount--;
+        break;
+      }
       case OP_TRY_CATCH: {
         if (vm.tryCatchStackCount + 1 == TRY_CATCH_STACK_MAX) {
           runtimeError("Cant stack more than %d try-catch blocks.", TRY_CATCH_STACK_MAX);
@@ -557,6 +601,7 @@ static InterpretResult run() {
 
         tryCatch->frame = frame;
         tryCatch->frameStackTop = vm.stackTop;
+        tryCatch->startIp = frame->ip;
         tryCatch->catchIp = frame->ip + catchOffset;
         tryCatch->outIp = frame->ip + outOffset;
         tryCatch->hasCatchParameter = hasCatchParameter;
@@ -585,12 +630,38 @@ static InterpretResult run() {
         TryCatch *tryCatch = &vm.tryCatchStack[--vm.tryCatchStackCount]; 
         Value value = pop();
 
-        // Get back to the closest try-catch-block frame and move ip to the start of the catch block statement. 
-        vm.framesCount = tryCatch->frame - vm.frames + 1;
+        /*
+         * Pop Loops placed in intermediary frames between the "try-catch block" frame and
+         * the "throw" frame. If a "throw" is found in a deep nested function, this ensure all
+         * Loops created until there are popped. 
+         */
+        while (&vm.frames[vm.framesCount - 1] != tryCatch->frame) {
+          while (
+            vm.loopStack > 0 &&
+            vm.loopStack[vm.loopStackCount - 1].frame == &vm.frames[vm.framesCount - 1]
+          ) {
+            vm.loopStackCount--;
+          }
+
+          vm.framesCount--;
+        }
+
+        // Pop Loops placed in the same frame the try-catch block is
+        while (
+          vm.loopStackCount > 0 &&
+          vm.loopStack[vm.loopStackCount - 1].frame == tryCatch->frame &&
+          vm.loopStack[vm.loopStackCount - 1].outIp > tryCatch->startIp &&
+          vm.loopStack[vm.loopStackCount - 1].outIp < tryCatch->outIp
+        ) {
+          vm.loopStackCount--;
+        }
+
+        // Get back to the closest try-catch block frame and move ip to the start of the catch block statement. 
         vm.stackTop = tryCatch->frameStackTop;
         frame = tryCatch->frame;
         frame->ip = tryCatch->catchIp;
 
+        // If the catch block is compiled to receive a param, it should expect the param as a local variable in the stack
         if (tryCatch->hasCatchParameter) {
           push(value);
         }
@@ -748,6 +819,11 @@ static InterpretResult run() {
           result = OBJ_VAL(exports);
           FRAME_AS_MODULE(frame)->evaluated = true;
         } 
+
+        // Ensure loop blocks are popped if returned inside them
+        while (vm.loopStackCount > 0 && vm.loopStack[vm.loopStackCount - 1].frame == frame) {
+          vm.loopStackCount--;
+        }
 
         // Ensure try-catch blocks are popped if returned inside them 
         while(vm.tryCatchStackCount > 0 && vm.tryCatchStack[vm.tryCatchStackCount - 1].frame == frame) {

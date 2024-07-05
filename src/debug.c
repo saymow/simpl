@@ -148,12 +148,18 @@ int disassembleInstruction(Chunk* chunk, int offset) {
       return simpleInstruction("OP_LESS", offset);
     case OP_NOT:
       return simpleInstruction("OP_NOT", offset);
+    case OP_LOOP_GUARD_END:
+      return simpleInstruction("OP_LOOP_GUARD_END", offset);
+    case OP_LOOP_BREAK:
+      return simpleInstruction("OP_LOOP_BREAK", offset);
     case OP_JUMP:
       return jumpInstruction("OP_JUMP", 1, chunk, offset);
     case OP_JUMP_IF_FALSE:
       return jumpInstruction("OP_JUMP_IF_FALSE", 1, chunk, offset);
     case OP_LOOP:
       return jumpInstruction("OP_LOOP", -1, chunk, offset);
+    case OP_LOOP_GUARD:
+      return jumpInstruction("OP_LOOP_GUARD", 1, chunk, offset);
     case OP_TRY_CATCH:
       return tryCatchInstruction("OP_TRY_CATCH", chunk, offset);
     case OP_TRY_CATCH_TRY_END:

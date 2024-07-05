@@ -76,6 +76,8 @@ typedef struct Compiler {
   struct Compiler* enclosing;
   struct Compiler* semanticallyEnclosing;
   FunctionType topLevelType;
+
+  int loopCount;
 } Compiler;
 
 static void emitByte(uint8_t byte);
@@ -108,6 +110,7 @@ static void initCompiler(Compiler* compiler, char* absPath, FunctionType type) {
   compiler->type = type;
   compiler->localCount = 0;
   compiler->scopeDepth = 0;
+  compiler->loopCount = 0;
 
   if (type == TYPE_SCRIPT || type == TYPE_MODULE) {
     compiler->topLevelType = type;
@@ -562,21 +565,35 @@ static void emitLoop(int beforeLoop) {
   emitByte(offset & 0xff);
 }
 
+static void startLoop() {
+  current->loopCount++;
+}
+
+static void endLoop() {
+  current->loopCount--;
+}
+
 static void whileStatement() {
+  int loopGuard = emitJump(OP_LOOP_GUARD);
   int loopStart = currentChunk()->count;
 
+  startLoop();
   consume(TOKEN_LEFT_PAREN, "Expect '(' before if expresion");
   expression();
   consume(TOKEN_RIGHT_PAREN, "Expect ')' after if expresion");
 
   int exitLoop = emitJump(OP_JUMP_IF_FALSE);
-
   emitByte(OP_POP);
+
   statement();
+  
   emitLoop(loopStart);
-
+  patchJump(loopGuard, 2);
   patchJump(exitLoop, 2);
+
+  emitByte(OP_LOOP_GUARD_END);
   emitByte(OP_POP);
+  endLoop();
 }
 
 static void forStatement() {
@@ -791,8 +808,20 @@ static void throwStatement() {
   consume(TOKEN_SEMICOLON, "Expect ';' after throw statement.");
 }
 
+static void breakStatement() {
+  if (current->loopCount == 0) {
+    error("Cannot break outside a loop.");
+    return;
+  }
+
+  emitByte(OP_LOOP_BREAK);
+  consume(TOKEN_SEMICOLON, "Expect ';' after break statement.");
+}
+
 static void statement() {
-  if (match(TOKEN_THROW)) {
+  if (match(TOKEN_BREAK)) {
+    return breakStatement();
+  } else if (match(TOKEN_THROW)) {
     return throwStatement();
   } else if (match(TOKEN_TRY)) {
     return tryStatement();  
