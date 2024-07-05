@@ -31,6 +31,15 @@ fun closure3(a) {
     return enclosured;                                                         
 }
 
+fun closure0(a) {
+    var enclosured = fun (b) {
+        print a + b;
+    };
+
+    return enclosured;                                                         
+}
+
+var enclosured0 = closure0(1);
 var enclosured1 = closure1();
 var enclosured2 = closure2(2, 3);
 var enclosured3 = closure3(1);
@@ -38,3 +47,4 @@ var enclosured3 = closure3(1);
 enclosured1();                                                                   // expect 3
 enclosured2();                                                                   // expect 5
 enclosured3(2)(3);                                                               // expect 6
+enclosured0(3);                                                                  // expect 4
