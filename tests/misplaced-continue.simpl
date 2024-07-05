@@ -1,0 +1,3 @@
+continue;
+
+// error DATA_ERR [line 1] Error at 'continue': Cannot continue outside a loop.

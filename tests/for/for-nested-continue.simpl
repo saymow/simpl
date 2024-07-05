@@ -1,0 +1,35 @@
+// For loop nested continue
+
+print "before";
+
+for (var i = 0; i < 3;i = i + 1) {
+    if (i == 1) continue;
+    for (var j = 10; j < 13;j = j + 1) {
+        if (j == 11) continue;
+        for (var k = 100; k < 103;k = k + 1) {
+            if (k == 101) continue;
+            print k;
+        }
+        print j;
+    }
+    print i;
+}
+
+print "after";
+
+// expect before
+// expect 100
+// expect 102
+// expect 10
+// expect 100
+// expect 102
+// expect 12
+// expect 0
+// expect 100
+// expect 102
+// expect 10
+// expect 100
+// expect 102
+// expect 12
+// expect 2
+// expect after

@@ -1,0 +1,15 @@
+// While continue placed inside try-catch block 
+
+var idx = 0;
+
+while (idx != 1) {
+    try { 
+        idx = 1; 
+        continue;
+    }
+    catch { }
+}
+
+throw "try-catch block should be popped.";
+
+// error SOFTWARE_ERR Uncaught Exception.

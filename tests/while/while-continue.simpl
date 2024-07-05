@@ -1,0 +1,28 @@
+// While loop continue
+
+print "before";
+
+var idx = 0;
+
+while (idx < 10) {
+    if (idx == 5) {
+        idx = idx + 1;
+        continue;
+    }
+    print idx;
+    idx = idx + 1;
+}
+
+print "after";
+
+// expect before
+// expect 0
+// expect 1
+// expect 2
+// expect 3
+// expect 4
+// expect 6
+// expect 7
+// expect 8
+// expect 9
+// expect after

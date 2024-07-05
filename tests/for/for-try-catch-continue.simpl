@@ -1,0 +1,11 @@
+// For break placed inside try-catch block 
+
+
+for (var idx = 0; idx != 1; idx = idx + 1) {
+    try { continue; }
+    catch { }
+}
+
+throw "try-catch block should be popped.";
+
+// error SOFTWARE_ERR Uncaught Exception.
