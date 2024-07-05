@@ -1,0 +1,25 @@
+// No incrementer and initializer foor loop
+
+var idx = 0;
+
+print "before";
+
+for (; idx < 10;) {
+    print idx;
+    idx = idx + 1;
+}
+
+print "after";
+
+// expect before
+// expect 0
+// expect 1
+// expect 2
+// expect 3
+// expect 4
+// expect 5
+// expect 6
+// expect 7
+// expect 8
+// expect 9
+// expect after

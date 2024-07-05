@@ -1,0 +1,10 @@
+// For break placed inside try-catch block 
+
+for (;;) {
+    try { break; }
+    catch { }
+}
+
+throw "try-catch block should be popped.";
+
+// error SOFTWARE_ERR Uncaught Exception.

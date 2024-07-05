@@ -1,0 +1,75 @@
+// Loop guard should be correctly handled when function is returned 
+
+// There is a constraint to stack at most 8 LOOPs. This test use this fact to ensure
+// Loops are correctly popped from their stack when there is a return statement inside it.
+
+fun loopReturn() {
+    for (var idx = 0; idx < 10; idx = idx + 1) {
+        if (idx >= 5) {
+            return;
+        }
+        print idx;
+    }
+}
+
+loopReturn();  // 1° call   
+loopReturn();  // 2° call   
+loopReturn();  // 3° call   
+loopReturn();  // 4° call   
+loopReturn();  // 5° call   
+loopReturn();  // 6° call   
+loopReturn();  // 7° call   
+loopReturn();  // 8° call - If not correctly handled, the test should fail during the 8° "loopReturn" call
+loopReturn();  // 9° call   
+loopReturn();  // 10° call   
+
+// expect 0
+// expect 1
+// expect 2
+// expect 3
+// expect 4
+// expect 0
+// expect 1
+// expect 2
+// expect 3
+// expect 4
+// expect 0
+// expect 1
+// expect 2
+// expect 3
+// expect 4
+// expect 0
+// expect 1
+// expect 2
+// expect 3
+// expect 4
+// expect 0
+// expect 1
+// expect 2
+// expect 3
+// expect 4
+// expect 0
+// expect 1
+// expect 2
+// expect 3
+// expect 4
+// expect 0
+// expect 1
+// expect 2
+// expect 3
+// expect 4
+// expect 0
+// expect 1
+// expect 2
+// expect 3
+// expect 4
+// expect 0
+// expect 1
+// expect 2
+// expect 3
+// expect 4
+// expect 0
+// expect 1
+// expect 2
+// expect 3
+// expect 4
