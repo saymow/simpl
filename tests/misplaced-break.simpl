@@ -1,0 +1,3 @@
+break;
+
+// error DATA_ERR [line 1] Error at 'break': Cannot break outside a loop.

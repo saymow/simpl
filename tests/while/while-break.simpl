@@ -1,12 +1,15 @@
-// No incrementer foor loop
+// While loop break
 
 var idx = 0;
 
 print "before";
 
-for (; idx < 10;) {
+while (true) {
     print idx;
     idx = idx + 1;
+    if (idx >= 10) {
+        break;
+    }
 }
 
 print "after";

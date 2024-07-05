@@ -1,0 +1,23 @@
+// While loop break with enclosured function
+
+fun hoc(a, b) {
+    var funExpr;
+    var shouldStop = false;
+
+    while (!shouldStop) {
+        funExpr = fun (c) {
+            return a + b + c;
+        };
+        break;
+    }
+
+    return funExpr;
+}
+
+var hoc0 = hoc(1, 2);
+var hoc1 = hoc(3, 4);
+var hoc2 = hoc(5, 6);
+
+print hoc0(3);                                                                                              // expect 6
+print hoc1(5);                                                                                              // expect 12
+print hoc2(7);                                                                                              // expect 18

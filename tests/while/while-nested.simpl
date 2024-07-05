@@ -1,0 +1,64 @@
+// While loop nested break
+
+
+print "before";
+
+var i = 0;
+while (i < 3) {
+    var j = 10;
+    while (j < 13) {
+        var k = 100;
+        while (k < 103) {
+            print k;
+            k = k + 1;    
+        }
+        print j;
+        j = j + 1;
+    }
+    print i;
+    i = i + 1;
+}
+
+print "after";
+
+// expect before
+// expect 100
+// expect 101
+// expect 102
+// expect 10
+// expect 100
+// expect 101
+// expect 102
+// expect 11
+// expect 100
+// expect 101
+// expect 102
+// expect 12
+// expect 0
+// expect 100
+// expect 101
+// expect 102
+// expect 10
+// expect 100
+// expect 101
+// expect 102
+// expect 11
+// expect 100
+// expect 101
+// expect 102
+// expect 12
+// expect 1
+// expect 100
+// expect 101
+// expect 102
+// expect 10
+// expect 100
+// expect 101
+// expect 102
+// expect 11
+// expect 100
+// expect 101
+// expect 102
+// expect 12
+// expect 2
+// expect after

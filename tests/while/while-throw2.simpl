@@ -1,0 +1,56 @@
+// Nested Loop guards should be correctly handled when something is thrown 
+
+// There is a constraint to stack at most 8 LOOPs. This test use this fact to ensure
+// Loops are correctly popped from their stack when there is a throw statement inside it.
+
+fun throwAt(num, message) {
+    while (true) {
+        print "throwAt";
+        if (num == 1) {
+            throw message;
+        }
+        throwAt(num - 1, message);
+    }
+}
+
+// 1° iteration - If not correctly handled, it is expected that only the loop in the try-catch statement frame is popped.
+// In this case, no loop is popped. 
+try throwAt(4, "Should throw after 4 nested while loops");
+catch {}
+
+// 2° iteration - If not correctly handled, the test should fail during the 2° iteration, i.e when we reach 8 stacked loops 
+try throwAt(4, "Should throw after 4 nested while loops");
+catch {}
+
+// 3° iteration 
+try throwAt(4, "Should throw after 4 nested while loops");
+catch {}
+
+// 4° iteration 
+try throwAt(4, "Should throw after 4 nested while loops");
+catch {}
+
+// 5° iteration 
+try throwAt(4, "Should throw after 4 nested while loops");
+catch {}
+
+// expect throwAt
+// expect throwAt
+// expect throwAt
+// expect throwAt
+// expect throwAt
+// expect throwAt
+// expect throwAt
+// expect throwAt
+// expect throwAt
+// expect throwAt
+// expect throwAt
+// expect throwAt
+// expect throwAt
+// expect throwAt
+// expect throwAt
+// expect throwAt
+// expect throwAt
+// expect throwAt
+// expect throwAt
+// expect throwAt

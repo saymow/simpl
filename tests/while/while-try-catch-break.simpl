@@ -1,0 +1,10 @@
+// While break placed inside try-catch block 
+
+while (true) {
+    try { break; }
+    catch { }
+}
+
+throw "try-catch block should be popped.";
+
+// error SOFTWARE_ERR Uncaught Exception.

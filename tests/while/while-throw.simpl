@@ -1,0 +1,176 @@
+// Loop guard should be correctly handled when somethin is thrown 
+
+// There is a constraint to stack at most 8 LOOPs. This test use this fact to ensure
+// Loops are correctly popped from their stack when there is a throw statement inside it.
+
+// 1° iteration
+var idx = 0;
+try {
+    while (true) {
+        print idx;
+        idx = idx + 1;
+        if (idx >= 5) {
+            throw "throw should pop enclosing loop";
+        }
+    }
+} catch {}
+
+// 2° iteration
+idx = 0;
+try {
+    while (true) {
+        print idx;
+        idx = idx + 1;
+        if (idx >= 5) {
+            throw "throw should pop enclosing loop";
+        }
+    }
+} catch {}
+
+// 3° iteration
+idx = 0;
+try {
+    while (true) {
+        print idx;
+        idx = idx + 1;
+        if (idx >= 5) {
+            throw "throw should pop enclosing loop";
+        }
+    }
+} catch {}
+
+// 4° iteration
+idx = 0;
+try {
+    while (true) {
+        print idx;
+        idx = idx + 1;
+        if (idx >= 5) {
+            throw "throw should pop enclosing loop";
+        }
+    }
+} catch {}
+
+// 5° iteration
+idx = 0;
+try {
+    while (true) {
+        print idx;
+        idx = idx + 1;
+        if (idx >= 5) {
+            throw "throw should pop enclosing loop";
+        }
+    }
+} catch {}
+
+// 6° iteration
+idx = 0;
+try {
+    while (true) {
+        print idx;
+        idx = idx + 1;
+        if (idx >= 5) {
+            throw "throw should pop enclosing loop";
+        }
+    }
+} catch {}
+
+// 7° iteration
+idx = 0;
+try {
+    while (true) {
+        print idx;
+        idx = idx + 1;
+        if (idx >= 5) {
+            throw "throw should pop enclosing loop";
+        }
+    }
+} catch {}
+
+
+// 8° iteration - If not correctly handled, the test should fail during the 8° iteration
+idx = 0;
+try {
+    while (true) {
+        print idx;
+        idx = idx + 1;
+        if (idx >= 5) {
+            throw "throw should pop enclosing loop";
+        }
+    }
+} catch {}
+
+// 9° iteration
+idx = 0;
+try {
+    while (true) {
+        print idx;
+        idx = idx + 1;
+        if (idx >= 5) {
+            throw "throw should pop enclosing loop";
+        }
+    }
+} catch {}
+
+// 10° iteration
+idx = 0;
+try {
+    while (true) {
+        print idx;
+        idx = idx + 1;
+        if (idx >= 5) {
+            throw "throw should pop enclosing loop";
+        }
+    }
+} catch {}
+
+// expect 0
+// expect 1
+// expect 2
+// expect 3
+// expect 4
+// expect 0
+// expect 1
+// expect 2
+// expect 3
+// expect 4
+// expect 0
+// expect 1
+// expect 2
+// expect 3
+// expect 4
+// expect 0
+// expect 1
+// expect 2
+// expect 3
+// expect 4
+// expect 0
+// expect 1
+// expect 2
+// expect 3
+// expect 4
+// expect 0
+// expect 1
+// expect 2
+// expect 3
+// expect 4
+// expect 0
+// expect 1
+// expect 2
+// expect 3
+// expect 4
+// expect 0
+// expect 1
+// expect 2
+// expect 3
+// expect 4
+// expect 0
+// expect 1
+// expect 2
+// expect 3
+// expect 4
+// expect 0
+// expect 1
+// expect 2
+// expect 3
+// expect 4
