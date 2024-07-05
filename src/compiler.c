@@ -573,10 +573,33 @@ static void endLoop() {
   current->loopCount--;
 }
 
+static int emitLoopGuard() {
+  emitByte(OP_LOOP_GUARD);
+  /*
+  * - Loop start address offset
+  * When we have and incrementer, the start of the loop is the incrementer and the loop jumps are like this: 
+  * 
+  * 1) incrementer -> comparison -> body -> (incrementer | end)
+  * 
+  * Otherwise, the start of the loop is the comparison and the loop jumps are like this: 
+  * 
+  * 2) comparison -> body -> (comparison | end)
+  * 
+  * The 2° scenario is handled by default, since the OP_LOOP_GUARD instruction is emitted right before the comparison.
+  * For the 1° scenario, we need to patch this offset.  
+  */
+  writeChunk(currentChunk(), 0x00, parser.previous.line);
+  writeChunk(currentChunk(), 0x00, parser.previous.line);
+  // Loop end address offset
+  writeChunk(currentChunk(), 0xff, parser.previous.line);
+  writeChunk(currentChunk(), 0xff, parser.previous.line);
+  return currentChunk()->count - 4;
+}
+
 static void whileStatement() {
   beginLoop();
   
-  int loopGuard = emitJump(OP_LOOP_GUARD);
+  int loopGuard = emitLoopGuard() + 2;
   int loopStart = currentChunk()->count;
 
   consume(TOKEN_LEFT_PAREN, "Expect '(' before if expresion");
@@ -611,7 +634,7 @@ static void forStatement() {
     expressionStatement();
   }
 
-  int loopGuard = emitJump(OP_LOOP_GUARD);
+  int loopGuard = emitLoopGuard();
   int loopStart = currentChunk()->count;
 
   int exitJmp = -1;
@@ -626,6 +649,7 @@ static void forStatement() {
   if (!match(TOKEN_RIGHT_PAREN)) {
     int bodyJmp = emitJump(OP_JUMP);
 
+    loopGuard = patchJump(loopGuard, 4);
     int incrementStart = currentChunk()->count;
     expression();
     emitByte(OP_POP);
@@ -634,6 +658,8 @@ static void forStatement() {
     emitLoop(loopStart);
     loopStart = incrementStart;
     patchJump(bodyJmp, 2);
+  } else {
+    loopGuard += 2;
   }
 
   statement();
@@ -825,13 +851,25 @@ static void breakStatement() {
   consume(TOKEN_SEMICOLON, "Expect ';' after break statement.");
 }
 
+static void continueStatement() {
+  if (current->loopCount == 0) {
+    error("Cannot continue outside a loop.");
+    return;
+  }
+
+  emitByte(OP_LOOP_CONTINUE);
+  consume(TOKEN_SEMICOLON, "Expect ';' after continue statement.");
+} 
+
 static void statement() {
-  if (match(TOKEN_BREAK)) {
-    return breakStatement();
+  if (match(TOKEN_CONTINUE)) {
+    continueStatement();
+  } else if (match(TOKEN_BREAK)) {
+    breakStatement();
   } else if (match(TOKEN_THROW)) {
-    return throwStatement();
+    throwStatement();
   } else if (match(TOKEN_TRY)) {
-    return tryStatement();  
+    tryStatement();  
   } else if (match(TOKEN_IMPORT)) {
     importStatement();
   } else if (match(TOKEN_EXPORT)) {

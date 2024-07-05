@@ -549,6 +549,7 @@ static InterpretResult run() {
           return INTERPRET_RUNTIME_ERROR;
         }
 
+        uint16_t startOffset = READ_SHORT();
         uint16_t outOffset = READ_SHORT();
 
         // push loop
@@ -556,7 +557,7 @@ static InterpretResult run() {
 
         loop->frame = frame;
         loop->frameStackTop = vm.stackTop;
-        loop->startIp = frame->ip;
+        loop->startIp = frame->ip + startOffset;
         loop->outIp = frame->ip + outOffset; 
         break;
       }
@@ -574,9 +575,28 @@ static InterpretResult run() {
         }
 
         frame->ip = loop->outIp;
-        // Since we are jumping to the OP_LOOP_GUARD_END and right after that we have a OP_POP,
-        // we need to increment one on the stackTop.
+        // Since we are jumping to the OP_LOOP_GUARD_END and right after that we have a OP_POP
+        // (that is intended to pop the loop comparison expression) we need to increment one on the stackTop.
         vm.stackTop = loop->frameStackTop + 1;
+
+        closeUpValues(loop->frameStackTop - 1);
+        break;
+      }
+      case OP_LOOP_CONTINUE: {
+        Loop* loop = &vm.loopStack[vm.loopStackCount - 1];
+
+        // Pop any existing try-catch block inside loop block 
+        while (
+          vm.tryCatchStackCount > 0 &&
+          vm.tryCatchStack[vm.tryCatchStackCount - 1].frame == frame &&
+          vm.tryCatchStack[vm.tryCatchStackCount - 1].outIp > loop->startIp &&
+          vm.tryCatchStack[vm.tryCatchStackCount - 1].outIp < loop->outIp 
+        ) {
+          vm.tryCatchStackCount--;
+        }
+
+        frame->ip = loop->startIp;
+        vm.stackTop = loop->frameStackTop;
 
         closeUpValues(loop->frameStackTop - 1);
         break;
