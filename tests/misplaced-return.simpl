@@ -1,3 +1,5 @@
+// Return outside function
+
 return;
 
-// error DATA_ERR [line 1] Error at 'return': Cannot return outside a function.
+// error DATA_ERR [line 3] Error at 'return': Cannot return outside a function.

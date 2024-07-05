@@ -8,12 +8,12 @@ import {
 import { LINE_TERMINATOR_REGEX } from "./utils";
 import colors from "colors";
 
-export interface TestRunnerResult {
+export interface TestSuiteRunnerResult {
   successes: number;
   fails: number;
 }
 
-class TestRunner {
+class TestRunnerSuite {
   private successes: number = 0;
   private fails: number = 0;
   private errorMessages: string[] = [];
@@ -51,14 +51,14 @@ class TestRunner {
     return assertion.data === stdOutline;
   }
 
-  async execute(): Promise<TestRunnerResult> {
+  async execute(): Promise<TestSuiteRunnerResult> {
     const paths = `"${this.vmPath}" "${this.testSuite.testFile.path}"`;
     const testTitle = this.testSuite.title;
     const fileId = this.testSuite.testFile.id;
     const expects = this.testSuite.expectation.expects;
     const expectedError = this.testSuite.expectation.error;
 
-    return new Promise<TestRunnerResult>((resolve, reject) => {
+    return new Promise<TestSuiteRunnerResult>((resolve, reject) => {
       exec(paths, (error, stdout, stderr) => {
         if (error && this.parseErrorCode(error.code ?? -1) == null) {
           console.error(`Unexpected Execution error: ${error.message}`);
@@ -162,4 +162,4 @@ class TestRunner {
   }
 }
 
-export default TestRunner;
+export default TestRunnerSuite;

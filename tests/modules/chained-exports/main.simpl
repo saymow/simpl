@@ -1,3 +1,5 @@
+// Import through a dependency chain
+
 import module3 from "/level1/level2/level3/module3.simpl";
 
 module3.module2.module1.showSecret();

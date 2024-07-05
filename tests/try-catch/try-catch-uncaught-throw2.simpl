@@ -1,5 +1,4 @@
-
-// Unhandled exception 2
+// Uncaught exception 2
 
 try {
     throw "something";
@@ -7,4 +6,4 @@ try {
     throw err; 
 }
 
-// error SOFTWARE_ERR
+// error SOFTWARE_ERR Uncaught Exception.
