@@ -38,3 +38,51 @@ print num3;                                         // expect 30
 print str1;                                         // expect hello
 print str2;                                         // expect world
 print str3;                                         // expect hello-world
+
+// += operator
+num1 += 5;
+num2 += 10;
+num3 += 15;
+
+str1 += " ";
+str2 += "!";
+str3 += "123";
+
+// Test += operator results
+print num1;                                         // expect 15
+print num2;                                         // expect 30
+print num3;                                         // expect 45
+
+print str1;                                         // expect hello 
+print str2;                                         // expect world!
+print str3;                                         // expect hello-world123
+
+// -= operator
+num1 -= 5;
+num2 -= 10;
+num3 -= 15;
+
+// Test -= operator results
+print num1;                                         // expect 10
+print num2;                                         // expect 20
+print num3;                                         // expect 30
+
+// *= operator
+num1 *= 2;
+num2 *= 3;
+num3 *= 4;
+
+// Test *= operator results
+print num1;                                         // expect 20
+print num2;                                         // expect 60
+print num3;                                         // expect 120
+
+// /= operator
+num1 /= 2;
+num2 /= 3;
+num3 /= 4;
+
+// Test /= operator results
+print num1;                                         // expect 10
+print num2;                                         // expect 20
+print num3;                                         // expect 30
