@@ -1099,6 +1099,26 @@ static void namedVariable(Token token, bool canAssign) {
   if (canAssign && match(TOKEN_EQUAL)) {
     expression();
     emitBytes(setOp, (uint8_t)arg);
+  } else if (canAssign && match(TOKEN_PLUS_EQUAL)) {
+    emitBytes(getOp, (uint8_t)arg);
+    expression();
+    emitByte(OP_ADD);
+    emitBytes(setOp, (uint8_t)arg);
+  } else if (canAssign && match(TOKEN_MINUS_EQUAL)) {
+    emitBytes(getOp, (uint8_t)arg);
+    expression();
+    emitByte(OP_SUBTRACT);
+    emitBytes(setOp, (uint8_t)arg);
+  } else if (canAssign && match(TOKEN_STAR_EQUAL)) {
+    emitBytes(getOp, (uint8_t)arg);
+    expression();
+    emitByte(OP_MULTIPLY);
+    emitBytes(setOp, (uint8_t)arg);
+  } else if (canAssign && match(TOKEN_SLASH_EQUAL)) {
+    emitBytes(getOp, (uint8_t)arg);
+    expression();
+    emitByte(OP_DIVIDE);
+    emitBytes(setOp, (uint8_t)arg);
   } else {
     emitBytes(getOp, (uint8_t)arg);
   }
