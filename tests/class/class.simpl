@@ -29,3 +29,29 @@ print myObject.name;                                                          //
 print myObject.version;                                                       // expect 1
 print myObject.funExpr();                                                     // expect funExpr is cool
 print myObject.defNotAProperty;                                               // expect something
+
+// += operator
+myObject.name += "s";
+myObject.version += 9;
+
+// Test += operator results
+print myObject.name;                                                          // expect Simplers
+print myObject.version;                                                       // expect 10
+
+// -= operator
+myObject.version -= 5;
+
+// Test -= operator results
+print myObject.version;                                                       // expect 5
+
+// *= operator
+myObject.version *= 2;
+
+// Test *= operator results
+print myObject.version;                                                       // expect 10
+
+// /= operator
+myObject.version /= 2;
+
+// Test *= operator results
+print myObject.version;                                                       // expect 5

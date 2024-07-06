@@ -1,13 +1,13 @@
-// Class static-ish methods
-
-class Math {
-    exp() {
-        for (var idx = 0; idx < 3; idx = idx + 1) {
-            print idx;
-        }
+class Counter {
+    Counter() {
+        this.count = 0;
     }
 }
 
-var math = Math(); 
+var counter = Counter();
 
-print math.exp();                                                  // expect 8
+counter.count += 10;
+
+counter.count = counter.count + 10;
+
+print counter.count;
