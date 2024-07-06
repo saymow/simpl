@@ -58,13 +58,21 @@ class TestRunnerSuite {
     const expects = this.testSuite.expectation.expects;
     const expectedError = this.testSuite.expectation.error;
 
-    return new Promise<TestSuiteRunnerResult>((resolve, reject) => {
+    return new Promise<TestSuiteRunnerResult>((resolve) => {
       exec(paths, (error, stdout, stderr) => {
         if (error && this.parseErrorCode(error.code ?? -1) == null) {
+          console.log(`${colors.bgRed.bold("FAIL")} ${colors.bold(fileId)}`);
+
+          if (testTitle) {
+            console.log(colors.red.bold(`\t● › ${testTitle}\n`));
+          }
+
           console.error(`Unexpected Execution error: ${error.message}`);
           console.error(`Error code: ${error.code}`);
           console.error(`Signal received: ${error.signal}`);
-          reject(error);
+
+          resolve({ fails: expects.length + (expectedError ? 1 : 0), successes: 0 });
+          return;
         }
 
         const stdOutLines = stdout.split(LINE_TERMINATOR_REGEX);
@@ -82,7 +90,6 @@ class TestRunnerSuite {
             this.fails++;
           }
         }
-
 
         if (error) {
           const vmError = this.parseErrorCode(error.code ?? -1);
