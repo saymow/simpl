@@ -948,6 +948,7 @@ static void unary(bool canAssign) {
       break;
     case TOKEN_BANG:
       emitByte(OP_NOT);
+      break;
     default:
       break;
   }
@@ -1181,8 +1182,32 @@ static void propertyGetOrSet(bool canAssign) {
   consume(TOKEN_IDENTIFIER, "Expect property name.");
   uint8_t name = identifierConstant(&parser.previous);
 
-  if (match(TOKEN_EQUAL) && canAssign) {
+  if (canAssign && match(TOKEN_EQUAL)) {
     expression();
+    emitBytes(OP_SET_PROPERTY, name);
+  } else if (canAssign && match(TOKEN_PLUS_EQUAL)) {
+    emitBytes(OP_GET_PROPERTY, name);
+    emitByte(true);
+    expression();
+    emitByte(OP_ADD);
+    emitBytes(OP_SET_PROPERTY, name);
+  } else if (canAssign && match(TOKEN_MINUS_EQUAL)) {
+    emitBytes(OP_GET_PROPERTY, name);
+    emitByte(true);
+    expression();
+    emitByte(OP_SUBTRACT);
+    emitBytes(OP_SET_PROPERTY, name);
+  } else if (canAssign && match(TOKEN_STAR_EQUAL)) {
+    emitBytes(OP_GET_PROPERTY, name);
+    emitByte(true);
+    expression();
+    emitByte(OP_MULTIPLY);
+    emitBytes(OP_SET_PROPERTY, name);
+  } else if (canAssign && match(TOKEN_SLASH_EQUAL)) {
+    emitBytes(OP_GET_PROPERTY, name);
+    emitByte(true);
+    expression();
+    emitByte(OP_DIVIDE);
     emitBytes(OP_SET_PROPERTY, name);
   } else if (match(TOKEN_LEFT_PAREN)) {
     uint8_t args = argumentsList();
@@ -1190,6 +1215,7 @@ static void propertyGetOrSet(bool canAssign) {
     emitByte(args);
   } else {
     emitBytes(OP_GET_PROPERTY, name);
+    emitByte(false);
   }
 }
 
@@ -1226,11 +1252,33 @@ static void arrayGetOrSet(bool canAssign) {
   consume(TOKEN_RIGHT_BRACKET, "Expect ']' at end of array access.");
 
   // Should array item invocation be optimized? 
-  if (match(TOKEN_EQUAL) && canAssign) {
+  if (canAssign && match(TOKEN_EQUAL)) {
     expression();
     emitByte(OP_SET_ITEM);
+  } else if (canAssign && match(TOKEN_PLUS_EQUAL)) {
+    emitBytes(OP_GET_ITEM, (uint8_t) true);
+    expression();
+    emitByte(OP_ADD);
+    emitByte(OP_SET_ITEM);
+  } else if (canAssign && match(TOKEN_MINUS_EQUAL)) {
+    emitBytes(OP_GET_ITEM, (uint8_t) true);
+    expression();
+    emitByte(OP_SUBTRACT);
+    emitByte(OP_SET_ITEM);
+  } else if (canAssign && match(TOKEN_STAR_EQUAL)) {
+    emitBytes(OP_GET_ITEM, (uint8_t) true);
+    expression();
+    emitByte(OP_MULTIPLY);
+    emitByte(OP_SET_ITEM);
+  } else if (canAssign && match(TOKEN_SLASH_EQUAL)) {
+    emitBytes(OP_GET_ITEM, (uint8_t) true);
+    expression();
+    emitByte(OP_DIVIDE);
+    emitByte(OP_SET_ITEM);
   } else {
-    emitByte(OP_GET_ITEM);
+    // When assign operators other than '=' are used, we need to keep the base + identifier in the stack.
+    // The bool is intended to handled that.
+    emitBytes(OP_GET_ITEM, (uint8_t) false);
   }
 }
 
@@ -1244,7 +1292,9 @@ ParseRule rules[] = {
     [TOKEN_COMMA] = {NULL, NULL, PREC_NONE},
     [TOKEN_DOT] = {NULL, propertyGetOrSet, PREC_CALL},
     [TOKEN_MINUS] = {unary, binary, PREC_TERM},
+    [TOKEN_MINUS_MINUS] = {unary, NULL, PREC_UNARY},
     [TOKEN_PLUS] = {NULL, binary, PREC_TERM},
+    [TOKEN_PLUS_PLUS] = {unary, NULL, PREC_UNARY},
     [TOKEN_SEMICOLON] = {NULL, NULL, PREC_NONE},
     [TOKEN_SLASH] = {NULL, binary, PREC_FACTOR},
     [TOKEN_STAR] = {NULL, binary, PREC_FACTOR},

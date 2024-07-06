@@ -440,9 +440,15 @@ static InterpretResult run() {
         break;
       }
       case OP_GET_PROPERTY: {
-        Value base = pop();
+        Value base;
         ObjString* name = READ_STRING();
         Value value;
+
+        if (READ_BYTE() == true) {
+          base = peek(0);
+        } else {
+          base = pop();
+        }
 
         if (!(IS_INSTANCE(base) || IS_ARRAY(base))) {
           runtimeError("Cannot access property '%s'.", name->chars);
@@ -492,8 +498,16 @@ static InterpretResult run() {
         break;
       }
       case OP_GET_ITEM: {
-        Value identifier = pop();
-        Value base = pop();
+        Value identifier;
+        Value base;
+
+        if (READ_BYTE() == true) {
+          identifier = peek(0);
+          base = peek(1);
+        } else {
+          identifier = pop();
+          base = pop();
+        }
 
         Value value;
         if (IS_ARRAY(base)) {

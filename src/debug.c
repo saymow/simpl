@@ -17,6 +17,12 @@ static int simpleInstruction(const char* name, int offset) {
   return offset + 1;
 }
 
+static int flaggedSimpleInstruction(const char* name, Chunk* chunk, int offset) {
+  uint8_t flag = chunk->code[offset + 1];
+  printf("%s | %d\n", name, flag);
+  return offset + 2;
+}
+
 static int byteInstruction(const char* name, Chunk* chunk, int offset) {
   uint8_t slot = chunk->code[offset + 1];
   printf("%-16s %4d\n", name, slot);
@@ -58,6 +64,15 @@ static int constantInstruction(const char* name, Chunk* chunk, int offset) {
   return offset + 2;
 }
 
+static int flaggedConstantInstruction(const char* name, Chunk* chunk, int offset) {
+  uint8_t constantIdx = chunk->code[offset + 1];
+  uint8_t flag = chunk->code[offset + 2];
+  printf("%-16s %4d '", name, constantIdx);
+  printfValue(chunk->constants.values[constantIdx]);
+  printf(" | %d'\n", flag);
+  return offset + 3;
+}
+
 int disassembleInstruction(Chunk* chunk, int offset) {
   uint8_t instruction = chunk->code[offset];
 
@@ -75,7 +90,7 @@ int disassembleInstruction(Chunk* chunk, int offset) {
     case OP_CLASS:
       return constantInstruction("OP_CLASS", chunk, offset);
     case OP_GET_PROPERTY:
-      return constantInstruction("OP_GET_PROPERTY", chunk, offset);
+      return flaggedConstantInstruction("OP_GET_PROPERTY", chunk, offset);
     case OP_SET_PROPERTY:
       return constantInstruction("OP_SET_PROPERTY", chunk, offset);
     case OP_GET_GLOBAL:
@@ -86,6 +101,8 @@ int disassembleInstruction(Chunk* chunk, int offset) {
       return constantInstruction("OP_SET_GLOBAL", chunk, offset);
     case OP_EXPORT:
       return constantInstruction("OP_EXPORT", chunk, offset);
+    case OP_METHOD:
+      return constantInstruction("OP_METHOD", chunk, offset);
     case OP_GET_LOCAL:
       return byteInstruction("OP_GET_LOCAL", chunk, offset);
     case OP_SET_LOCAL:
@@ -117,7 +134,7 @@ int disassembleInstruction(Chunk* chunk, int offset) {
       return offset;
     }
     case OP_GET_ITEM:
-      return simpleInstruction("OP_GET_ITEM", offset);
+      return flaggedSimpleInstruction("OP_GET_ITEM", chunk, offset);
     case OP_SET_ITEM:
       return simpleInstruction("OP_SET_ITEM", offset);
     case OP_POP:
