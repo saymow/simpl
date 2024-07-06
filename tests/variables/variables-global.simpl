@@ -1,4 +1,4 @@
-// Variable declaration, string concatenation and assignments
+// Global variables declaration, string concatenation and assignments
 
 // Numerical variables
 var num1 = 1;

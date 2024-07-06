@@ -1,0 +1,92 @@
+// Local variables declaration, string concatenation and assignments
+
+fun scoped() {
+    var num1 = 1;
+    print num1;                                         // expect 1
+
+    {
+        var num2 = 2;
+     
+        print num1;                                         // expect 1
+        print num2;                                         // expect 2
+     
+        {
+            var num3 = num1 + num2;
+            print num1;                                         // expect 1
+            print num2;                                         // expect 2
+            print num3;                                         // expect 3
+
+            {
+                print num1;                                         // expect 1
+                print num2;                                         // expect 2
+                print num3;                                         // expect 3
+            
+                    {
+                        print num1;                                         // expect 1
+                        print num2;                                         // expect 2
+                        print num3;                                         // expect 3
+                    
+                        num1 = 10;
+                        num2 = 20;
+                        num3 = num1 + num2;
+
+                        {
+                            print num1;                                         // expect 10
+                            print num2;                                         // expect 20
+                            print num3;                                         // expect 30
+                        }
+                    }
+            }
+
+            print num3;                                         // expect 30
+        }
+
+        print num2;                                         // expect 20
+    }
+    print num1;                                         // expect 10
+
+    var str1 = "test";
+    print str1;                                         // expect test
+
+    {
+        var str2 = "something";
+      
+        print str1;                                         // expect test
+        print str2;                                         // expect something
+
+        {
+            var str3 = str1 + str2; 
+          
+            print str1;                                         // expect test
+            print str2;                                         // expect something
+            print str3;                                         // expect testsomething
+            
+            {
+                print str1;                                         // expect test
+                print str2;                                         // expect something
+                print str3;                                         // expect testsomething
+    
+                str1 = "hello";
+                str2 = "world";
+                str3 = str1 + "-" + str2;
+    
+                print str1;                                         // expect hello
+                print str2;                                         // expect world
+                print str3;                                         // expect hello-world
+
+                {
+                    print str1;                                         // expect hello
+                    print str2;                                         // expect world
+                    print str3;                                         // expect hello-world
+                }
+            }
+
+            print str3;                                         // expect hello-world
+        }
+
+        print str2;                                         // expect world
+    }
+    print str1;                                         // expect hello
+}
+
+scoped();
