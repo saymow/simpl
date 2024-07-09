@@ -1,0 +1,47 @@
+// Class inheritance of methods and methods overriding 
+
+class Animal {
+    Animal(name, group, order) {
+        this.name = name;
+        this.group = group;
+        this.order = order;
+    }
+
+    getName() {
+        return this.name;
+    }
+
+    getGroup() {
+        return this.group;
+    }
+
+    getOrder() {
+        return this.order;
+    }
+}
+
+class Mammal extends Animal {
+    Mammal(name, order) {
+        super.Animal(name, "Mammal", order);
+    }
+
+    getOrder() {
+        return "the order is " + super.getOrder();
+    }
+}
+
+class Human extends Mammal {
+    Human(name) {
+        super.Mammal(name, "Carnivora");
+    }
+
+    getName() {
+        return "my name is " + super.getName();
+    }
+}
+
+var human = Human("John");
+
+print human.getName();                                                                              // expect my name is John
+print human.getGroup();                                                                             // expect Mammal
+print human.getOrder();                                                                             // expect the order is Carnivora
