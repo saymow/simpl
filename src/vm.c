@@ -799,7 +799,7 @@ static InterpretResult run() {
         break;
       }
       case OP_INHERIT: {
-        ObjClass* class = AS_CLASS(pop());
+        ObjClass* klass = AS_CLASS(pop());
         Value superclass = peek(0);
 
         if (!IS_CLASS(superclass)) {
@@ -807,7 +807,21 @@ static InterpretResult run() {
           return INTERPRET_RUNTIME_ERROR;
         }
 
-        tableAddAll(&AS_CLASS(superclass)->methods, &class->methods);
+        tableAddAll(&AS_CLASS(superclass)->methods, &klass->methods);
+        break;
+      }
+      case OP_SUPER: {
+        ObjClass* klass = AS_CLASS(pop()); 
+        Value base = pop();
+        ObjString* name = READ_STRING();
+        Value value;
+
+        if (!classMethod(base, klass, name, &value)) {
+          runtimeError("Cannot access method '%s'.", name->chars);
+          return INTERPRET_RUNTIME_ERROR;
+        }
+
+        push(value);
         break;
       }
       case OP_METHOD: {

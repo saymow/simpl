@@ -1318,6 +1318,22 @@ static void arrayGetOrSet(bool canAssign) {
   }
 }
 
+static void _super(bool canAssign) {
+  if (currentClass == NULL) {
+    error("Expect super inside a class.");
+  } else if (!currentClass->hasSuperclass) {
+    error("Expect class to have a superclass.");
+  }
+
+  consume(TOKEN_DOT, "Expect '.' after super.");
+  consume(TOKEN_IDENTIFIER, "Expect superclass method name after '.'.");
+  uint8_t name = identifierConstant(&parser.previous);  
+  
+  namedVariable(syntheticToken(TOKEN_IDENTIFIER, "this"), false);
+  namedVariable(syntheticToken(TOKEN_IDENTIFIER, "super"), false);
+  emitBytes(OP_SUPER, name);
+}
+
 ParseRule rules[] = {
     [TOKEN_LEFT_PAREN] = {grouping, call, PREC_CALL},
     [TOKEN_RIGHT_PAREN] = {NULL, NULL, PREC_NONE},
@@ -1356,7 +1372,7 @@ ParseRule rules[] = {
     [TOKEN_OR] = {NULL, _or, PREC_OR},
     [TOKEN_PRINT] = {NULL, NULL, PREC_NONE},
     [TOKEN_RETURN] = {NULL, NULL, PREC_NONE},
-    [TOKEN_SUPER] = {NULL, NULL, PREC_NONE},
+    [TOKEN_SUPER] = {_super, NULL, PREC_NONE},
     [TOKEN_THIS] = {_this, NULL, PREC_NONE},
     [TOKEN_TRUE] = {literal, NULL, PREC_NONE},
     [TOKEN_VAR] = {NULL, NULL, PREC_NONE},
