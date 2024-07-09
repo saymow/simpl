@@ -1,0 +1,29 @@
+// Class inheritance of methods and methods overriding 
+
+class Animal {
+    isAnimal() {
+        return true;
+    }
+}
+
+class Mammal extends Animal {
+    getGroup() {
+        return "mammals";
+    }
+
+    getOrder() {
+        return "unknown";
+    }
+}
+
+class Human extends Mammal {
+    getOrder() {
+        return "carnivora";
+    }
+}
+
+var human = Human();
+
+print human.isAnimal();                                                                             // expect true
+print human.getGroup();                                                                             // expect mammals
+print human.getOrder();                                                                             // expect carnivora
