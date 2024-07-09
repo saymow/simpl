@@ -1329,6 +1329,7 @@ static void _super(bool canAssign) {
   consume(TOKEN_IDENTIFIER, "Expect superclass method name after '.'.");
   uint8_t name = identifierConstant(&parser.previous);  
   
+  // Should this be optmized for calls?
   namedVariable(syntheticToken(TOKEN_IDENTIFIER, "this"), false);
   namedVariable(syntheticToken(TOKEN_IDENTIFIER, "super"), false);
   emitBytes(OP_SUPER, name);

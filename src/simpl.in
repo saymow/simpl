@@ -1,13 +1,13 @@
-class Counter {
-    Counter() {
-        this.count = 0;
+class Superclass {
+    method() {
+
     }
 }
 
-var counter = Counter();
+class Subclass extends Superclass {
+    method() {
+        super.method();
+    }
+}
 
-counter.count += 10;
-
-counter.count = counter.count + 10;
-
-print counter.count;
+Superclass().method();
