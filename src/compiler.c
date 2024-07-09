@@ -34,6 +34,7 @@ typedef enum {
 typedef struct ClassCompiler {
   struct ClassCompiler* enclosing;
   Token name;
+  bool hasSuperclass;
 } ClassCompiler;
 
 typedef void (*ParseFn)(bool canAssign);
@@ -90,6 +91,7 @@ static ParseRule* getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
 static void namedVariable(Token token, bool canAssign);
 static void string(bool canAssign);
+static void variable(bool canAssign);
 
 Modules modules;
 Parser parser;
@@ -444,6 +446,16 @@ static void method(Token* className) {
   emitBytes(OP_METHOD, nameConstant);
 }
 
+static Token syntheticToken(TokenType type, const char* str) {
+  Token token;
+  token.type = type;
+  token.start = str;
+  token.length = strlen(str);
+  token.line = parser.previous.line;
+
+  return token;
+}
+
 static void classDeclaration() {
   consume(TOKEN_IDENTIFIER, "Expect class name.");
   Token name = parser.previous;
@@ -457,6 +469,26 @@ static void classDeclaration() {
   classCompiler.enclosing = currentClass;
   classCompiler.name = name;
   currentClass = &classCompiler;
+  currentClass->hasSuperclass = false;
+
+  if (match(TOKEN_EXTENDS)) {
+    consume(TOKEN_IDENTIFIER, "Expect superclass name.");
+
+    if (identifiersEqual(&name, &parser.previous)) {
+      error("Class can't extend itself.");
+    }
+
+    beginScope();
+
+    addLocal(syntheticToken(TOKEN_IDENTIFIER, "super"));
+    markLocalInitialized();
+
+    variable(false);
+    namedVariable(name, false);
+    emitByte(OP_INHERIT);
+
+    currentClass->hasSuperclass = true; 
+  }
 
   namedVariable(name, false);
   consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
@@ -465,6 +497,10 @@ static void classDeclaration() {
   }
   consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
   emitByte(OP_POP);
+
+  if (currentClass->hasSuperclass) {
+    endScope();
+  }
 
   currentClass = currentClass->enclosing;
 }

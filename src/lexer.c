@@ -134,7 +134,15 @@ static TokenType identifierType() {
           case 'l':
             return checkKeyword(2, 2, "se", TOKEN_ELSE);
           case 'x':
-            return checkKeyword(2, 4, "port", TOKEN_EXPORT);
+            if (lexer->current - lexer->start > 2) {
+              switch (lexer->start[2]) {
+                case 'p':
+                  return checkKeyword(3, 3, "ort", TOKEN_EXPORT);
+                case 't':
+                  return checkKeyword(3, 4, "ends", TOKEN_EXTENDS);
+              }
+            }
+          break;
         }
         break;
       }

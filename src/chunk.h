@@ -44,6 +44,7 @@ typedef enum {
   OP_CLOSURE,
   OP_CLOSE_UPVALUE,
   OP_CLASS,
+  OP_INHERIT,
   OP_METHOD,
   OP_EXPORT,
   OP_IMPORT,
