@@ -1,13 +1,7 @@
-class Superclass {
-    method() {
+var start = clock();
 
-    }
+for (var idx = 0; idx < 10000000; idx += 1) {
+
 }
 
-class Subclass extends Superclass {
-    method() {
-        super.method();
-    }
-}
-
-Superclass().method();
+print clock() - start;
