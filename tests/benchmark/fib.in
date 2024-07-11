@@ -1,0 +1,22 @@
+// Fibonacci implementation to test calls and arithmetic expressions.
+
+var start = clock();
+
+fun fib(n) {
+    if (n <= 1) return n;
+    return fib(n - 2) + fib(n - 1);
+}
+
+fib(30);
+
+print clock() - start;
+
+
+// -------------------------- BENCHMARK ---------------------------
+// title                                              version 1.0.0
+// rounds                                                         7
+// min                                                       1.213s
+// max                                                       1.414s
+// median                                                    1.375s
+// avg                                                       1.343s
+// stdDeviation                                              0.077s
