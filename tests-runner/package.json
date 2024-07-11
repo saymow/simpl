@@ -5,9 +5,9 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsnd src/index.ts --vm=\"C:/Users/gustavo/Desktop/projects/simplc/build/simpl.exe\" --tests=\"C:/Users/gustavo/Desktop/projects/simplc/tests/language\"",
-    "dev:benchmark": "tsnd src/index.ts --vm=\"C:/Users/gustavo/Desktop/projects/simplc/build/simpl.exe\" --tests=\"C:/Users/gustavo/Desktop/projects/simplc/tests/language\" --benchmark-mode",
+    "dev:benchmark": "tsnd src/index.ts --vm=\"C:/Users/gustavo/Desktop/projects/simplc/build/simpl.exe\" --tests=\"C:/Users/gustavo/Desktop/projects/simplc/tests/benchmark\" --benchmark-mode",
     "start": "node dist/index.js --vm=\"C:/Users/gustavo/Desktop/projects/simplc/build/simpl.exe\" --tests=\"C:/Users/gustavo/Desktop/projects/simplc/tests/language\"",
-    "start:benchmark": "node dist/index.js --vm=\"C:/Users/gustavo/Desktop/projects/simplc/build/simpl.exe\" --tests=\"C:/Users/gustavo/Desktop/projects/simplc/tests/language\" --benchmark-mode"
+    "start:benchmark": "node dist/index.js --vm=\"C:/Users/gustavo/Desktop/projects/simplc/build/simpl.exe\" --tests=\"C:/Users/gustavo/Desktop/projects/simplc/tests/benchmark\" --benchmark-mode"
   },
   "keywords": [],
   "author": "",

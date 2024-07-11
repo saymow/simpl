@@ -1,10 +1,10 @@
-import { TestSuite } from "./expectations-reader";
+import { ExpectationTestSuite } from "./expectations-test-reader";
 import { Settings, TestRunnerController } from "./interfaces";
 import TestRunner from "./test-runner";
 
 class StandardTestRunnerController extends TestRunnerController {
   private is_running = false;
-  private faieldTestSuites: TestSuite[] = [];
+  private failedTestSuites: ExpectationTestSuite[] = [];
 
   constructor(settings: Settings) {
     super(settings);
@@ -15,8 +15,8 @@ class StandardTestRunnerController extends TestRunnerController {
 
     this.is_running = true;
     const testsRunner = new TestRunner(this.vmPath, this.testsDir);
-    this.faieldTestSuites =
-      (await testsRunner.execute()) ?? this.faieldTestSuites;
+    this.failedTestSuites =
+      (await testsRunner.execute()) ?? this.failedTestSuites;
 
     this.displayCommands();
     this.is_running = false;
@@ -24,13 +24,13 @@ class StandardTestRunnerController extends TestRunnerController {
 
   private async runFailed() {
     if (this.is_running) return;
-    if (this.faieldTestSuites.length === 0) return;
+    if (this.failedTestSuites.length === 0) return;
 
     this.is_running = true;
     const testsRunner = new TestRunner(this.vmPath, this.testsDir);
-    this.faieldTestSuites =
-      (await testsRunner.executeTestSuites(this.faieldTestSuites)) ??
-      this.faieldTestSuites;
+    this.failedTestSuites =
+      (await testsRunner.executeTestSuites(this.failedTestSuites)) ??
+      this.failedTestSuites;
 
     this.displayCommands();
     this.is_running = false;

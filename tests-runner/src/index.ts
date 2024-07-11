@@ -1,8 +1,9 @@
 import readline from "readline";
 // @ts-ignore
 import argsParser from "args-parser";
-import { Mode, Settings } from "./interfaces";
+import { Mode, Settings, TestRunnerController } from "./interfaces";
 import StandardTestRunnerController from "./standard-test-runner-controller";
+import BenchmarkTestRunnerController from "./benchmark-test-runner-controller";
 
 readline.emitKeypressEvents(process.stdin);
 
@@ -29,11 +30,18 @@ const parseSettings = (): Settings => {
   };
 };
 
+const makeTestRunnerController = (settings: Settings): TestRunnerController => {
+  if (settings.mode === Mode.Benchmark) {
+    return new BenchmarkTestRunnerController(settings);
+  }
+
+  return new StandardTestRunnerController(settings);
+}
+
 const main = async () => {
   const settings = parseSettings();
-  const standardTestController = new StandardTestRunnerController(settings);
 
-  await standardTestController.execute();
+  await makeTestRunnerController(settings).execute();
 };
 
 main();

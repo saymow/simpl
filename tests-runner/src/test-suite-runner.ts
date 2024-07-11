@@ -2,9 +2,9 @@ import { exec } from "child_process";
 import {
   Assertion,
   ExpectAssertion,
-  TestSuite,
+  ExpectationTestSuite,
   VmErrors,
-} from "./expectations-reader";
+} from "./expectations-test-reader";
 import { LINE_TERMINATOR_REGEX } from "./utils";
 import colors from "colors";
 
@@ -20,7 +20,7 @@ class TestRunnerSuite {
 
   constructor(
     private readonly vmPath: string,
-    private readonly testSuite: TestSuite
+    private readonly testSuite: ExpectationTestSuite
   ) {}
 
   private error(message: string) {
@@ -71,7 +71,10 @@ class TestRunnerSuite {
           console.error(`Error code: ${error.code}`);
           console.error(`Signal received: ${error.signal}`);
 
-          resolve({ fails: expects.length + (expectedError ? 1 : 0), successes: 0 });
+          resolve({
+            fails: expects.length + (expectedError ? 1 : 0),
+            successes: 0,
+          });
           return;
         }
 
@@ -137,12 +140,12 @@ class TestRunnerSuite {
             console.log(colors.red.bold(`\t● › ${testTitle}\n`));
           }
 
-          if (stderr) {
-            const stderrLines = stderr.split(LINE_TERMINATOR_REGEX);
+          for (const stderrLine of stdErrLines) {
+            console.log(`\t${stderrLine}`);
+          }
 
-            for (const stderrLine of stderrLines) {
-              console.log(`\t${stderrLine}`);
-            }
+          if (stdErrLines.length) {
+            console.log("\t");
           }
 
           for (const errorMessage of this.errorMessages) {

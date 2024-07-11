@@ -1,6 +1,6 @@
 import colors from "colors";
 import FilesReader from "./files-reader";
-import TestSuiteReader, { TestSuite } from "./expectations-reader";
+import ExpectationTestReader, { ExpectationTestSuite } from "./expectations-test-reader";
 import TestSuiteRunner from "./test-suite-runner";
 
 interface FinalResult {
@@ -52,8 +52,8 @@ class TestRunner {
     console.timeEnd(colors.white.bold("Time".padEnd(14, " ")));
   }
 
-  async run(testSuites: TestSuite[]): Promise<TestSuite[]> {
-    const failedTests: TestSuite[] = [];
+  async run(testSuites: ExpectationTestSuite[]): Promise<ExpectationTestSuite[]> {
+    const failedTests: ExpectationTestSuite[] = [];
     const results: FinalResult = {
       suites: { successes: 0, fails: 0 },
       assertions: { successes: 0, fails: 0 },
@@ -80,7 +80,7 @@ class TestRunner {
     return failedTests;
   }
 
-  async executeTestSuites(testSuites: TestSuite[]) {
+  async executeTestSuites(testSuites: ExpectationTestSuite[]) {
     try {
       this.runStopwatch();
       return this.run(testSuites);
@@ -94,10 +94,10 @@ class TestRunner {
       this.runStopwatch();
       const filesReader = new FilesReader(this.testsDir);
       const testFiles = await filesReader.execute();
-      const testSuites: TestSuite[] = [];
+      const testSuites: ExpectationTestSuite[] = [];
 
       for (const testFile of testFiles) {
-        const testSuitesReader = new TestSuiteReader(testFile);
+        const testSuitesReader = new ExpectationTestReader(testFile);
         const testSuite = testSuitesReader.execute();
 
         // File is flagged to be skiped

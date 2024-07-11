@@ -24,6 +24,10 @@ export const crawlFilePaths = async (dir: string): Promise<string[]> => {
   return result;
 };
 
+export const sleep = async (time: number) => {
+  return new Promise((resolve) => setTimeout(resolve, time));
+};
+
 const readdir = promisify(fs.readdir);
 
 const readstat = promisify(fs.stat);
