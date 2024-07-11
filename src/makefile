@@ -3,6 +3,9 @@ all: compile
 compile:
 	@gcc -o main.run *.c */*.c  -Wall -I . -lshlwapi
 
+compile-profile:
+	@gcc -o main.run *.c  */*.c -Wall -I . -lshlwapi -pg -no-pie
+
 compile-debug:
 	@gcc -o main.run *.c  */*.c -DDEBUG -Wall -I . -lshlwapi
 
@@ -20,6 +23,9 @@ run-repl:
 
 exec:
 	@make compile --no-print-directory && make run --no-print-directory
+
+exec-profile:
+	@make compile-profile --no-print-directory && ./main.run simpl.in && gprof main.run gmon.out > cpu-profile.out && rm gmon.out
 
 exec-debug:
 	@make compile-debug --no-print-directory && make run --no-print-directory

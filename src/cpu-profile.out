@@ -1,0 +1,566 @@
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  ns/call  ns/call  name    
+ 31.95      2.08     2.08                             run
+ 31.64      4.14     2.06                             _mcount_private
+ 19.66      5.42     1.28                             __fentry__
+  4.15      5.69     0.27 184549323     1.46     1.46  push
+  3.53      5.92     0.23                             peek
+  2.61      6.09     0.17                             findEntry
+  2.30      6.24     0.15 166094394     0.90     0.90  pop
+  1.38      6.33     0.09                             isFalsey
+  0.92      6.39     0.06                             call
+  0.77      6.44     0.05                             callValue
+  0.46      6.47     0.03 18454936     1.63     1.63  tableGet
+  0.46      6.50     0.03                             captureUpvalue
+  0.08      6.50     0.01                             closeUpValue
+  0.08      6.51     0.01                             closeUpValues
+  0.00      6.51     0.00 230686619     0.00     0.00  freeVM
+  0.00      6.51     0.00 18454960     0.00     0.00  freeTable
+  0.00      6.51     0.00  9227472     0.00     0.00  printfValue
+  0.00      6.51     0.00      755     0.00     0.00  popLexer
+  0.00      6.51     0.00      475     0.00     0.00  freeChunk
+  0.00      6.51     0.00      129     0.00     0.00  reallocate
+  0.00      6.51     0.00      112     0.00     0.00  markCompilerRoots
+  0.00      6.51     0.00       66     0.00     0.00  writeChunk
+  0.00      6.51     0.00       53     0.00     0.00  scanToken
+  0.00      6.51     0.00       28     0.00     0.00  hashString
+  0.00      6.51     0.00       22     0.00     0.00  allocateObj
+  0.00      6.51     0.00       18     0.00     0.36  tableSet
+  0.00      6.51     0.00       17     0.00     0.21  copyString
+  0.00      6.51     0.00       17     0.00     0.00  tableFindString
+  0.00      6.51     0.00       14     0.00     0.00  resolveModule
+  0.00      6.51     0.00       13     0.00     2.37  addConstant
+  0.00      6.51     0.00       13     0.00     0.00  writeValueArray
+  0.00      6.51     0.00       10     0.00     0.36  allocateString
+  0.00      6.51     0.00        8     0.00     0.00  initTable
+  0.00      6.51     0.00        8     0.00     0.00  startGarbageCollector
+  0.00      6.51     0.00        6     0.00     0.00  initValueArray
+  0.00      6.51     0.00        6     0.00     0.00  newNativeFunction
+  0.00      6.51     0.00        4     0.00     0.00  initChunk
+  0.00      6.51     0.00        2     0.00     0.00  arityCheck
+  0.00      6.51     0.00        2     0.00     0.00  clockNative
+  0.00      6.51     0.00        2     0.00     0.00  freeValueArray
+  0.00      6.51     0.00        2     0.00     0.00  newClass
+  0.00      6.51     0.00        2     0.00     0.00  newClosure
+  0.00      6.51     0.00        2     0.00     0.00  newFunction
+  0.00      6.51     0.00        1     0.00     0.00  compile
+  0.00      6.51     0.00        1     0.00     0.00  freeModules
+  0.00      6.51     0.00        1     0.00     0.00  freeObjects
+  0.00      6.51     0.00        1     0.00     0.00  getFileAbsPath
+  0.00      6.51     0.00        1     0.00     0.00  initLexer
+  0.00      6.51     0.00        1     0.00     0.00  initModules
+  0.00      6.51     0.00        1     0.00     0.42  initVM
+  0.00      6.51     0.00        1     0.00     4.73  interpret
+  0.00      6.51     0.00        1     0.00     0.00  readFile
+  0.00      6.51     0.00        1     0.00     0.00  resolveDependency
+
+ %         the percentage of the total running time of the
+time       program used by this function.
+
+cumulative a running sum of the number of seconds accounted
+ seconds   for by this function and those listed above it.
+
+ self      the number of seconds accounted for by this
+seconds    function alone.  This is the major sort for this
+           listing.
+
+calls      the number of times this function was invoked, if
+           this function is profiled, else blank.
+
+ self      the average number of milliseconds spent in this
+ms/call    function per call, if this function is profiled,
+	   else blank.
+
+ total     the average number of milliseconds spent in this
+ms/call    function and its descendents per call, if this
+	   function is profiled, else blank.
+
+name       the name of the function.  This is the minor sort
+           for this listing. The index shows the location of
+	   the function in the gprof listing. If the index is
+	   in parenthesis it shows where it would appear in
+	   the gprof listing if it were to be printed.
+
+Copyright (C) 2012-2023 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.
+
+		     Call graph (explanation follows)
+
+
+granularity: each sample hit covers 4 byte(s) for 0.15% of 6.51 seconds
+
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]     38.9    2.08    0.45                 run [1]
+                0.27    0.00 184549294/184549323     push [4]
+                0.15    0.00 166094367/166094394     pop [7]
+                0.03    0.00 18454932/18454936     tableGet [11]
+                0.00    0.00       2/18          tableSet [18]
+                0.00    0.00 212231685/230686619     freeVM [28]
+                0.00    0.00 9227465/9227472     printfValue [30]
+                0.00    0.00       1/2           newClosure [51]
+-----------------------------------------------
+                                                 <spontaneous>
+[2]     31.6    2.06    0.00                 _mcount_private [2]
+-----------------------------------------------
+                                                 <spontaneous>
+[3]     19.7    1.28    0.00                 __fentry__ [3]
+-----------------------------------------------
+                0.00    0.00       2/184549323     callNativeFn [23]
+                0.00    0.00       2/184549323     interpret [19]
+                0.00    0.00      12/184549323     defineNativeFunction [15]
+                0.00    0.00      13/184549323     addConstant [16]
+                0.27    0.00 184549294/184549323     run [1]
+[4]      4.1    0.27    0.00 184549323         push [4]
+-----------------------------------------------
+                                                 <spontaneous>
+[5]      3.5    0.23    0.00                 peek [5]
+-----------------------------------------------
+                                                 <spontaneous>
+[6]      2.6    0.17    0.00                 findEntry [6]
+-----------------------------------------------
+                0.00    0.00       2/166094394     interpret [19]
+                0.00    0.00      12/166094394     defineNativeFunction [15]
+                0.00    0.00      13/166094394     addConstant [16]
+                0.15    0.00 166094367/166094394     run [1]
+[7]      2.3    0.15    0.00 166094394         pop [7]
+-----------------------------------------------
+                                                 <spontaneous>
+[8]      1.4    0.09    0.00                 isFalsey [8]
+-----------------------------------------------
+                                                 <spontaneous>
+[9]      0.9    0.06    0.00                 call [9]
+-----------------------------------------------
+                                                 <spontaneous>
+[10]     0.8    0.05    0.00                 callValue [10]
+                0.00    0.00 18454932/230686619     freeVM [28]
+-----------------------------------------------
+                0.00    0.00       4/18454936     tableSet [18]
+                0.03    0.00 18454932/18454936     run [1]
+[11]     0.5    0.03    0.00 18454936         tableGet [11]
+                0.00    0.00 18454932/18454960     freeTable [29]
+-----------------------------------------------
+                                                 <spontaneous>
+[12]     0.5    0.03    0.00                 captureUpvalue [12]
+-----------------------------------------------
+                                                 <spontaneous>
+[13]     0.1    0.01    0.00                 closeUpValue [13]
+-----------------------------------------------
+                                                 <spontaneous>
+[14]     0.1    0.01    0.00                 closeUpValues [14]
+-----------------------------------------------
+                                                 <spontaneous>
+[15]     0.0    0.00    0.00                 defineNativeFunction [15]
+                0.00    0.00      12/184549323     push [4]
+                0.00    0.00      12/166094394     pop [7]
+                0.00    0.00       6/18          tableSet [18]
+                0.00    0.00       6/17          copyString [21]
+                0.00    0.00       6/6           newNativeFunction [45]
+-----------------------------------------------
+                0.00    0.00      13/13          makeConstant [17]
+[16]     0.0    0.00    0.00      13         addConstant [16]
+                0.00    0.00      13/184549323     push [4]
+                0.00    0.00      13/166094394     pop [7]
+                0.00    0.00      13/13          writeValueArray [41]
+-----------------------------------------------
+                                                 <spontaneous>
+[17]     0.0    0.00    0.00                 makeConstant [17]
+                0.00    0.00      13/13          addConstant [16]
+                0.00    0.00      13/475         freeChunk [32]
+-----------------------------------------------
+                0.00    0.00       2/18          run [1]
+                0.00    0.00       6/18          defineNativeFunction [15]
+                0.00    0.00      10/18          allocateString [22]
+[18]     0.0    0.00    0.00      18         tableSet [18]
+                0.00    0.00       4/18454936     tableGet [11]
+                0.00    0.00      18/18454960     freeTable [29]
+-----------------------------------------------
+                0.00    0.00       1/1           runFile [20]
+[19]     0.0    0.00    0.00       1         interpret [19]
+                0.00    0.00       2/184549323     push [4]
+                0.00    0.00       2/166094394     pop [7]
+                0.00    0.00       1/1           compile [53]
+                0.00    0.00       1/2           newClosure [51]
+                0.00    0.00       1/230686619     freeVM [28]
+-----------------------------------------------
+                                                 <spontaneous>
+[20]     0.0    0.00    0.00                 runFile [20]
+                0.00    0.00       1/1           interpret [19]
+                0.00    0.00       1/1           getFileAbsPath [56]
+                0.00    0.00       1/1           readFile [59]
+-----------------------------------------------
+                0.00    0.00       1/17          initCompiler [27]
+                0.00    0.00       2/17          initVM [25]
+                0.00    0.00       6/17          defineNativeFunction [15]
+                0.00    0.00       8/17          identifierConstant [24]
+[21]     0.0    0.00    0.00      17         copyString [21]
+                0.00    0.00      10/10          allocateString [22]
+                0.00    0.00      17/28          hashString [37]
+                0.00    0.00      17/17          tableFindString [39]
+                0.00    0.00      10/129         reallocate [33]
+-----------------------------------------------
+                0.00    0.00      10/10          copyString [21]
+[22]     0.0    0.00    0.00      10         allocateString [22]
+                0.00    0.00      10/18          tableSet [18]
+                0.00    0.00      10/22          allocateObj [38]
+                0.00    0.00      10/28          hashString [37]
+-----------------------------------------------
+                                                 <spontaneous>
+[23]     0.0    0.00    0.00                 callNativeFn [23]
+                0.00    0.00       2/184549323     push [4]
+                0.00    0.00       2/2           clockNative [48]
+-----------------------------------------------
+                                                 <spontaneous>
+[24]     0.0    0.00    0.00                 identifierConstant [24]
+                0.00    0.00       8/17          copyString [21]
+                0.00    0.00       8/475         freeChunk [32]
+-----------------------------------------------
+                0.00    0.00       1/1           main [26]
+[25]     0.0    0.00    0.00       1         initVM [25]
+                0.00    0.00       2/17          copyString [21]
+                0.00    0.00       7/9227472     printfValue [30]
+                0.00    0.00       2/8           initTable [42]
+                0.00    0.00       2/2           newClass [50]
+-----------------------------------------------
+                                                 <spontaneous>
+[26]     0.0    0.00    0.00                 main [26]
+                0.00    0.00       1/1           initVM [25]
+                0.00    0.00       1/53          scanToken [36]
+                0.00    0.00       1/230686619     freeVM [28]
+-----------------------------------------------
+                                                 <spontaneous>
+[27]     0.0    0.00    0.00                 initCompiler [27]
+                0.00    0.00       1/17          copyString [21]
+                0.00    0.00       2/2           newFunction [52]
+-----------------------------------------------
+                0.00    0.00       1/230686619     main [26]
+                0.00    0.00       1/230686619     interpret [19]
+                0.00    0.00 18454932/230686619     callValue [10]
+                0.00    0.00 212231685/230686619     run [1]
+[28]     0.0    0.00    0.00 230686619         freeVM [28]
+                0.00    0.00       2/18454960     freeTable [29]
+                0.00    0.00       1/1           freeObjects [55]
+-----------------------------------------------
+                0.00    0.00       2/18454960     freeObject [168]
+                0.00    0.00       2/18454960     freeVM [28]
+                0.00    0.00       6/18454960     adjustCapacity [90]
+                0.00    0.00      18/18454960     tableSet [18]
+                0.00    0.00 18454932/18454960     tableGet [11]
+[29]     0.0    0.00    0.00 18454960         freeTable [29]
+                0.00    0.00       4/129         reallocate [33]
+                0.00    0.00       4/8           initTable [42]
+-----------------------------------------------
+                0.00    0.00       7/9227472     initVM [25]
+                0.00    0.00 9227465/9227472     run [1]
+[30]     0.0    0.00    0.00 9227472         printfValue [30]
+-----------------------------------------------
+                0.00    0.00      15/755         identifierType [182]
+                0.00    0.00      20/755         number [225]
+                0.00    0.00      21/755         match [209]
+                0.00    0.00     144/755         skipWhitespace [265]
+                0.00    0.00     243/755         identifier [181]
+                0.00    0.00     312/755         scanToken [36]
+[31]     0.0    0.00    0.00     755         popLexer [31]
+-----------------------------------------------
+                0.00    0.00       1/475         declareVariable [130]
+                0.00    0.00       2/475         endCompiler [143]
+                0.00    0.00       2/475         printStatement [240]
+                0.00    0.00       2/475         expressionStatement [154]
+                0.00    0.00       2/475         freeObject [168]
+                0.00    0.00       3/475         defineVariable [132]
+                0.00    0.00       3/475         funDeclaration [172]
+                0.00    0.00       4/475         emitReturn [141]
+                0.00    0.00       4/475         varDeclaration [287]
+                0.00    0.00       4/475         number [226]
+                0.00    0.00       5/475         call [111]
+                0.00    0.00       6/475         patchJump [230]
+                0.00    0.00       6/475         returnStatement [258]
+                0.00    0.00       8/475         match [210]
+                0.00    0.00       8/475         emitConstant [137]
+                0.00    0.00       8/475         identifierConstant [24]
+                0.00    0.00       8/475         parseVariable [229]
+                0.00    0.00       8/475         block [108]
+                0.00    0.00       8/475         emitJump [138]
+                0.00    0.00       9/475         ifStatement [184]
+                0.00    0.00       9/475         expression [153]
+                0.00    0.00      10/475         binary [106]
+                0.00    0.00      12/475         compile [53]
+                0.00    0.00      13/475         makeConstant [17]
+                0.00    0.00      13/475         function [173]
+                0.00    0.00      13/475         argumentsList [94]
+                0.00    0.00      14/475         resolveLocal [255]
+                0.00    0.00      19/475         consume [124]
+                0.00    0.00      19/475         declaration [129]
+                0.00    0.00      33/475         parsePrecedence [228]
+                0.00    0.00      46/475         emitBytes [136]
+                0.00    0.00      56/475         namedVariable [217]
+                0.00    0.00      57/475         statement [267]
+                0.00    0.00      60/475         emitByte [135]
+[32]     0.0    0.00    0.00     475         freeChunk [32]
+                0.00    0.00       4/129         reallocate [33]
+                0.00    0.00       2/2           freeValueArray [49]
+                0.00    0.00       2/4           initChunk [46]
+-----------------------------------------------
+                0.00    0.00       1/129         pushNodesStack [247]
+                0.00    0.00       1/129         freeNodesStack [167]
+                0.00    0.00       1/129         insertSeenNodes [188]
+                0.00    0.00       1/129         freeSeenNodes [169]
+                0.00    0.00       1/129         freeNode [166]
+                0.00    0.00       2/129         newClosure [51]
+                0.00    0.00       2/129         writeValueArray [41]
+                0.00    0.00       2/129         freeValueArray [49]
+                0.00    0.00       4/129         freeChunk [32]
+                0.00    0.00       4/129         freeTable [29]
+                0.00    0.00       8/129         adjustCapacity [90]
+                0.00    0.00      10/129         copyString [21]
+                0.00    0.00      14/129         writeChunk [35]
+                0.00    0.00      22/129         freeObjects [55]
+                0.00    0.00      22/129         allocateObj [38]
+                0.00    0.00      34/129         freeObject [168]
+[33]     0.0    0.00    0.00     129         reallocate [33]
+-----------------------------------------------
+                0.00    0.00       4/112         resolveUpValue [257]
+                0.00    0.00       5/112         binary [106]
+                0.00    0.00       5/112         call [111]
+                0.00    0.00      10/112         variable [288]
+                0.00    0.00      16/112         namedVariable [217]
+                0.00    0.00      72/112         parsePrecedence [228]
+[34]     0.0    0.00    0.00     112         markCompilerRoots [34]
+-----------------------------------------------
+                0.00    0.00       6/66          emitJump [138]
+                0.00    0.00      60/66          emitByte [135]
+[35]     0.0    0.00    0.00      66         writeChunk [35]
+                0.00    0.00      14/129         reallocate [33]
+-----------------------------------------------
+                0.00    0.00       1/53          main [26]
+                0.00    0.00      52/53          advance [91]
+[36]     0.0    0.00    0.00      53         scanToken [36]
+                0.00    0.00     312/755         popLexer [31]
+-----------------------------------------------
+                0.00    0.00       1/28          initModules [58]
+                0.00    0.00      10/28          allocateString [22]
+                0.00    0.00      17/28          copyString [21]
+[37]     0.0    0.00    0.00      28         hashString [37]
+-----------------------------------------------
+                0.00    0.00       2/22          newClass [50]
+                0.00    0.00       2/22          newClosure [51]
+                0.00    0.00       2/22          newFunction [52]
+                0.00    0.00       6/22          newNativeFunction [45]
+                0.00    0.00      10/22          allocateString [22]
+[38]     0.0    0.00    0.00      22         allocateObj [38]
+                0.00    0.00      22/129         reallocate [33]
+-----------------------------------------------
+                0.00    0.00      17/17          copyString [21]
+[39]     0.0    0.00    0.00      17         tableFindString [39]
+-----------------------------------------------
+                0.00    0.00       1/14          varDeclaration [287]
+                0.00    0.00       1/14          printStatement [240]
+                0.00    0.00       1/14          expressionStatement [154]
+                0.00    0.00       2/14          ifStatement [184]
+                0.00    0.00       2/14          returnStatement [258]
+                0.00    0.00       3/14          argumentsList [94]
+                0.00    0.00       4/14          declaration [129]
+[40]     0.0    0.00    0.00      14         resolveModule [40]
+-----------------------------------------------
+                0.00    0.00      13/13          addConstant [16]
+[41]     0.0    0.00    0.00      13         writeValueArray [41]
+                0.00    0.00       2/129         reallocate [33]
+-----------------------------------------------
+                0.00    0.00       2/8           newClass [50]
+                0.00    0.00       2/8           initVM [25]
+                0.00    0.00       4/8           freeTable [29]
+[42]     0.0    0.00    0.00       8         initTable [42]
+-----------------------------------------------
+                0.00    0.00       1/8           initModules [58]
+                0.00    0.00       7/8           freeModules [54]
+[43]     0.0    0.00    0.00       8         startGarbageCollector [43]
+-----------------------------------------------
+                0.00    0.00       2/6           freeValueArray [49]
+                0.00    0.00       4/6           initChunk [46]
+[44]     0.0    0.00    0.00       6         initValueArray [44]
+-----------------------------------------------
+                0.00    0.00       6/6           defineNativeFunction [15]
+[45]     0.0    0.00    0.00       6         newNativeFunction [45]
+                0.00    0.00       6/22          allocateObj [38]
+-----------------------------------------------
+                0.00    0.00       2/4           freeChunk [32]
+                0.00    0.00       2/4           newFunction [52]
+[46]     0.0    0.00    0.00       4         initChunk [46]
+                0.00    0.00       4/6           initValueArray [44]
+-----------------------------------------------
+                0.00    0.00       2/2           clockNative [48]
+[47]     0.0    0.00    0.00       2         arityCheck [47]
+-----------------------------------------------
+                0.00    0.00       2/2           callNativeFn [23]
+[48]     0.0    0.00    0.00       2         clockNative [48]
+                0.00    0.00       2/2           arityCheck [47]
+-----------------------------------------------
+                0.00    0.00       2/2           freeChunk [32]
+[49]     0.0    0.00    0.00       2         freeValueArray [49]
+                0.00    0.00       2/129         reallocate [33]
+                0.00    0.00       2/6           initValueArray [44]
+-----------------------------------------------
+                0.00    0.00       2/2           initVM [25]
+[50]     0.0    0.00    0.00       2         newClass [50]
+                0.00    0.00       2/22          allocateObj [38]
+                0.00    0.00       2/8           initTable [42]
+-----------------------------------------------
+                0.00    0.00       1/2           run [1]
+                0.00    0.00       1/2           interpret [19]
+[51]     0.0    0.00    0.00       2         newClosure [51]
+                0.00    0.00       2/129         reallocate [33]
+                0.00    0.00       2/22          allocateObj [38]
+-----------------------------------------------
+                0.00    0.00       2/2           initCompiler [27]
+[52]     0.0    0.00    0.00       2         newFunction [52]
+                0.00    0.00       2/22          allocateObj [38]
+                0.00    0.00       2/4           initChunk [46]
+-----------------------------------------------
+                0.00    0.00       1/1           interpret [19]
+[53]     0.0    0.00    0.00       1         compile [53]
+                0.00    0.00      12/475         freeChunk [32]
+                0.00    0.00       1/1           initLexer [57]
+                0.00    0.00       1/1           initModules [58]
+                0.00    0.00       1/1           freeModules [54]
+-----------------------------------------------
+                0.00    0.00       1/1           compile [53]
+[54]     0.0    0.00    0.00       1         freeModules [54]
+                0.00    0.00       7/8           startGarbageCollector [43]
+                0.00    0.00       1/1           resolveDependency [60]
+-----------------------------------------------
+                0.00    0.00       1/1           freeVM [28]
+[55]     0.0    0.00    0.00       1         freeObjects [55]
+                0.00    0.00      22/129         reallocate [33]
+-----------------------------------------------
+                0.00    0.00       1/1           runFile [20]
+[56]     0.0    0.00    0.00       1         getFileAbsPath [56]
+-----------------------------------------------
+                0.00    0.00       1/1           compile [53]
+[57]     0.0    0.00    0.00       1         initLexer [57]
+-----------------------------------------------
+                0.00    0.00       1/1           compile [53]
+[58]     0.0    0.00    0.00       1         initModules [58]
+                0.00    0.00       1/28          hashString [37]
+                0.00    0.00       1/8           startGarbageCollector [43]
+-----------------------------------------------
+                0.00    0.00       1/1           runFile [20]
+[59]     0.0    0.00    0.00       1         readFile [59]
+-----------------------------------------------
+                0.00    0.00       1/1           freeModules [54]
+[60]     0.0    0.00    0.00       1         resolveDependency [60]
+-----------------------------------------------
+
+ This table describes the call tree of the program, and was sorted by
+ the total amount of time spent in each function and its children.
+
+ Each entry in this table consists of several lines.  The line with the
+ index number at the left hand margin lists the current function.
+ The lines above it list the functions that called this function,
+ and the lines below it list the functions this one called.
+ This line lists:
+     index	A unique number given to each element of the table.
+		Index numbers are sorted numerically.
+		The index number is printed next to every function name so
+		it is easier to look up where the function is in the table.
+
+     % time	This is the percentage of the `total' time that was spent
+		in this function and its children.  Note that due to
+		different viewpoints, functions excluded by options, etc,
+		these numbers will NOT add up to 100%.
+
+     self	This is the total amount of time spent in this function.
+
+     children	This is the total amount of time propagated into this
+		function by its children.
+
+     called	This is the number of times the function was called.
+		If the function called itself recursively, the number
+		only includes non-recursive calls, and is followed by
+		a `+' and the number of recursive calls.
+
+     name	The name of the current function.  The index number is
+		printed after it.  If the function is a member of a
+		cycle, the cycle number is printed between the
+		function's name and the index number.
+
+
+ For the function's parents, the fields have the following meanings:
+
+     self	This is the amount of time that was propagated directly
+		from the function into this parent.
+
+     children	This is the amount of time that was propagated from
+		the function's children into this parent.
+
+     called	This is the number of times this parent called the
+		function `/' the total number of times the function
+		was called.  Recursive calls to the function are not
+		included in the number after the `/'.
+
+     name	This is the name of the parent.  The parent's index
+		number is printed after it.  If the parent is a
+		member of a cycle, the cycle number is printed between
+		the name and the index number.
+
+ If the parents of the function cannot be determined, the word
+ `<spontaneous>' is printed in the `name' field, and all the other
+ fields are blank.
+
+ For the function's children, the fields have the following meanings:
+
+     self	This is the amount of time that was propagated directly
+		from the child into the function.
+
+     children	This is the amount of time that was propagated from the
+		child's children to the function.
+
+     called	This is the number of times the function called
+		this child `/' the total number of times the child
+		was called.  Recursive calls by the child are not
+		listed in the number after the `/'.
+
+     name	This is the name of the child.  The child's index
+		number is printed after it.  If the child is a
+		member of a cycle, the cycle number is printed
+		between the name and the index number.
+
+ If there are any cycles (circles) in the call graph, there is an
+ entry for the cycle-as-a-whole.  This entry shows who called the
+ cycle (as parents) and the members of the cycle (as children.)
+ The `+' recursive calls entry shows the number of function calls that
+ were internal to the cycle, and the calls entry for each member shows,
+ for that member, how many times it was called from other members of
+ the cycle.
+
+Copyright (C) 2012-2023 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.
+
+Index by function name
+
+   [3] __fentry__             [29] freeTable               [5] peek
+   [2] _mcount_private        [28] freeVM                  [7] pop
+  [16] addConstant            [49] freeValueArray         [31] popLexer
+  [38] allocateObj            [56] getFileAbsPath         [30] printfValue
+  [22] allocateString         [37] hashString              [4] push
+  [47] arityCheck             [46] initChunk              [59] readFile
+   [9] call                   [57] initLexer              [33] reallocate
+  [10] callValue              [58] initModules            [60] resolveDependency
+  [12] captureUpvalue         [42] initTable              [40] resolveModule
+  [48] clockNative            [25] initVM                  [1] run
+  [13] closeUpValue           [44] initValueArray         [36] scanToken
+  [14] closeUpValues          [19] interpret              [43] startGarbageCollector
+  [53] compile                 [8] isFalsey               [39] tableFindString
+  [21] copyString             [34] markCompilerRoots      [11] tableGet
+   [6] findEntry              [50] newClass               [18] tableSet
+  [32] freeChunk              [51] newClosure             [35] writeChunk
+  [54] freeModules            [52] newFunction            [41] writeValueArray
+  [55] freeObjects            [45] newNativeFunction
