@@ -16,7 +16,7 @@ class BenchmarkTestSaver {
     let str = "\n";
 
     str += "// -------------------------- BENCHMARK ---------------------------\n";
-    str += `// ${"title".padEnd(32)}${this.title.padStart(34)}`;
+    str += `// ${"version".padEnd(32)}${this.title.padStart(34)}`;
     str += `// ${"rounds".padEnd(32)}${this.benchmark.rounds.toString().padStart(32)}\n`;
     str += `// ${"min".padEnd(32)}${this.benchmark.min.padStart(32)}\n`;
     str += `// ${"max".padEnd(32)}${this.benchmark.max.padStart(32)}\n`;
