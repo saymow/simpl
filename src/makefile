@@ -9,6 +9,9 @@ compile-profile:
 compile-debug:
 	@gcc -o main.run *.c  */*.c -DDEBUG -Wall -I . -lshlwapi
 
+compile-debugger:
+	@gcc -o main-debugger.run *.c  */*.c -Wall -I . -lshlwapi -g 
+
 compile-debug-logs:
 	@gcc -o main.run *.c  */*.c -DDEBUG_LOGS -Wall -I . -lshlwapi
 
