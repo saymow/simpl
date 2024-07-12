@@ -20,3 +20,11 @@ print clock() - start;
 // median                                                    0.776s
 // avg                                                       0.771s
 // stdDeviation                                              0.012s
+// -------------------------- BENCHMARK ---------------------------
+// version                                                   v1.1.0
+// rounds                                                         3
+// min                                                       0.747s
+// max                                                       0.778s
+// median                                                    0.749s
+// avg                                                       0.758s
+// stdDeviation                                              0.014s
