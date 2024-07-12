@@ -100,11 +100,11 @@ class BenchmarkTestRunnerController extends TestRunnerController {
 
               try {
                 await benchmarkSaver.execute();
-                
+
                 console.clear();
                 console.log("Benchmark saved successfuly.");
                 await sleep(1000);
-                
+
                 console.clear();
               } catch (err) {
                 console.log(err);

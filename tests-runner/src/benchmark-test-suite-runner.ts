@@ -4,7 +4,7 @@ import { VmErrors } from "./expectations-test-reader";
 import colors from "colors";
 import { LINE_TERMINATOR_REGEX } from "./utils";
 
-const BENCHMARK_ROUNDS = 7;
+const BENCHMARK_ROUNDS = 3;
 
 export interface BenchmarkResults {
   [benchmarkRound: string]: string;
@@ -28,7 +28,7 @@ class BenchmarkTestSuiteRunner {
   private buildBenchmarkResults(elapsedTimes: number[]): BenchmarkResults {
     const orderedElapsedTimes = elapsedTimes.sort((a, b) => a - b);
     const results: Record<string, any> = {};
-    
+
     results.rounds = elapsedTimes.length;
 
     orderedElapsedTimes.reduce((acc, result, resultIndex) => {
@@ -143,9 +143,18 @@ class BenchmarkTestSuiteRunner {
 
   async execute() {
     try {
-      const elapsedTimes = await Promise.all(
-        new Array(BENCHMARK_ROUNDS).fill(null).map(() => this.benchmark())
-      );
+      const elapsedTimes: number[] = [];
+
+      for (let idx = 0; idx < BENCHMARK_ROUNDS; idx++) {
+        console.clear();
+        console.log(`${colors.bgWhite.bold("RUNNING")} ${colors.bold(this.testSuite.testFile.id)}`);
+        console.log(colors.white.bold(`● › ${this.testSuite.title}\n`));
+        console.log(`Running round ${idx + 1}/${BENCHMARK_ROUNDS}...`);
+        elapsedTimes.push(await this.benchmark());
+      }
+
+      console.clear();
+
       const results = this.buildBenchmarkResults(elapsedTimes);
 
       this.displayBenchmarkResults(results);
