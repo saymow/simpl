@@ -28,3 +28,11 @@ print clock() - start;
 // median                                                    0.749s
 // avg                                                       0.758s
 // stdDeviation                                              0.014s
+// -------------------------- BENCHMARK ---------------------------
+// version                                      v1.2.0 - NaN boxing
+// rounds                                                         3
+// min                                                       0.582s
+// max                                                       0.586s
+// median                                                    0.582s
+// avg                                                       0.583s
+// stdDeviation                                              0.002s

@@ -7,6 +7,8 @@
 
 #define IS_WINDOWS defined(_WIN32) || defined(_WIN64)
 
+#define NAN_BOXING
+
 #ifdef DEBUG
     #define DEBUG_LOGS
     #define DEBUG_GC
