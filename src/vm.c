@@ -282,11 +282,6 @@ static bool nativeClassMethod(Value base, ObjClass* klass, ObjString* name, Valu
 }
 
 static bool invokeMethod(Value base, ObjString* name, uint8_t argCount) {
-  if (!(IS_INSTANCE(base) || IS_ARRAY(base))) {
-    runtimeError("Cannot invoke property '%s'.", name->chars);
-    return false;
-  }
-
   Value value;
   if (IS_INSTANCE(base)) {
     if (!(tableGet(&AS_INSTANCE(base)->properties, name, &value) ||
@@ -294,15 +289,19 @@ static bool invokeMethod(Value base, ObjString* name, uint8_t argCount) {
       runtimeError("Undefined property '%s'.", name->chars);
       return false;
     }
-  } else {
+  } else if (IS_ARRAY(base)) {
     if (!nativeClassMethod(base, AS_ARRAY(base)->klass, name, &value)) {
       runtimeError("Undefined property '%s'.", name->chars);
       return false;
     }
+  } else {
+    runtimeError("Cannot invoke property '%s'.", name->chars);
+    return false;
   }
 
   return callValue(value, argCount);
 }
+
 
 static bool getArrayItem(ObjArray* arr, Value index, Value* value) {
   if (!IS_NUMBER(index)) {
