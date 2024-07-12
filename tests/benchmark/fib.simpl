@@ -13,10 +13,10 @@ print clock() - start;
 
 
 // -------------------------- BENCHMARK ---------------------------
-// title                                              version 1.0.0
-// rounds                                                         7
-// min                                                       1.213s
-// max                                                       1.414s
-// median                                                    1.375s
-// avg                                                       1.343s
-// stdDeviation                                              0.077s
+// version                                                   v1.0.0
+// rounds                                                         3
+// min                                                       0.754s
+// max                                                       0.782s
+// median                                                    0.776s
+// avg                                                       0.771s
+// stdDeviation                                              0.012s
