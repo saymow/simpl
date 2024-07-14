@@ -129,10 +129,17 @@ static bool call(ObjClosure* closure, uint8_t argCount) {
 
 static bool callNativeFn(NativeFn function, int argCount, bool isMethod) {
   // If this is a method, then handlers expects to receive the callee as argument.
-  // We properly handle that by leveraging the bool type.
-  Value result = function(argCount, vm.stackTop - argCount - isMethod);
-  vm.stackTop -= argCount + 1;
-  push(result);
+  // We properly handle that by leveraging the bool type and avoiding branching.
+  // function returns false <=> function returns error 
+  if (!function(argCount, vm.stackTop - argCount - isMethod)) {
+    Value fnReturn = pop(); // Must be an ObjStrint containing error message.
+    runtimeError(AS_CSTRING(fnReturn));
+    return false;  
+  } 
+
+  Value fnReturn = pop();
+  pop();  // callee or base object;
+  push(fnReturn);
   return true;
 }
 

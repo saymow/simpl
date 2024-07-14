@@ -49,7 +49,7 @@ typedef struct {
   Table properties;
 } ObjInstance;
 
-typedef Value (*NativeFn)(int argCount, Value *args);
+typedef bool (*NativeFn)(int argCount, Value *args);
 
 typedef struct {
   Obj obj;

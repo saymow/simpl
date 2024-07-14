@@ -10,38 +10,53 @@
 #include "memory.h"
 
 
-static void __arityCheck(int expected, int received) {
-    if (expected == received) return;
+static bool __arityCheck(int expected, int received) {
+    if (expected == received) return true;
     
-    fprintf(stderr, "Expected %d arguments but received %d.", expected, received);
-    exit(70);
+    char * buffer = ALLOCATE(char, 64);
+    int length = sprintf(buffer, "Expected %d arguments but got %d.", expected, received);
+    push(OBJ_VAL(takeString(buffer, length)));
+
+    return false;
 }
 
-static inline void __arityLooseCheck(int expected, int received) {
-    if (expected >= received) return;
+static bool __arityLooseCheck(int expected, int received) {
+    if (expected >= received) return true;
     
-    fprintf(stderr, "Expected at most %d arguments but received %d.", expected, received);
-    exit(70);
+    char * buffer = ALLOCATE(char, 64);
+    int length = sprintf(buffer, "Expected at most %d arguments but got %d.", expected, received);
+    push(OBJ_VAL(takeString(buffer, length)));
+
+    return false;
 }
 
-static inline Value __nativeClock(int argCount, Value* args) {
-  __arityCheck(0, argCount);
-  return NUMBER_VAL(clock() / (double) CLOCKS_PER_SEC);
+static inline bool __nativeClock(int argCount, Value* args) {
+  if (!__arityCheck(0, argCount)) return false;
+
+  push(NUMBER_VAL(clock() / (double) CLOCKS_PER_SEC));
+  
+  return true;
 }
 
-static inline Value __nativeClassToString(int argCount, Value* args) {
-  __arityCheck(0, argCount);
-  return OBJ_VAL(toString(*args));  
+static inline bool __nativeClassToString(int argCount, Value* args) {
+  if (!__arityCheck(0, argCount)) return false;
+
+  push(OBJ_VAL(toString(*args)));
+  
+  return true;  
 }
 
-static inline Value __nativeArrayLength(int argCount, Value* args) {
-    __arityCheck(0, argCount);
-    ObjArray* array = AS_ARRAY(*args);
-    return NUMBER_VAL(array->list.count);
+static inline bool __nativeArrayLength(int argCount, Value* args) {
+  if (!__arityCheck(0, argCount)) return false;
+
+  ObjArray* array = AS_ARRAY(*args);
+  push(NUMBER_VAL(array->list.count));
+
+  return true;
 }
 
-static inline Value __nativeArrayPush(int argCount, Value* args) {
-    __arityCheck(1, argCount);
+static inline bool __nativeArrayPush(int argCount, Value* args) {
+    if (!__arityCheck(1, argCount)) return false;
 
     ObjArray* array = AS_ARRAY(*args);
     Value value = *(++args);
@@ -54,16 +69,20 @@ static inline Value __nativeArrayPush(int argCount, Value* args) {
 
     array->list.values[array->list.count++] = value;
 
-    return NUMBER_VAL(array->list.count);
+    push(NUMBER_VAL(array->list.count));
+
+    return true;
 }
 
-static inline Value __nativeArrayPop(int argCount, Value* args) {
-    __arityCheck(0, argCount);
+static inline bool __nativeArrayPop(int argCount, Value* args) {
+    if (!__arityCheck(0, argCount)) return false;
 
     ObjArray* array = AS_ARRAY(*args);
 
     if (array->list.count == 0) {
-        return NIL_VAL;
+        push(NIL_VAL);
+        
+        return true;
     }
 
     Value value = array->list.values[--array->list.count];
@@ -75,11 +94,13 @@ static inline Value __nativeArrayPop(int argCount, Value* args) {
         array->list.values = GROW_ARRAY(Value, array->list.values, oldCapacity, array->list.capacity);
     }
 
-    return value; 
+    push(value);
+    
+    return true; 
 }
 
-static inline Value __nativeArrayUnshift(int argCount, Value* args) {
-    __arityCheck(1, argCount);
+static inline bool __nativeArrayUnshift(int argCount, Value* args) {
+    if (!__arityCheck(1, argCount)) return false;
 
     ObjArray* array = AS_ARRAY(*args);
     Value value = *(++args);
@@ -96,16 +117,19 @@ static inline Value __nativeArrayUnshift(int argCount, Value* args) {
     
     array->list.values[0] = value;
 
-    return NUMBER_VAL(++array->list.count); 
+    push(NUMBER_VAL(++array->list.count)); 
+
+    return true;
 }
 
-static inline Value __nativeArrayShift(int argCount, Value* args) {
-    __arityCheck(0, argCount);
+static inline bool __nativeArrayShift(int argCount, Value* args) {
+    if (!__arityCheck(0, argCount)) return false;
 
     ObjArray* array = AS_ARRAY(*args);
 
     if (array->list.count == 0) {
-        return NIL_VAL;
+        push(NIL_VAL);
+        return true;
     }
 
     Value value = array->list.values[0];
@@ -122,11 +146,12 @@ static inline Value __nativeArrayShift(int argCount, Value* args) {
         array->list.values = GROW_ARRAY(Value, array->list.values, oldCapacity, array->list.capacity);
     }
 
-    return value; 
+    push(value);
+    return true; 
 }
 
-static inline Value __nativeArraySlice(int argCount, Value* args) {
-    __arityLooseCheck(2, argCount);
+static inline bool __nativeArraySlice(int argCount, Value* args) {
+    if (!__arityLooseCheck(2, argCount)) return false;
 
     ObjArray* array = AS_ARRAY(*args);
     ObjArray* slicedArray = newArray();
@@ -153,7 +178,8 @@ static inline Value __nativeArraySlice(int argCount, Value* args) {
         writeValueArray(&slicedArray->list, array->list.values[start]);        
     }
 
-    return OBJ_VAL(slicedArray);
+    push(OBJ_VAL(slicedArray));
+    return true;
 }
 
 static void defineNativeFunction(VM* vm, Table* methods, const char* name, NativeFn function) {
