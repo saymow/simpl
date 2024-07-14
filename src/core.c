@@ -10,31 +10,38 @@
 #include "memory.h"
 
 
-static inline void __nativeArityCheck(int expected, int received) {
+static void __arityCheck(int expected, int received) {
     if (expected == received) return;
     
-    printf("Expected %d arguments but received %d.", expected, received);
+    fprintf(stderr, "Expected %d arguments but received %d.", expected, received);
     exit(70);
 }
 
-static inline Value __nativeToString(int argCount, Value* args) {
-  __nativeArityCheck(0, argCount);
-  return OBJ_VAL(toString(*args));  
+static inline void __arityLooseCheck(int expected, int received) {
+    if (expected >= received) return;
+    
+    fprintf(stderr, "Expected at most %d arguments but received %d.", expected, received);
+    exit(70);
 }
 
 static inline Value __nativeClock(int argCount, Value* args) {
-  __nativeArityCheck(0, argCount);
+  __arityCheck(0, argCount);
   return NUMBER_VAL(clock() / (double) CLOCKS_PER_SEC);
 }
 
+static inline Value __nativeClassToString(int argCount, Value* args) {
+  __arityCheck(0, argCount);
+  return OBJ_VAL(toString(*args));  
+}
+
 static inline Value __nativeArrayLength(int argCount, Value* args) {
-    __nativeArityCheck(0, argCount);
+    __arityCheck(0, argCount);
     ObjArray* array = AS_ARRAY(*args);
     return NUMBER_VAL(array->list.count);
 }
 
 static inline Value __nativeArrayPush(int argCount, Value* args) {
-    __nativeArityCheck(1, argCount);
+    __arityCheck(1, argCount);
 
     ObjArray* array = AS_ARRAY(*args);
     Value value = *(++args);
@@ -51,7 +58,7 @@ static inline Value __nativeArrayPush(int argCount, Value* args) {
 }
 
 static inline Value __nativeArrayPop(int argCount, Value* args) {
-    __nativeArityCheck(0, argCount);
+    __arityCheck(0, argCount);
 
     ObjArray* array = AS_ARRAY(*args);
 
@@ -72,7 +79,7 @@ static inline Value __nativeArrayPop(int argCount, Value* args) {
 }
 
 static inline Value __nativeArrayUnshift(int argCount, Value* args) {
-    __nativeArityCheck(1, argCount);
+    __arityCheck(1, argCount);
 
     ObjArray* array = AS_ARRAY(*args);
     Value value = *(++args);
@@ -93,7 +100,7 @@ static inline Value __nativeArrayUnshift(int argCount, Value* args) {
 }
 
 static inline Value __nativeArrayShift(int argCount, Value* args) {
-    __nativeArityCheck(0, argCount);
+    __arityCheck(0, argCount);
 
     ObjArray* array = AS_ARRAY(*args);
 
@@ -116,6 +123,37 @@ static inline Value __nativeArrayShift(int argCount, Value* args) {
     }
 
     return value; 
+}
+
+static inline Value __nativeArraySlice(int argCount, Value* args) {
+    __arityLooseCheck(2, argCount);
+
+    ObjArray* array = AS_ARRAY(*args);
+    ObjArray* slicedArray = newArray();
+    int start = 0;
+    int end = array->list.count;
+
+    if (argCount >= 1) {
+        start = AS_NUMBER(*(++args));
+
+        if (start < 0) {
+            start = end + start;
+        }
+
+        if (argCount == 2) {
+            end = AS_NUMBER(*(++args));
+
+            if (end < 0) {
+                end = array->list.count + end;
+            }
+        } 
+    }
+
+    for (;start < end; start++) {
+        writeValueArray(&slicedArray->list, array->list.values[start]);        
+    }
+
+    return OBJ_VAL(slicedArray);
 }
 
 static void defineNativeFunction(VM* vm, Table* methods, const char* name, NativeFn function) {
@@ -161,7 +199,7 @@ void initializeCore(VM* vm) {
   */  
   vm->nativeFunctionClass = defineNewClass("NativeFunction");
 
-  defineNativeFunction(vm, &vm->klass->methods, "toString", __nativeToString);
+  defineNativeFunction(vm, &vm->klass->methods, "toString", __nativeClassToString);
   
   // But the "NativeFunction" inheritance should come after the "Class" methods are defined
   inherit(vm->nativeFunctionClass, vm->klass);  
@@ -189,6 +227,7 @@ void initializeCore(VM* vm) {
   defineNativeFunction(vm, &vm->arrayClass->methods, "pop", __nativeArrayPop);
   defineNativeFunction(vm, &vm->arrayClass->methods, "unshift", __nativeArrayUnshift);
   defineNativeFunction(vm, &vm->arrayClass->methods, "shift", __nativeArrayShift);
+  defineNativeFunction(vm, &vm->arrayClass->methods, "slice", __nativeArraySlice);
   
   vm->moduleExportsClass = defineNewClass("Exports");
   inherit(vm->moduleExportsClass, vm->klass);
