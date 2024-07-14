@@ -82,7 +82,10 @@ ObjClass *newClass(ObjString *name) {
   // awkward statement
   if (vm.klass != NULL) {
     klass->obj.klass = vm.klass;
+    // gc 👌
+    push(OBJ_VAL(klass));
     tableAddAll(&vm.klass->methods, &klass->methods);
+    pop();
   }
 
   return klass;
@@ -141,7 +144,10 @@ ObjString *allocateString(char *chars, int length) {
   string->hash = hashString(chars, length);
   string->obj.klass = vm.stringClass;
 
+  // GC 👌
+  push(OBJ_VAL(string));
   tableSet(&vm.strings, string, BOOL_VAL(true));
+  pop();
 
   return string;
 }

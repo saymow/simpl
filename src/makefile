@@ -18,6 +18,9 @@ compile-debug-logs:
 compile-debug-gc:
 	@gcc -o main.run *.c -DDEBUG_GC -Wall -I . -lshlwapi
 
+compile-debug-and-debugger:
+	@gcc -o main-debugger.run *.c -DDEBUG -Wall -I . -lshlwapi -g
+
 run:
 	@./main.run ./program.simpl
 

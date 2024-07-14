@@ -170,15 +170,15 @@ static void markRoots() {
     markObject((Obj*)upvalue);
   }
 
-  markObject((Obj*)&vm.klass);
-  markObject((Obj*)&vm.nilClass);
-  markObject((Obj*)&vm.boolClass);
-  markObject((Obj*)&vm.numberClass);
-  markObject((Obj*)&vm.stringClass);
-  markObject((Obj*)&vm.functionClass);
-  markObject((Obj*)&vm.nativeFunctionClass);
-  markObject((Obj*)&vm.arrayClass);
-  markObject((Obj*)&vm.moduleExportsClass);
+  markObject((Obj*)vm.klass);
+  markObject((Obj*)vm.nilClass);
+  markObject((Obj*)vm.boolClass);
+  markObject((Obj*)vm.numberClass);
+  markObject((Obj*)vm.stringClass);
+  markObject((Obj*)vm.functionClass);
+  markObject((Obj*)vm.nativeFunctionClass);
+  markObject((Obj*)vm.arrayClass);
+  markObject((Obj*)vm.moduleExportsClass);
   markTable(&vm.global);
   markCompilerRoots();
 }

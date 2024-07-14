@@ -950,7 +950,10 @@ ObjFunction* compile(const char* source, char* absPath) {
 
   ObjFunction* function = endCompiler();
 
+  // gc 👌
+  push(OBJ_VAL(function));
   freeModules(&modules);
+  pop();
 
   if (parser.hadError) {
     fprintf(stderr,"at file: %s\n", basePath);
