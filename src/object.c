@@ -82,10 +82,9 @@ ObjClass *newClass(ObjString *name) {
   // awkward statement
   if (vm.klass != NULL) {
     klass->obj.klass = vm.klass;
-    // gc 👌
-    push(OBJ_VAL(klass));
+    beginAssemblyLine((Obj *) klass->obj.klass);
     tableAddAll(&vm.klass->methods, &klass->methods);
-    pop();
+    endAssemblyLine();
   }
 
   return klass;
@@ -101,6 +100,9 @@ ObjUpValue *newUpValue(Value *value) {
 }
 
 ObjClosure *newClosure(ObjFunction *function) {
+  // Since we are not allocating it using the ALLOCATE_OBJ macro, there is no risk
+  // of the GC running and cleaning this. But, we cannot allocate this after allocating
+  // the ObjClosure, because the ALLOCATE macro, internally, can trigger the GC. 
   // Garbage Collector 👌
   ObjUpValue **upvalues = ALLOCATE(ObjUpValue *, function->upvalueCount);
   for (int idx = 0; idx < function->upvalueCount; idx++) {
@@ -144,10 +146,9 @@ ObjString *allocateString(char *chars, int length) {
   string->hash = hashString(chars, length);
   string->obj.klass = vm.stringClass;
 
-  // GC 👌
-  push(OBJ_VAL(string));
+  beginAssemblyLine((Obj*) string);
   tableSet(&vm.strings, string, BOOL_VAL(true));
-  pop();
+  endAssemblyLine();
 
   return string;
 }

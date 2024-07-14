@@ -50,7 +50,6 @@ typedef struct {
   Table global;
 
   ObjUpValue* upvalues;
-  Obj* objects;
 
   ObjClass* klass;
   ObjClass* nilClass;
@@ -62,16 +61,46 @@ typedef struct {
   ObjClass* arrayClass;
   ObjClass* moduleExportsClass;
 
-  int grayCount;
-  int grayCapacity;
-  Obj** grayStack;
-  size_t bytesAllocated;
-  size_t GCThreshold;
 
   Loop loopStack[LOOP_STACK_MAX];
   int loopStackCount;
   TryCatch tryCatchStack[TRY_CATCH_STACK_MAX];
   int tryCatchStackCount; 
+  
+
+  // Garbage Collector fields
+  // Memory allocating are handling in three ways:
+  //    1. Manual allocation, e.g, module resolution
+  //    2. Garbage Collector allocation, we leave the task of freeing unused Objects to the GC.
+  //    3. Compound allocation, a garbage-collector-tracked object has pointers to several
+  //    manually allocated objects. Garbage Collector can handle this by freing the object
+  //    and its pointers, if the object has ownership of it. 
+
+  // All tracked objects that Gargage Collector has control over
+  Obj* objects;
+  // Most Objects only exists in the presence of others Objects. For instance a Function
+  // MUST be associated with a String in order to have a name to be referenced.
+  // This field is intended to track the objects assembly line, i.e, objects that are not
+  // part of the program yet (The GC would not be able to mark them otherwise), but should not be collected
+  // if the garbage collection is triggered.
+  // If this is not NULL, all objects up until the one it is pointing to are considered 
+  // part of the assembly line and, therefore, should be marked. 
+  Obj* objectsAssemblyLineEnd;
+
+  // Quantity of bytes allocated by the program, it can be manual allocation or not.
+  // TODO: files read are not being counted on this.  
+  size_t bytesAllocated;
+  // Threshold of bytes allocated to trigger Garbage Collector
+  // TODO: there may exist a corner case in which a Garbage collection is triggered
+  // because of too much manual memory allocation - which it should not.
+  size_t GCThreshold;
+  
+  // Garbage Collector Auxiliary list of Objects it was able to mark
+  // The collected objects are: ALL_OBJECTS - MARKED_OBJECTS
+  // That is, objects it could not mark
+  int grayCount;
+  int grayCapacity;
+  Obj** grayStack;
 } VM;
 
 typedef enum {
@@ -94,5 +123,7 @@ InterpretResult interpret(const char* source, char* absPath);
 void push(Value value);
 Value pop();
 Value peek(int distance);
+void beginAssemblyLine(Obj* obj);
+void endAssemblyLine();
 
 #endif

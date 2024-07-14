@@ -119,18 +119,19 @@ static inline Value __nativeArrayShift(int argCount, Value* args) {
 }
 
 static void defineNativeFunction(VM* vm, Table* methods, const char* name, NativeFn function) {
-  push(OBJ_VAL(copyString(name, strlen(name))));
-  push(OBJ_VAL(newNativeFunction(function, AS_STRING(peek(0)))));
-  tableSet(methods, AS_STRING(vm->stack[0]), vm->stack[1]);
-  pop();
-  pop();
+  ObjString* string = copyString(name, strlen(name));
+  beginAssemblyLine((Obj *) string); 
+  ObjNativeFn* native = newNativeFunction(function, string);
+  tableSet(methods, string, OBJ_VAL(native));
+  endAssemblyLine();
 }
 
 static ObjClass* defineNewClass(const char* name) {
-  ObjClass* klass;
-  push(OBJ_VAL(copyString(name, strlen(name))));  
-  klass = newClass(AS_STRING(peek(0)));
-  pop();
+  ObjString* string = copyString(name, strlen(name));
+  beginAssemblyLine((Obj *) string);   
+  ObjClass* klass = newClass(string);
+  endAssemblyLine();
+
   return klass;
 }
 

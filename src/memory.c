@@ -110,6 +110,7 @@ static void freeObject(Obj* object) {
 
 void freeObjects() {
   Obj* object = vm.objects;
+  
   while (object != NULL) {
     Obj* tmp = object->next;
     freeObject(object);
@@ -152,6 +153,17 @@ void markArray(ValueArray* valueArray) {
   }
 }
 
+static void markAssemblyLine() {
+  if (vm.objectsAssemblyLineEnd == NULL) return;
+
+  Obj* current = vm.objects;
+
+  while (current != vm.objectsAssemblyLineEnd->next) {
+    markObject(current);
+    current = current->next;
+  }
+}
+
 static void markRoots() {
   for (Value* slot = vm.stack; slot < vm.stackTop; slot++) {
     markValue(*slot);
@@ -170,6 +182,7 @@ static void markRoots() {
     markObject((Obj*)upvalue);
   }
 
+  markAssemblyLine();
   markObject((Obj*)vm.klass);
   markObject((Obj*)vm.nilClass);
   markObject((Obj*)vm.boolClass);

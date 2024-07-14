@@ -25,20 +25,34 @@ void initVM() {
   resetStack();
   initTable(&vm.strings);
   initTable(&vm.global);
-  vm.objects = NULL;
   vm.upvalues = NULL;
   vm.framesCount = 0;
 
+  vm.tryCatchStackCount = 0;
+  vm.loopStackCount = 0;
+
+  vm.objects = NULL;
+  vm.objectsAssemblyLineEnd = NULL;
   vm.grayCount = 0;
   vm.grayCapacity = 0;
   vm.grayStack = NULL;
   vm.bytesAllocated = 0;
   vm.GCThreshold = 1024 * 1024;
 
-  vm.tryCatchStackCount = 0;
-  vm.loopStackCount = 0;
 
   initializeCore(&vm);
+}
+
+// All objects created after beginAssemblyLine is called (and the obj argument) 
+// are considered part of the assembly line. Hence, cannot be garbage collected.
+// When endAssemblyLine is called, the objects privileges are taken away. 
+void beginAssemblyLine(Obj* obj) {
+  if (vm.objectsAssemblyLineEnd != NULL) return;
+  vm.objectsAssemblyLineEnd = obj;
+}
+
+void endAssemblyLine() {
+  vm.objectsAssemblyLineEnd = NULL;
 }
 
 void freeVM() {
@@ -902,11 +916,10 @@ InterpretResult interpret(const char* source, char* absPath) {
     return INTERPRET_COMPILE_ERROR;
   }
 
-  // Gargabe Collector 👌
-  push(OBJ_VAL(function));
+  vm.objectsAssemblyLineEnd = (Obj *) function;
   ObjClosure* closure = newClosure(function);
-  // Gargabe Collector 👌
-  pop();
+  vm.objectsAssemblyLineEnd = NULL;
+
   push(OBJ_VAL(closure));
   callValue(OBJ_VAL(closure), 0);
 
