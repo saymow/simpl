@@ -272,7 +272,7 @@ static bool objectClassProperty(Value base, ObjString* name, Value* value) {
     exit(1);
   }
 
-  if (property == NIL_VAL) return false;
+  if (IS_NIL(property)) return false;
 
   if (IS_NATIVE_FUNCTION(property)) {
     *value = OBJ_VAL(newBoundNativeFn(base, AS_NATIVE(property)));  

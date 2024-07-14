@@ -327,9 +327,9 @@ ObjString* toString(Value value) {
       case VAL_BOOL:
         return CONSTANT_STRING(AS_BOOL(value) ? "true" : "false");
       case VAL_NUMBER:
-        return CONSTANT_STRING("nil");
-      case VAL_NIL:
         return numberToString(AS_NUMBER(value));
+      case VAL_NIL:
+        return CONSTANT_STRING("nil");
       case VAL_OBJ:
         return objToString(value);
     }
