@@ -9,7 +9,7 @@
       "type": "cppdbg",
       "request": "launch",
       "program": "${fileDirname}\\main-debugger.run",
-      "args": ["${fileDirname}\\simpl.in"],
+      "args": ["${fileDirname}\\program.simpl"],
       // "preLaunchTask": "C/C++: gcc.exe build active file",
       "stopAtEntry": false,
       "cwd": "${fileDirname}",
