@@ -19,7 +19,7 @@ compile-debug-gc:
 	@gcc -o main.run *.c -DDEBUG_GC -Wall -I . -lshlwapi
 
 run:
-	@./main.run ./simpl.in
+	@./main.run ./program.simpl
 
 run-repl:
 	@./main.run
@@ -28,7 +28,7 @@ exec:
 	@make compile --no-print-directory && make run --no-print-directory
 
 exec-profile:
-	@make compile-profile --no-print-directory && ./main.run simpl.in && gprof main.run gmon.out > cpu-profile.out && rm gmon.out
+	@make compile-profile --no-print-directory && ./main.run program.simpl && gprof main.run gmon.out > cpu-profile.out && rm gmon.out
 
 exec-debug:
 	@make compile-debug --no-print-directory && make run --no-print-directory
