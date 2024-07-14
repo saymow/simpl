@@ -1,0 +1,22 @@
+// Array.slice
+
+var arr = [1, 2, 3, 4, 5];
+
+print arr.slice();                                         // expect [1, 2, 3, 4, 5]
+print arr.slice(0);                                        // expect [1, 2, 3, 4, 5]
+print arr.slice(2);                                        // expect [3, 4, 5]
+print arr.slice(2, 4);                                     // expect [3, 4]
+print arr.slice(2, 5);                                     // expect [3, 4, 5]
+
+print arr.slice(-2);                                       // expect [4, 5]
+
+print arr.slice(-3, -1);                                   // expect [3, 4]
+
+// Test copy
+
+var sliced = arr.slice();
+
+sliced.push(6);
+
+print arr;                                                 // expect [1, 2, 3, 4, 5]
+print sliced;                                              // expect [1, 2, 3, 4, 5, 6]
