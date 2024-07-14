@@ -52,14 +52,21 @@ typedef struct {
   ObjUpValue* upvalues;
   Obj* objects;
 
+  ObjClass* klass;
+  ObjClass* nilClass;
+  ObjClass* boolClass;
+  ObjClass* numberClass;
+  ObjClass* stringClass;
+  ObjClass* functionClass;
+  ObjClass* nativeFunctionClass;
+  ObjClass* arrayClass;
+  ObjClass* moduleExportsClass;
+
   int grayCount;
   int grayCapacity;
   Obj** grayStack;
   size_t bytesAllocated;
   size_t GCThreshold;
-
-  ObjClass* moduleExportsClass;
-  ObjClass* arrayClass;
 
   Loop loopStack[LOOP_STACK_MAX];
   int loopStackCount;
@@ -86,5 +93,6 @@ void freeVM();
 InterpretResult interpret(const char* source, char* absPath);
 void push(Value value);
 Value pop();
+Value peek(int distance);
 
 #endif

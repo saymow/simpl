@@ -9,24 +9,15 @@
 #include "common.h"
 #include "compiler.h"
 #include "debug.h"
-#include "lib/clock-native.h"
 #include "memory.h"
 #include "utils.h"
 #include "value.h"
-#include "lib/array.h"
+#include "core.h"
 
 VM vm;
 
 void push(Value value);
 Value pop();
-
-static void defineNativeFunction(Table* methods, const char* name, NativeFn function) {
-  push(OBJ_VAL(copyString(name, strlen(name))));
-  push(OBJ_VAL(newNativeFunction(function)));
-  tableSet(methods, AS_STRING(vm.stack[0]), vm.stack[1]);
-  pop();
-  pop();
-}
 
 static void resetStack() { vm.stackTop = vm.stack; }
 
@@ -44,20 +35,10 @@ void initVM() {
   vm.bytesAllocated = 0;
   vm.GCThreshold = 1024 * 1024;
 
-  vm.moduleExportsClass = NULL;
-  vm.moduleExportsClass = newClass(copyString("Exports", 7));
-  vm.arrayClass = NULL;
-  vm.arrayClass = newClass(copyString("Array", 5));
-
   vm.tryCatchStackCount = 0;
   vm.loopStackCount = 0;
 
-  defineNativeFunction(&vm.global, "clock", clockNative);
-  defineNativeFunction(&vm.arrayClass->methods, "length", arrayLength);
-  defineNativeFunction(&vm.arrayClass->methods, "push", arrayPush);
-  defineNativeFunction(&vm.arrayClass->methods, "pop", arrayPop);
-  defineNativeFunction(&vm.arrayClass->methods, "unshift", arrayUnshift);
-  defineNativeFunction(&vm.arrayClass->methods, "shift", arrayShift);
+  initializeCore(&vm);
 }
 
 void freeVM() {
@@ -201,7 +182,7 @@ static bool callValue(Value callee, int argCount) {
   return false;
 }
 
-static Value peek(int distance) { return vm.stackTop[-(1 + distance)]; }
+Value peek(int distance) { return vm.stackTop[-(1 + distance)]; }
 
 void push(Value value) {
   *vm.stackTop = value;
@@ -259,23 +240,50 @@ static void defineMethod(ObjString* name) {
   pop();
 }
 
-static bool classMethod(Value base, ObjClass* klass, ObjString* name, Value* value) {
-  Value method;
+// Return an object class property, if it is a method, the object is bound to the method 
+static bool objectClassProperty(Value base, ObjString* name, Value* value) {
+  Value property = NIL_VAL;
 
-  if (tableGet(&klass->methods, name, &method)) {
-    *value = OBJ_VAL(newBoundMethod(base, AS_CLOSURE(method)));
-    return true;
+  if (IS_OBJ(base)) {
+    Obj* obj = AS_OBJ(base); 
+    tableGet(&obj->klass->methods, name, &property);
+  } else if (IS_NUMBER(base)) {
+    tableGet(&vm.numberClass->methods, name, &property);
+  } else if (IS_BOOL(base)) {
+    tableGet(&vm.boolClass->methods, name, &property); 
+  } else if (IS_NIL(base)) {
+    tableGet(&vm.nilClass->methods, name, &property);
+  } else {
+    printf("todo unreachable.");
+    exit(1);
   }
 
-  return false;
+  if (property == NIL_VAL) return false;
+
+  if (IS_NATIVE_FUNCTION(property)) {
+    *value = OBJ_VAL(newBoundNativeFn(base, AS_NATIVE(property)));  
+  } else if (IS_CLOSURE(property)) {
+    *value = OBJ_VAL(newBoundMethod(base, AS_CLOSURE(property)));
+  } else {
+    *value = property;
+  } 
+
+  return true;
 }
 
-static bool nativeClassMethod(Value base, ObjClass* klass, ObjString* name, Value* value) {
-  Value method;
+// Bind a superclass method to an object, usually used with as super.method()
+static bool classBoundMethod(Value base, ObjClass* klass, ObjString* name, Value* value) {
+  Value property;
 
-  if (tableGet(&klass->methods, name, &method)) {
-    *value = OBJ_VAL(newBoundNativeFn(base, AS_NATIVE(method)));
-    return true;
+  if (tableGet(&klass->methods, name, &property)) {
+    if (IS_NATIVE_FUNCTION(property)) {
+      *value = OBJ_VAL(newBoundNativeFn(base, AS_NATIVE(property)));  
+      return true;
+    } 
+    if (IS_CLOSURE(property)) {
+      *value = OBJ_VAL(newBoundMethod(base, AS_CLOSURE(property)));
+      return true;
+    }
   }
 
   return false;
@@ -283,25 +291,18 @@ static bool nativeClassMethod(Value base, ObjClass* klass, ObjString* name, Valu
 
 static bool invokeMethod(Value base, ObjString* name, uint8_t argCount) {
   Value value;
-  if (IS_INSTANCE(base)) {
-    if (!(tableGet(&AS_INSTANCE(base)->properties, name, &value) ||
-          classMethod(base, AS_INSTANCE(base)->klass, name, &value))) {
-      runtimeError("Undefined property '%s'.", name->chars);
-      return false;
-    }
-  } else if (IS_ARRAY(base)) {
-    if (!nativeClassMethod(base, AS_ARRAY(base)->klass, name, &value)) {
-      runtimeError("Undefined property '%s'.", name->chars);
-      return false;
-    }
-  } else {
-    runtimeError("Cannot invoke property '%s'.", name->chars);
+  
+  if (IS_INSTANCE(base) && tableGet(&AS_INSTANCE(base)->properties, name, &value)) {
+    return callValue(value, argCount);
+  } 
+  
+  if (!objectClassProperty(base, name, &value)) {
+    runtimeError("Undefined property '%s'.", name->chars);
     return false;
   }
 
   return callValue(value, argCount);
 }
-
 
 static bool getArrayItem(ObjArray* arr, Value index, Value* value) {
   if (!IS_NUMBER(index)) {
@@ -389,8 +390,8 @@ static InterpretResult run() {
           pop();
           length--;
         }
-        push(OBJ_VAL(array));
 
+        push(OBJ_VAL(array));
         break;
       }
       case OP_DEFINE_GLOBAL: {
@@ -441,7 +442,7 @@ static InterpretResult run() {
       case OP_GET_PROPERTY: {
         Value base;
         ObjString* name = READ_STRING();
-        Value value;
+        Value value = NIL_VAL;
 
         if (READ_BYTE() == true) {
           base = peek(0);
@@ -449,25 +450,13 @@ static InterpretResult run() {
           base = pop();
         }
 
-        if (!(IS_INSTANCE(base) || IS_ARRAY(base))) {
-          runtimeError("Cannot access property '%s'.", name->chars);
-          return INTERPRET_RUNTIME_ERROR;
+        if (IS_INSTANCE(base) && tableGet(&AS_INSTANCE(base)->properties, name, &value)) {
+          push(value);
+          break;
         }
 
-        if (IS_INSTANCE(base)) {
-          if (tableGet(&AS_INSTANCE(base)->properties, name, &value) ||
-              classMethod(base, AS_INSTANCE(base)->klass, name, &value)) {
-            push(value);
-          } else {
-            push(NIL_VAL);
-          }
-        } else {
-          if (nativeClassMethod(base, AS_ARRAY(base)->klass, name, &value)) {
-            push(value);
-          } else {
-            push(NIL_VAL);
-          }
-        }
+        objectClassProperty(base, name, &value);
+        push(value);
         break;
       }
       case OP_INVOKE: {
@@ -815,7 +804,7 @@ static InterpretResult run() {
         ObjString* name = READ_STRING();
         Value value;
 
-        if (!classMethod(base, klass, name, &value)) {
+        if (!classBoundMethod(base, klass, name, &value)) {
           runtimeError("Cannot access method '%s'.", name->chars);
           return INTERPRET_RUNTIME_ERROR;
         }

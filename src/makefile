@@ -1,22 +1,22 @@
 all: compile
 
 compile:
-	@gcc -o main.run *.c */*.c  -Wall -I . -lshlwapi
+	@gcc -o main.run *.c -Wall -I . -lshlwapi
 
 compile-profile:
-	@gcc -o main.run *.c  */*.c -Wall -I . -lshlwapi -pg -no-pie
+	@gcc -o main.run *.c -Wall -I . -lshlwapi -pg -no-pie
 
 compile-debug:
-	@gcc -o main.run *.c  */*.c -DDEBUG -Wall -I . -lshlwapi
+	@gcc -o main.run *.c -DDEBUG -Wall -I . -lshlwapi
 
 compile-debugger:
-	@gcc -o main-debugger.run *.c  */*.c -Wall -I . -lshlwapi -g 
+	@gcc -o main-debugger.run *.c -Wall -I . -lshlwapi -g 
 
 compile-debug-logs:
-	@gcc -o main.run *.c  */*.c -DDEBUG_LOGS -Wall -I . -lshlwapi
+	@gcc -o main.run *.c -DDEBUG_LOGS -Wall -I . -lshlwapi
 
 compile-debug-gc:
-	@gcc -o main.run *.c  */*.c -DDEBUG_GC -Wall -I . -lshlwapi
+	@gcc -o main.run *.c -DDEBUG_GC -Wall -I . -lshlwapi
 
 run:
 	@./main.run ./simpl.in

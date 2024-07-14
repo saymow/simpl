@@ -10,40 +10,26 @@ typedef enum {
   OBJ_STRING,
   OBJ_FUNCTION,
   OBJ_NATIVE_FN,
+  OBJ_CLASS,
+  OBJ_ARRAY,
+  OBJ_INSTANCE,
+  OBJ_MODULE,
   OBJ_CLOSURE,
   OBJ_UPVALUE,
-  OBJ_CLASS,
-  OBJ_INSTANCE,
   OBJ_BOUND_METHOD,
-  OBJ_MODULE,
-  OBJ_ARRAY,
   OBJ_BOUND_NATIVE_FN
 } ObjType;
+
+typedef struct ObjClass ObjClass;
 
 struct Obj {
   ObjType type;
   bool isMarked;
+  
+  ObjClass* klass;
+  
   struct Obj *next;
 };
-
-typedef Value (*NativeFn)(int argCount, Value *args);
-
-typedef struct {
-  Obj obj;
-  ObjString *name;
-  Table methods;
-} ObjClass;
-
-typedef struct {
-  Obj obj;
-  ObjClass *klass;
-  Table properties;
-} ObjInstance;
-
-typedef struct {
-  Obj obj;
-  NativeFn function;
-} ObjNativeFn;
 
 struct ObjString {
   Obj obj;
@@ -51,6 +37,25 @@ struct ObjString {
   uint32_t hash;
   char *chars;
 };
+
+struct ObjClass {
+  Obj obj;
+  ObjString *name;
+  Table methods;
+};
+
+typedef struct {
+  Obj obj;
+  Table properties;
+} ObjInstance;
+
+typedef Value (*NativeFn)(int argCount, Value *args);
+
+typedef struct {
+  Obj obj;
+  ObjString* name;
+  NativeFn function;
+} ObjNativeFn;
 
 typedef struct ObjFunction {
   Obj obj;
@@ -89,7 +94,6 @@ typedef struct ObjModule {
 
 typedef struct ObjArray {
   Obj obj;
-  ObjClass *klass;
   ValueArray list;
 } ObjArray;
 
@@ -101,6 +105,7 @@ typedef struct ObjBoundNativeFn {
 
 #define OBJ_TYPE(value) (AS_OBJ(value)->type)
 
+#define IS_CLOSURE(value) (isObjType(value, OBJ_CLOSURE))
 #define IS_BOUND_NATIVE_FN(value) (isObjType(value, OBJ_BOUND_NATIVE_FN))
 #define IS_ARRAY(value) (isObjType(value, OBJ_ARRAY))
 #define IS_MODULE(value) (isObjType(value, OBJ_MODULE))
@@ -111,6 +116,7 @@ typedef struct ObjBoundNativeFn {
 #define IS_FUNCTION(value) (isObjType(value, OBJ_FUNCTION))
 #define IS_NATIVE_FUNCTION(value) (isObjType(value, OBJ_NATIVE_FN))
 
+#define AS_UP_VALUE(value) ((ObjUpValue*)AS_OBJ(value))
 #define AS_BOUND_NATIVE_FN(value) ((ObjBoundNativeFn*)AS_OBJ(value))
 #define AS_ARRAY_LIST(value) (((ObjArray *)AS_OBJ(value))->list)
 #define AS_ARRAY(value) ((ObjArray *)AS_OBJ(value))
@@ -125,6 +131,14 @@ typedef struct ObjBoundNativeFn {
 #define AS_NATIVE(value) (((ObjNativeFn *)AS_OBJ(value)))
 #define AS_NATIVE_FN(value) (((ObjNativeFn *)AS_OBJ(value))->function)
 
+
+/*
+* Expands to copyString in compilation time with the correct string literal length.
+* "- 1" is used to remove null terminator char '\0'.
+*/
+#define CONSTANT_STRING(str) copyString((str), sizeof(str) - 1) 
+
+ObjString* toString(Value value);
 ObjBoundNativeFn *newBoundNativeFn(Value base, ObjNativeFn* native);
 ObjArray *newArray();
 ObjModule *newModule(ObjFunction *function);
@@ -134,7 +148,7 @@ ObjClass *newClass(ObjString *name);
 ObjClosure *newClosure(ObjFunction *function);
 ObjUpValue *newUpValue(Value *value);
 ObjFunction *newFunction();
-ObjNativeFn *newNativeFunction(NativeFn function);
+ObjNativeFn *newNativeFunction(NativeFn function, ObjString* name);
 ObjString *copyString(const char *chars, int length);
 ObjString *takeString(char *chars, int length);
 void printObject(Value value);

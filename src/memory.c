@@ -170,8 +170,15 @@ static void markRoots() {
     markObject((Obj*)upvalue);
   }
 
-  markObject((Obj*)&vm.moduleExportsClass);
+  markObject((Obj*)&vm.klass);
+  markObject((Obj*)&vm.nilClass);
+  markObject((Obj*)&vm.boolClass);
+  markObject((Obj*)&vm.numberClass);
+  markObject((Obj*)&vm.stringClass);
+  markObject((Obj*)&vm.functionClass);
+  markObject((Obj*)&vm.nativeFunctionClass);
   markObject((Obj*)&vm.arrayClass);
+  markObject((Obj*)&vm.moduleExportsClass);
   markTable(&vm.global);
   markCompilerRoots();
 }
@@ -209,7 +216,7 @@ static void blackenObject(Obj* obj) {
     }
     case OBJ_INSTANCE: {
       ObjInstance* instance = (ObjInstance*)obj;
-      markObject((Obj*)instance->klass);
+      markObject((Obj*)instance->obj.klass);
       markTable(&instance->properties);
       break;
     }
@@ -238,8 +245,11 @@ static void blackenObject(Obj* obj) {
       markValue(upvalue->closed);
       break;
     }
+    case OBJ_NATIVE_FN: {
+      markObject((Obj*) ((ObjNativeFn* ) obj)->name);
+      break;
+    }
     case OBJ_STRING:
-    case OBJ_NATIVE_FN:
       break;
   }
 }
