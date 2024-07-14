@@ -1,0 +1,50 @@
+// Values types and ensure everything value is an object
+
+import module from "./values-module.simpl";
+
+fun closure() {
+    var str = "some strange string";
+
+    return fun() {
+        return str;
+    };
+}
+
+class Person {
+    Person(name) {
+        this.name = name;
+    }
+}
+
+var person = Person("John");
+var arr = [1, 2, 3];
+
+print module;                                                                                       // expect instance of Exports
+print nil;                                                                                          // expect nil
+print true;                                                                                         // expect true
+print false;                                                                                        // expect false
+print "str";                                                                                        // expect str
+print 5.555;                                                                                        // expect 5.555
+print arr;                                                                                          // expect [1, 2, 3]
+print closure;                                                                                      // expect <fn closure>
+print Person;                                                                                       // expect class Person
+print person;                                                                                       // expect instance of Person
+print (fun() {});                                                                                   // expect <fn fun>
+print closure()();                                                                                  // expect some strange string
+
+print "-";                                                                                          // expect -
+
+print module.toString();                                                                            // expect instance of Exports
+print nil.toString();                                                                               // expect nil
+print true.toString();                                                                              // expect true
+print false.toString();                                                                             // expect false
+print "str".toString();                                                                             // expect str
+print 5.555.toString();                                                                             // expect 5.555
+print arr.toString();                                                                               // expect instance of Array
+print closure.toString();                                                                           // expect closure
+print Person.toString();                                                                            // expect Person
+print person.toString();                                                                            // expect instance of Person
+print (fun() {}).toString();                                                                        // expect fun
+print closure()().toString();                                                                       // expect some strange string
+print 5.toString.toString();                                                                        // expect toString
+print clock.toString();                                                                             // expect clock
