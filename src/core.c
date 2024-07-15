@@ -10,7 +10,7 @@
 #include "memory.h"
 
 
-static bool __arityCheck(int expected, int received) {
+static inline bool __arityEqualCheck(int expected, int received) {
     if (expected == received) return true;
     
     char * buffer = ALLOCATE(char, 64);
@@ -20,14 +20,30 @@ static bool __arityCheck(int expected, int received) {
     return false;
 }
 
-static bool __arityLooseCheck(int expected, int received) {
-    if (expected >= received) return true;
+static inline bool __arityLessThanOrEqualCheck(int expected, int received) {
+    if (received <= expected) return true;
     
     char * buffer = ALLOCATE(char, 64);
     int length = sprintf(buffer, "Expected at most %d arguments but got %d.", expected, received);
     push(OBJ_VAL(takeString(buffer, length)));
 
     return false;
+}
+
+static inline bool __arityMoreThanOrEqualCheck(int expected, int received) {
+    if (received >= expected) return true;
+    
+    char * buffer = ALLOCATE(char, 64);
+    int length = sprintf(buffer, "Expected at least %d arguments but got %d.", expected, received);
+    push(OBJ_VAL(takeString(buffer, length)));
+
+    return false;
+}
+
+static inline void swap(ValueArray* arr, int i, int j) {
+    Value tmp = arr->values[i];
+    arr->values[i] = arr->values[j];
+    arr->values[j] = tmp;
 }
 
 #define SAFE_CONSUME_NUMBER(args, name)                                             \
@@ -42,10 +58,11 @@ static bool __arityLooseCheck(int expected, int received) {
             0.0;                                                                    \
         })                                                                          \
     )                                                                               \
-    
+
+#define VALID_INDEX_CHECK(received, length) (received >= 0 && received < length)
 
 static inline bool __nativeClock(int argCount, Value* args) {
-  if (!__arityCheck(0, argCount)) return false;
+  if (!__arityEqualCheck(0, argCount)) return false;
 
   push(NUMBER_VAL(clock() / (double) CLOCKS_PER_SEC));
   
@@ -53,7 +70,7 @@ static inline bool __nativeClock(int argCount, Value* args) {
 }
 
 static inline bool __nativeClassToString(int argCount, Value* args) {
-  if (!__arityCheck(0, argCount)) return false;
+  if (!__arityEqualCheck(0, argCount)) return false;
 
   push(OBJ_VAL(toString(*args)));
   
@@ -61,7 +78,7 @@ static inline bool __nativeClassToString(int argCount, Value* args) {
 }
 
 static inline bool __nativeArrayLength(int argCount, Value* args) {
-  if (!__arityCheck(0, argCount)) return false;
+  if (!__arityEqualCheck(0, argCount)) return false;
 
   ObjArray* array = AS_ARRAY(*args);
   push(NUMBER_VAL(array->list.count));
@@ -70,7 +87,7 @@ static inline bool __nativeArrayLength(int argCount, Value* args) {
 }
 
 static inline bool __nativeArrayPush(int argCount, Value* args) {
-    if (!__arityCheck(1, argCount)) return false;
+    if (!__arityEqualCheck(1, argCount)) return false;
 
     ObjArray* array = AS_ARRAY(*args);
     Value value = *(++args);
@@ -89,7 +106,7 @@ static inline bool __nativeArrayPush(int argCount, Value* args) {
 }
 
 static inline bool __nativeArrayPop(int argCount, Value* args) {
-    if (!__arityCheck(0, argCount)) return false;
+    if (!__arityEqualCheck(0, argCount)) return false;
 
     ObjArray* array = AS_ARRAY(*args);
 
@@ -114,7 +131,7 @@ static inline bool __nativeArrayPop(int argCount, Value* args) {
 }
 
 static inline bool __nativeArrayUnshift(int argCount, Value* args) {
-    if (!__arityCheck(1, argCount)) return false;
+    if (!__arityEqualCheck(1, argCount)) return false;
 
     ObjArray* array = AS_ARRAY(*args);
     Value value = *(++args);
@@ -137,7 +154,7 @@ static inline bool __nativeArrayUnshift(int argCount, Value* args) {
 }
 
 static inline bool __nativeArrayShift(int argCount, Value* args) {
-    if (!__arityCheck(0, argCount)) return false;
+    if (!__arityEqualCheck(0, argCount)) return false;
 
     ObjArray* array = AS_ARRAY(*args);
 
@@ -165,7 +182,7 @@ static inline bool __nativeArrayShift(int argCount, Value* args) {
 }
 
 static inline bool __nativeArraySlice(int argCount, Value* args) {
-    if (!__arityLooseCheck(2, argCount)) return false;
+    if (!__arityLessThanOrEqualCheck(2, argCount)) return false;
 
     ObjArray* array = AS_ARRAY(*args);
     ObjArray* slicedArray = newArray();
@@ -197,7 +214,7 @@ static inline bool __nativeArraySlice(int argCount, Value* args) {
 }
 
 static inline bool __nativeArrayIndexOf(int argCount, Value* args) {
-    if (!__arityLooseCheck(1, argCount)) return false;
+    if (!__arityLessThanOrEqualCheck(1, argCount)) return false;
 
     ObjArray* array = AS_ARRAY(*args);
     Value value = *(++args);
@@ -210,6 +227,33 @@ static inline bool __nativeArrayIndexOf(int argCount, Value* args) {
     }
 
     push(NUMBER_VAL(-1));
+    return true;
+}
+
+static inline bool __nativeArrayInsert(int argCount, Value* args) {
+    if (!__arityMoreThanOrEqualCheck(2, argCount)) return false;
+
+    ObjArray* array = AS_ARRAY(*args);
+    int valuesToInsert = argCount - 1;
+    int insertIndex = SAFE_CONSUME_NUMBER(args, "index");
+    int arrInitialLen = array->list.count;
+
+    // Allocate space at the end for values to be insert
+    for (int idx = 0; idx < valuesToInsert; idx++) {
+        writeValueArray(&array->list, NIL_VAL);
+    }
+
+    // Shift existing values after insert index to the right by valuesToInsert offset
+    for (int idx = 0; idx < arrInitialLen - insertIndex; idx++) {
+        swap(&array->list, arrInitialLen - 1 - idx, arrInitialLen - 1 - idx + valuesToInsert);
+    }
+
+    // Insert items at their positions    
+    for (int idx = 0; idx < valuesToInsert; idx++) {
+        array->list.values[idx + insertIndex] = *(++args);
+    }
+
+    push(OBJ_VAL(array));
     return true;
 }
 
@@ -286,6 +330,7 @@ void initializeCore(VM* vm) {
   defineNativeFunction(vm, &vm->arrayClass->methods, "shift", __nativeArrayShift);
   defineNativeFunction(vm, &vm->arrayClass->methods, "slice", __nativeArraySlice);
   defineNativeFunction(vm, &vm->arrayClass->methods, "indexOf", __nativeArrayIndexOf);
+  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert);
   
   vm->moduleExportsClass = defineNewClass("Exports");
   inherit(vm->moduleExportsClass, vm->klass);
