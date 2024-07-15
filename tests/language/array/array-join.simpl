@@ -1,0 +1,8 @@
+// Array.join
+
+var arr = [1, 2, 3, 4, 5];
+
+print arr.join(", ");                         // expect 1, 2, 3, 4, 5
+print arr.join(" ");                          // expect 1 2 3 4 5
+print arr.join("");                           // expect 12345
+print arr.join("some-strange-string");        // expect 1some-strange-string2some-strange-string3some-strange-string4some-strange-string5
