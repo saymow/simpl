@@ -16,3 +16,7 @@ print arr.slice().insert(5, "a", "b");                                         /
 
 print arr.slice().insert(-1, "a", "b");                                        // expect [1, 2, 3, 4, 5, a, b]
 print arr.slice().insert(99, "a", "b");                                        // expect [1, 2, 3, 4, 5, a, b]
+
+print arr.slice().insert(99, "a");                                             // expect [1, 2, 3, 4, 5, a]
+print arr.slice().insert(-1, "a", "b", "c", "d", "e");                         // expect [1, 2, 3, 4, 5, a, b, c, d, e]
+print arr.slice().insert(0, arr.slice());                                      // expect [[1, 2, 3, 4, 5], 1, 2, 3, 4, 5]
