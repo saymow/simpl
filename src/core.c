@@ -57,6 +57,19 @@ static inline void swap(ValueArray* arr, int i, int j) {
             return false;                                                           \
             0.0;                                                                    \
         })                                                                          \
+    )
+
+#define SAFE_CONSUME_STRING(args, name)                                             \
+    (ObjString *) (                                                                 \
+        IS_STRING(*(++args)) ?                                                      \
+        AS_STRING(*args)     :                                                      \
+        ({                                                                          \
+            char * buffer = ALLOCATE(char, 64);                                     \
+            int length = sprintf(buffer, "Expected %s to be a string.", name);      \
+            push(OBJ_VAL(takeString(buffer, length)));                              \
+            return false;                                                           \
+            NULL;                                                                  \
+        })                                                                          \
     )                                                                               \
 
 // Ensure the index is in [0, length)
@@ -282,6 +295,43 @@ static inline bool __nativeArrayInsert(int argCount, Value* args) {
     return true;
 }
 
+static inline bool __nativeArrayJoin(int argCount, Value* args) {
+    if (!__arityMoreThanOrEqualCheck(1, argCount)) return false;
+
+    ObjArray* array = AS_ARRAY(*args);
+    ObjString* separator = SAFE_CONSUME_STRING(args, "separator");
+    ObjArray* tmpArray = newArray();
+    int length = (array->list.count - 1) * separator->length;
+
+    for (int idx = 0; idx < array->list.count; idx++) {
+        ObjString* str = toString(array->list.values[idx]);
+        length += str->length;
+        writeValueArray(&tmpArray->list, OBJ_VAL(str));
+    }
+
+    char *buffer = ALLOCATE(char, length + 1);
+    
+    // There is no separator after the last element, so iteraate until the last element
+    // printing: (element + separator)* + element
+    int idx = 0;
+    int currentLength = 0;
+    for (; idx < tmpArray->list.count - 1; idx++) {
+        ObjString* str = ((ObjString *)  AS_OBJ(tmpArray->list.values[idx]));
+        
+        memcpy(buffer + currentLength, str->chars, str->length);
+        memcpy(buffer + currentLength + str->length, separator->chars, separator->length);
+        currentLength += str->length + separator->length;
+    }
+
+    ObjString* str = ((ObjString *)  AS_OBJ(tmpArray->list.values[idx]));
+    memcpy(buffer + currentLength, str->chars, str->length);
+
+    buffer[length] = '\0';
+
+    push(OBJ_VAL(takeString(buffer, length)));
+    return true;
+}
+
 static void defineNativeFunction(VM* vm, Table* methods, const char* name, NativeFn function) {
   ObjString* string = copyString(name, strlen(name));
   beginAssemblyLine((Obj *) string); 
@@ -356,6 +406,7 @@ void initializeCore(VM* vm) {
   defineNativeFunction(vm, &vm->arrayClass->methods, "slice", __nativeArraySlice);
   defineNativeFunction(vm, &vm->arrayClass->methods, "indexOf", __nativeArrayIndexOf);
   defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert);
+  defineNativeFunction(vm, &vm->arrayClass->methods, "join", __nativeArrayJoin);
   
   vm->moduleExportsClass = defineNewClass("Exports");
   inherit(vm->moduleExportsClass, vm->klass);
