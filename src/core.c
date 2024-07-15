@@ -30,6 +30,20 @@ static bool __arityLooseCheck(int expected, int received) {
     return false;
 }
 
+#define SAFE_CONSUME_NUMBER(args, name)                                             \
+    (double) (                                                                      \
+        IS_NUMBER(*(++args)) ?                                                      \
+        AS_NUMBER(*args)     :                                                      \
+        ({                                                                          \
+            char * buffer = ALLOCATE(char, 64);                                     \
+            int length = sprintf(buffer, "Expected %s to be a number.", name);      \
+            push(OBJ_VAL(takeString(buffer, length)));                              \
+            return false;                                                           \
+            0.0;                                                                    \
+        })                                                                          \
+    )                                                                               \
+    
+
 static inline bool __nativeClock(int argCount, Value* args) {
   if (!__arityCheck(0, argCount)) return false;
 
@@ -159,14 +173,14 @@ static inline bool __nativeArraySlice(int argCount, Value* args) {
     int end = array->list.count;
 
     if (argCount >= 1) {
-        start = AS_NUMBER(*(++args));
+        start = SAFE_CONSUME_NUMBER(args, "start");
 
         if (start < 0) {
             start = end + start;
         }
 
         if (argCount == 2) {
-            end = AS_NUMBER(*(++args));
+            end = SAFE_CONSUME_NUMBER(args, "end");
 
             if (end < 0) {
                 end = array->list.count + end;
