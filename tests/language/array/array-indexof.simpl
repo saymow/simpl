@@ -1,0 +1,20 @@
+// Array.indexOf
+
+class Person {}
+
+var person = Person();
+
+fun fn() {}
+
+var arr = [Person, person, fn, "str", 1, nil, true];
+
+print arr.indexOf(Person);                                              // expect 0
+print arr.indexOf(1);                                                   // expect 4
+print arr.indexOf(person);                                              // expect 1
+print arr.indexOf(fn);                                                  // expect 2
+print arr.indexOf(true);                                                // expect 6
+print arr.indexOf("str");                                               // expect 3
+print arr.indexOf(nil);                                                 // expect 5
+
+print arr.indexOf(77);                                                  // expect -1
+print arr.indexOf("def not there");                                     // expect -1
