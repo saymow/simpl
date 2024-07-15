@@ -706,15 +706,17 @@ static void forEachStatement() {
   emitByte(OP_LOOP_GUARD_END);
   
   // Normal loops are usualy compiled like this:
-  //
+  //  
+  //  <START>
   //  <EXPRESSION>
   //  OP_JUMP_IF_FALSE     => <END>
   //  OP_POP
   //  ...
+  //  OP_JUMP              => <START>
   //  <END>
   //  OP_POP
   //
-  // The last OP_POP is used to remove the JUMP expression from the stack.
+  // The last OP_POP is used to remove the OP_JUMP_IF_FALSE <EXPRESSION> from the stack.
   //
   // The LOOP_GUARD implementation is built on top of this concept and whenever it faces
   // a "break" statement, it adds a dummy value to be consumed by the OP_POP after <END>. 
