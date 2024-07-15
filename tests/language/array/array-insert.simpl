@@ -1,0 +1,16 @@
+// Array.insert
+
+var arr = [1, 2, 3, 4, 5];
+
+// Test mutability 
+
+arr.insert(arr.length(), 6, 7, 8);
+
+print arr;                                                                     // expect [1, 2, 3, 4, 5, 6, 7, 8]
+
+arr = [1, 2, 3, 4, 5];
+
+print arr.slice().insert(0, "a", "b");                                         // expect [a, b, 1, 2, 3, 4, 5]
+print arr.slice().insert(3, "a", "b");                                         // expect [1, 2, 3, a, b, 4, 5]
+print arr.slice().insert(5, "a", "b");                                         // expect [1, 2, 3, 4, 5, a, b]
+
