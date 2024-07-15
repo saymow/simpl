@@ -1,4 +1,4 @@
-// For loop guard should be correctly handled when somethin is thrown 
+// For each loop guard should be correctly handled when somethin is thrown 
 
 // There is a constraint to stack at most 8 LOOPs. This test use this fact to ensure
 // Loops are correctly popped from their stack when there is a throw statement inside it.
@@ -6,7 +6,7 @@
 // 1° iteration
 var idx = 0;
 try {
-    for (;;) {
+    for (idx of [0, 1, 2, 3, 4, 5, 6, 7]) {
         print idx;
         idx = idx + 1;
         if (idx >= 5) {
@@ -18,7 +18,7 @@ try {
 // 2° iteration
 idx = 0;
 try {
-    for (;;) {
+    for (idx of [0, 1, 2, 3, 4, 5, 6, 7]) {
         print idx;
         idx = idx + 1;
         if (idx >= 5) {
@@ -30,7 +30,7 @@ try {
 // 3° iteration
 idx = 0;
 try {
-    for (;;) {
+    for (idx of [0, 1, 2, 3, 4, 5, 6, 7]) {
         print idx;
         idx = idx + 1;
         if (idx >= 5) {
@@ -42,7 +42,7 @@ try {
 // 4° iteration
 idx = 0;
 try {
-    for (;;) {
+    for (idx of [0, 1, 2, 3, 4, 5, 6, 7]) {
         print idx;
         idx = idx + 1;
         if (idx >= 5) {
@@ -54,7 +54,7 @@ try {
 // 5° iteration
 idx = 0;
 try {
-    for (;;) {
+    for (idx of [0, 1, 2, 3, 4, 5, 6, 7]) {
         print idx;
         idx = idx + 1;
         if (idx >= 5) {
@@ -66,7 +66,7 @@ try {
 // 6° iteration
 idx = 0;
 try {
-    for (;;) {
+    for (idx of [0, 1, 2, 3, 4, 5, 6, 7]) {
         print idx;
         idx = idx + 1;
         if (idx >= 5) {
@@ -78,7 +78,7 @@ try {
 // 7° iteration
 idx = 0;
 try {
-    for (;;) {
+    for (idx of [0, 1, 2, 3, 4, 5, 6, 7]) {
         print idx;
         idx = idx + 1;
         if (idx >= 5) {
@@ -91,7 +91,7 @@ try {
 // 8° iteration - If not correctly handled, the test should fail during the 8° iteration
 idx = 0;
 try {
-    for (;;) {
+    for (idx of [0, 1, 2, 3, 4, 5, 6, 7]) {
         print idx;
         idx = idx + 1;
         if (idx >= 5) {
@@ -103,7 +103,7 @@ try {
 // 9° iteration
 idx = 0;
 try {
-    for (;;) {
+    for (idx of [0, 1, 2, 3, 4, 5, 6, 7]) {
         print idx;
         idx = idx + 1;
         if (idx >= 5) {
@@ -115,7 +115,7 @@ try {
 // 10° iteration
 idx = 0;
 try {
-    for (;;) {
+    for (idx of [0, 1, 2, 3, 4, 5, 6, 7]) {
         print idx;
         idx = idx + 1;
         if (idx >= 5) {

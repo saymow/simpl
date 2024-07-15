@@ -1,10 +1,10 @@
-// For nested loop guards should be correctly handled when something is thrown 
+// For each nested loop guards should be correctly handled when something is thrown 
 
 // There is a constraint to stack at most 8 LOOPs. This test use this fact to ensure
 // Loops are correctly popped from their stack when there is a throw statement inside it.
 
 fun throwAt(num, message) {
-    for (;;) {
+    for (i of [1, 2, 3]) {
         print "throwAt";
         if (num == 1) {
             throw message;

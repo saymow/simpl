@@ -1,0 +1,25 @@
+// For each loop continue
+
+print "before";
+
+for (num of [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]) {
+    if (num == 5) {
+        continue;
+    }
+
+    print num;
+}
+
+print "after";
+
+// expect before
+// expect 0
+// expect 1
+// expect 2
+// expect 3
+// expect 4
+// expect 6
+// expect 7
+// expect 8
+// expect 9
+// expect after

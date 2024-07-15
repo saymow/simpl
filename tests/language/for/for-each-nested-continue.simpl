@@ -1,0 +1,35 @@
+// For each loop nested continue
+
+print "before";
+
+for (i of [0, 1, 2]) {
+    if (i == 1) continue;
+    for (j of [10, 11, 12]) {
+        if (j == 11) continue;
+        for (k of [100, 101, 102]) {
+            if (k == 101) continue;
+            print k;
+        }
+        print j;
+    }
+    print i;
+}
+
+print "after";
+
+// expect before
+// expect 100
+// expect 102
+// expect 10
+// expect 100
+// expect 102
+// expect 12
+// expect 0
+// expect 100
+// expect 102
+// expect 10
+// expect 100
+// expect 102
+// expect 12
+// expect 2
+// expect after

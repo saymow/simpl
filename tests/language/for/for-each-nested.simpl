@@ -1,0 +1,59 @@
+// For each loop nested break
+
+
+print "before";
+
+
+for (i of [0, 1, 2]) {
+    for (j of [10, 11, 12]) {
+        for (k of [100, 101, 102]) {
+            print k;
+        }
+        print j;
+    }
+    print i;
+}
+
+print "after";
+
+// expect before
+// expect 100
+// expect 101
+// expect 102
+// expect 10
+// expect 100
+// expect 101
+// expect 102
+// expect 11
+// expect 100
+// expect 101
+// expect 102
+// expect 12
+// expect 0
+// expect 100
+// expect 101
+// expect 102
+// expect 10
+// expect 100
+// expect 101
+// expect 102
+// expect 11
+// expect 100
+// expect 101
+// expect 102
+// expect 12
+// expect 1
+// expect 100
+// expect 101
+// expect 102
+// expect 10
+// expect 100
+// expect 101
+// expect 102
+// expect 11
+// expect 100
+// expect 101
+// expect 102
+// expect 12
+// expect 2
+// expect after

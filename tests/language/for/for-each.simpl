@@ -1,0 +1,22 @@
+// Standard foor each loop
+
+print "before";
+
+for (idx of ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]) {
+    print idx;
+}
+
+print "after";
+
+// expect before
+// expect a
+// expect b
+// expect c
+// expect d
+// expect e
+// expect f
+// expect g
+// expect h
+// expect i
+// expect j
+// expect after
