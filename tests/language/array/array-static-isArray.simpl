@@ -1,0 +1,33 @@
+// static Array.isArray
+
+fun closure() {
+    var str = "some strange string";
+
+    return fun() {
+        return str;
+    };
+}
+
+class Person {
+    Person(name) {
+        this.name = name;
+    }
+}
+
+var person = Person("John");
+var arr = [1, 2, 3];
+
+print Array.isArray(arr);                                                                                          // expect true
+print Array.isArray([]);                                                                                           // expect true
+print Array.isArray([-1]);                                                                                         // expect true
+
+print Array.isArray(nil);                                                                                          // expect false
+print Array.isArray(true);                                                                                         // expect false
+print Array.isArray(false);                                                                                        // expect false
+print Array.isArray("str");                                                                                        // expect false
+print Array.isArray(5.555);                                                                                        // expect false
+print Array.isArray(closure);                                                                                      // expect false
+print Array.isArray(Person);                                                                                       // expect false
+print Array.isArray(person);                                                                                       // expect false
+print Array.isArray((fun() {}));                                                                                   // expect false
+print Array.isArray(closure()());                                                                                  // expect false
