@@ -50,8 +50,15 @@ typedef struct {
   Table global;
 
   ObjUpValue* upvalues;
-
+  
+  // Root class, everything inherits from it
   ObjClass* klass;
+  
+  // Meta Classes are used to define static methods and are exposed to the global namespace
+  // These are superclasses of the Data Type Classes
+  ObjClass* metaArrayClass;
+
+  // Data Type Classes are superclasses of all data types
   ObjClass* nilClass;
   ObjClass* boolClass;
   ObjClass* numberClass;
@@ -61,12 +68,10 @@ typedef struct {
   ObjClass* arrayClass;
   ObjClass* moduleExportsClass;
 
-
   Loop loopStack[LOOP_STACK_MAX];
   int loopStackCount;
   TryCatch tryCatchStack[TRY_CATCH_STACK_MAX];
   int tryCatchStackCount; 
-  
 
   // Garbage Collector fields
   // Memory allocating are handling in three ways:

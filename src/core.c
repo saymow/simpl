@@ -10,6 +10,60 @@
 #include "memory.h"
 
 
+#define SAFE_CONSUME_NUMBER(args, name)                                             \
+    (double) (                                                                      \
+        IS_NUMBER(*(++args)) ?                                                      \
+        AS_NUMBER(*args)     :                                                      \
+        ({                                                                          \
+            char * buffer = ALLOCATE(char, 64);                                     \
+            int length = sprintf(buffer, "Expected %s to be a number.", name);      \
+            push(OBJ_VAL(takeString(buffer, length)));                              \
+            return false;                                                           \
+            0.0;                                                                    \
+        })                                                                          \
+    )
+
+#define SAFE_CONSUME_STRING(args, name)                                             \
+    (ObjString *) (                                                                 \
+        IS_STRING(*(++args)) ?                                                      \
+        AS_STRING(*args)     :                                                      \
+        ({                                                                          \
+            char * buffer = ALLOCATE(char, 64);                                     \
+            int length = sprintf(buffer, "Expected %s to be a string.", name);      \
+            push(OBJ_VAL(takeString(buffer, length)));                              \
+            return false;                                                           \
+            NULL;                                                                   \
+        })                                                                          \
+    )                                                                               \
+
+// Ensure the index is in [0, length)
+// 1°) If index >= length, it returns length - 1 (capping the index).
+// 2°) If index in [0, length), it returns index.
+// 3°) If index in [-length, 0), it returns length + idx.
+// 4°) If none of these conditions are met, it returns 0.
+#define SAFE_INDEX(idx, length)                                                     \
+    ((idx) >= (length) ?                                                            \
+        (length) - 1 :                                                              \
+     ((idx) >= 0 ?                                                                  \
+        (idx) :                                                                     \
+     (-(idx) < (length) ?                                                           \
+        (length) + (idx) :                                                          \
+        0)))                     
+
+// Ensure the index is in [0, length]
+// 1°) If index >= length, it returns length - 1 (capping the index).
+// 2°) If index in [0, length], it returns index.
+// 3°) If index in [-length, 0), it returns length + idx.
+// 4°) If none of these conditions are met, it returns 0.
+#define SAFE_INDEX_INCLUSIVE(idx, length)                                           \
+    ((idx) > (length) ?                                                             \
+        (length)     :                                                              \
+     ((idx) >= 0 ?                                                                  \
+        (idx) :                                                                     \
+     (-(idx) < (length) ?                                                           \
+        (length) + (idx) + 1 :                                                      \
+        0)))     
+
 static inline bool __arityEqualCheck(int expected, int received) {
     if (expected == received) return true;
     
@@ -45,61 +99,6 @@ static inline void swap(ValueArray* arr, int i, int j) {
     arr->values[i] = arr->values[j];
     arr->values[j] = tmp;
 }
-
-#define SAFE_CONSUME_NUMBER(args, name)                                             \
-    (double) (                                                                      \
-        IS_NUMBER(*(++args)) ?                                                      \
-        AS_NUMBER(*args)     :                                                      \
-        ({                                                                          \
-            char * buffer = ALLOCATE(char, 64);                                     \
-            int length = sprintf(buffer, "Expected %s to be a number.", name);      \
-            push(OBJ_VAL(takeString(buffer, length)));                              \
-            return false;                                                           \
-            0.0;                                                                    \
-        })                                                                          \
-    )
-
-#define SAFE_CONSUME_STRING(args, name)                                             \
-    (ObjString *) (                                                                 \
-        IS_STRING(*(++args)) ?                                                      \
-        AS_STRING(*args)     :                                                      \
-        ({                                                                          \
-            char * buffer = ALLOCATE(char, 64);                                     \
-            int length = sprintf(buffer, "Expected %s to be a string.", name);      \
-            push(OBJ_VAL(takeString(buffer, length)));                              \
-            return false;                                                           \
-            NULL;                                                                  \
-        })                                                                          \
-    )                                                                               \
-
-// Ensure the index is in [0, length)
-// 1°) If index >= length, it returns length - 1 (capping the index).
-// 2°) If index in [0, length), it returns index.
-// 3°) If index in [-length, 0), it returns length + idx.
-// 4°) If none of these conditions are met, it returns 0.
-#define SAFE_INDEX(idx, length)  \
-    ((idx) >= (length) ?         \
-        (length) - 1 :           \
-     ((idx) >= 0 ?               \
-        (idx) :                  \
-     (-(idx) < (length) ?        \
-        (length) + (idx) :       \
-        0)))                     
-
-// Ensure the index is in [0, length]
-// 1°) If index >= length, it returns length - 1 (capping the index).
-// 2°) If index in [0, length], it returns index.
-// 3°) If index in [-length, 0), it returns length + idx.
-// 4°) If none of these conditions are met, it returns 0.
-#define SAFE_INDEX_INCLUSIVE(idx, length)  \
-    ((idx) > (length) ?          \
-        (length)     :           \
-     ((idx) >= 0 ?               \
-        (idx) :                  \
-     (-(idx) < (length) ?        \
-        (length) + (idx) + 1 :   \
-        0)))                  
-
 
 static inline bool __nativeClock(int argCount, Value* args) {
   if (!__arityEqualCheck(0, argCount)) return false;
@@ -332,6 +331,14 @@ static inline bool __nativeArrayJoin(int argCount, Value* args) {
     return true;
 }
 
+static inline bool __nativeStaticArrayIsArray(int argCount, Value* args) {
+    if (!__arityEqualCheck(1, argCount)) return false;
+
+    Value value = *(++args);
+    push(IS_ARRAY(value) ? TRUE_VAL : FALSE_VAL);
+    return true;
+}
+
 static void defineNativeFunction(VM* vm, Table* methods, const char* name, NativeFn function) {
   ObjString* string = copyString(name, strlen(name));
   beginAssemblyLine((Obj *) string); 
@@ -363,6 +370,7 @@ void initializeCore(VM* vm) {
   vm->stringClass = NULL;
   vm->functionClass = NULL;
   vm->moduleExportsClass = NULL;
+  vm->metaArrayClass = NULL;
   vm->arrayClass = NULL;
 
   vm->klass = defineNewClass("Class");
@@ -395,8 +403,13 @@ void initializeCore(VM* vm) {
   vm->functionClass = defineNewClass("Function");
   inherit(vm->functionClass, vm->klass);
 
+  vm->metaArrayClass = defineNewClass("MetaArray");
+  inherit(vm->metaArrayClass, vm->klass);
+
+  defineNativeFunction(vm, &vm->metaArrayClass->methods, "isArray", __nativeStaticArrayIsArray);
+
   vm->arrayClass = defineNewClass("Array");
-  inherit(vm->arrayClass, vm->klass);
+  inherit(vm->arrayClass, vm->metaArrayClass);
 
   defineNativeFunction(vm, &vm->arrayClass->methods, "length", __nativeArrayLength);
   defineNativeFunction(vm, &vm->arrayClass->methods, "push", __nativeArrayPush);
@@ -407,9 +420,12 @@ void initializeCore(VM* vm) {
   defineNativeFunction(vm, &vm->arrayClass->methods, "indexOf", __nativeArrayIndexOf);
   defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert);
   defineNativeFunction(vm, &vm->arrayClass->methods, "join", __nativeArrayJoin);
-  
+
   vm->moduleExportsClass = defineNewClass("Exports");
   inherit(vm->moduleExportsClass, vm->klass);
 
   defineNativeFunction(vm, &vm->global, "clock", __nativeClock);
+  
+  
+  tableSet(&vm->global, vm->arrayClass->name, OBJ_VAL(vm->arrayClass));
 }
