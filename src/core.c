@@ -247,7 +247,7 @@ static inline bool __nativeArraySlice(int argCount, Value* args) {
 }
 
 static inline bool __nativeArrayIndexOf(int argCount, Value* args) {
-  if (!__arityLessThanOrEqualCheck(1, argCount)) return false;
+  if (!__arityEqualCheck(1, argCount)) return false;
 
   ObjArray* array = AS_ARRAY(*args);
   Value value = *(++args);
