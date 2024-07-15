@@ -59,7 +59,34 @@ static inline void swap(ValueArray* arr, int i, int j) {
         })                                                                          \
     )                                                                               \
 
-#define VALID_INDEX_CHECK(received, length) (received >= 0 && received < length)
+// Ensure the index is in [0, length)
+// 1°) If index >= length, it returns length - 1 (capping the index).
+// 2°) If index in [0, length), it returns index.
+// 3°) If index in [-length, 0), it returns length + idx.
+// 4°) If none of these conditions are met, it returns 0.
+#define SAFE_INDEX(idx, length)  \
+    ((idx) >= (length) ?         \
+        (length) - 1 :           \
+     ((idx) >= 0 ?               \
+        (idx) :                  \
+     (-(idx) < (length) ?        \
+        (length) + (idx) :       \
+        0)))                     
+
+// Ensure the index is in [0, length]
+// 1°) If index >= length, it returns length - 1 (capping the index).
+// 2°) If index in [0, length], it returns index.
+// 3°) If index in [-length, 0), it returns length + idx.
+// 4°) If none of these conditions are met, it returns 0.
+#define SAFE_INDEX_INCLUSIVE(idx, length)  \
+    ((idx) > (length) ?          \
+        (length)     :           \
+     ((idx) >= 0 ?               \
+        (idx) :                  \
+     (-(idx) < (length) ?        \
+        (length) + (idx) + 1 :   \
+        0)))                  
+
 
 static inline bool __nativeClock(int argCount, Value* args) {
   if (!__arityEqualCheck(0, argCount)) return false;
@@ -191,17 +218,13 @@ static inline bool __nativeArraySlice(int argCount, Value* args) {
 
     if (argCount >= 1) {
         start = SAFE_CONSUME_NUMBER(args, "start");
-
-        if (start < 0) {
-            start = end + start;
-        }
-
+        // stard is inclusive
+        start = SAFE_INDEX(start, array->list.count);
         if (argCount == 2) {
             end = SAFE_CONSUME_NUMBER(args, "end");
-
-            if (end < 0) {
-                end = array->list.count + end;
-            }
+            // end is exclusive, so we need to be able to access the length-ith positon.
+            // Hence, list.count + 1
+            end = SAFE_INDEX_INCLUSIVE(end, array->list.count);
         } 
     }
 
@@ -237,6 +260,8 @@ static inline bool __nativeArrayInsert(int argCount, Value* args) {
     int valuesToInsert = argCount - 1;
     int insertIndex = SAFE_CONSUME_NUMBER(args, "index");
     int arrInitialLen = array->list.count;
+
+    insertIndex = SAFE_INDEX_INCLUSIVE(insertIndex, array->list.count);
 
     // Allocate space at the end for values to be insert
     for (int idx = 0; idx < valuesToInsert; idx++) {

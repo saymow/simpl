@@ -7,10 +7,9 @@ print arr.slice(0);                                        // expect [1, 2, 3, 4
 print arr.slice(2);                                        // expect [3, 4, 5]
 print arr.slice(2, 4);                                     // expect [3, 4]
 print arr.slice(2, 5);                                     // expect [3, 4, 5]
-
-print arr.slice(-2);                                       // expect [4, 5]
-
-print arr.slice(-3, -1);                                   // expect [3, 4]
+print arr.slice(-1);                                       // expect [5]
+print arr.slice(-99);                                      // expect [1, 2, 3, 4, 5]
+print arr.slice(-3, -1);                                   // expect [3, 4, 5]
 
 // Test copy
 
@@ -20,3 +19,5 @@ sliced.push(6);
 
 print arr;                                                 // expect [1, 2, 3, 4, 5]
 print sliced;                                              // expect [1, 2, 3, 4, 5, 6]
+
+print arr.slice(4);                                     // expect [5]
