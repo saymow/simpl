@@ -182,6 +182,23 @@ static inline bool __nativeArraySlice(int argCount, Value* args) {
     return true;
 }
 
+static inline bool __nativeArrayIndexOf(int argCount, Value* args) {
+    if (!__arityLooseCheck(1, argCount)) return false;
+
+    ObjArray* array = AS_ARRAY(*args);
+    Value value = *(++args);
+
+    for (int idx = 0; idx < array->list.count; idx++) {
+        if (valuesEqual(array->list.values[idx], value)) {
+            push(NUMBER_VAL(idx));
+            return true;
+        }
+    }
+
+    push(NUMBER_VAL(-1));
+    return true;
+}
+
 static void defineNativeFunction(VM* vm, Table* methods, const char* name, NativeFn function) {
   ObjString* string = copyString(name, strlen(name));
   beginAssemblyLine((Obj *) string); 
@@ -254,6 +271,7 @@ void initializeCore(VM* vm) {
   defineNativeFunction(vm, &vm->arrayClass->methods, "unshift", __nativeArrayUnshift);
   defineNativeFunction(vm, &vm->arrayClass->methods, "shift", __nativeArrayShift);
   defineNativeFunction(vm, &vm->arrayClass->methods, "slice", __nativeArraySlice);
+  defineNativeFunction(vm, &vm->arrayClass->methods, "indexOf", __nativeArrayIndexOf);
   
   vm->moduleExportsClass = defineNewClass("Exports");
   inherit(vm->moduleExportsClass, vm->klass);
