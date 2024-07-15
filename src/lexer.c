@@ -160,7 +160,15 @@ static TokenType identifierType() {
     case 'n':
       return checkKeyword(1, 2, "il", TOKEN_NIL);
     case 'o':
-      return checkKeyword(1, 1, "r", TOKEN_OR);
+      if (lexer->current - lexer->start > 1) {
+        switch (lexer->start[1]) {
+          case 'r':
+            return checkKeyword(2, 0, "", TOKEN_OR);
+          case 'f':
+            return checkKeyword(2, 0, "", TOKEN_OF);
+        }
+        break;
+      }
     case 'p':
       return checkKeyword(1, 4, "rint", TOKEN_PRINT);
     case 'r':

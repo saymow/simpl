@@ -45,13 +45,23 @@ static int jumpInstruction(const char* name, int sign, Chunk* chunk, int offset)
   return offset + 3;
 }
 
+static int loopGuardInstruction(const char* name, Chunk* chunk, int offset) {
+  uint16_t loopStartJump = (uint16_t) (chunk->code[offset + 1] << 8);
+  loopStartJump |= chunk->code[offset + 2];
+  uint16_t loopEndJump = (uint16_t) (chunk->code[offset + 3] << 8);
+  loopEndJump |= chunk->code[offset + 4];
+  printf("%-16s %4d ->  %d | %d \n", name, offset, offset + loopStartJump + 5, offset + loopEndJump + 5);
+
+  return offset + 5;
+}
+
 static int tryCatchInstruction(const char* name, Chunk* chunk, int offset) {
   uint16_t catchJump = (uint16_t)(chunk->code[offset + 1] << 8);
   catchJump |= chunk->code[offset + 2];
   uint16_t outJump = (uint16_t)(chunk->code[offset + 3] << 8);
   outJump |= chunk->code[offset + 4];
   bool hasCatchParameter = chunk->code[offset + 5];
-  printf("%-16s %d ->  %d | %d | %d \n", name, offset, offset + catchJump + 6, offset + outJump + 6, hasCatchParameter);
+  printf("%-16s %4d ->  %d | %d | %d \n", name, offset, offset + catchJump + 6, offset + outJump + 6, hasCatchParameter);
 
   return offset + 6;
 }
@@ -179,10 +189,12 @@ int disassembleInstruction(Chunk* chunk, int offset) {
       return jumpInstruction("OP_JUMP", 1, chunk, offset);
     case OP_JUMP_IF_FALSE:
       return jumpInstruction("OP_JUMP_IF_FALSE", 1, chunk, offset);
+    case OP_NAMED_LOOP:
+      return simpleInstruction("OP_NAMED_LOOP", offset);
     case OP_LOOP:
       return jumpInstruction("OP_LOOP", -1, chunk, offset);
     case OP_LOOP_GUARD:
-      return jumpInstruction("OP_LOOP_GUARD", 1, chunk, offset);
+      return loopGuardInstruction("OP_LOOP_GUARD", chunk, offset);
     case OP_TRY_CATCH:
       return tryCatchInstruction("OP_TRY_CATCH", chunk, offset);
     case OP_TRY_CATCH_TRY_END:

@@ -611,21 +611,21 @@ static void endLoop() {
 
 static int emitLoopGuard() {
   emitByte(OP_LOOP_GUARD);
-  /*
-  * - Loop start address offset
-  * When we have and incrementer, the start of the loop is the incrementer and the loop jumps are like this: 
-  * 
-  * 1) incrementer -> comparison -> body -> (incrementer | end)
-  * 
-  * Otherwise, the start of the loop is the comparison and the loop jumps are like this: 
-  * 
-  * 2) comparison -> body -> (comparison | end)
-  * 
-  * The 2° scenario is handled by default, since the OP_LOOP_GUARD instruction is emitted right before the comparison.
-  * For the 1° scenario, we need to patch this offset.  
-  */
+  
+  // - Loop start address offset
+  // When we have an incrementer, the start of the loop is the incrementer and the loop jumps are like this: 
+  // 
+  // 1) incrementer -> comparison -> body -> (incrementer | end)
+  // 
+  // Otherwise, the start of the loop is the comparison and the loop jumps are like this: 
+  // 
+  // 2) comparison -> body -> (comparison | end)
+  // 
+  // The 2° scenario is handled by default, since the OP_LOOP_GUARD instruction is emitted right before the comparison.
+  // For the 1° scenario, we need to patch this offset.  
   writeChunk(currentChunk(), 0x00, parser.previous.line);
   writeChunk(currentChunk(), 0x00, parser.previous.line);
+
   // Loop end address offset
   writeChunk(currentChunk(), 0xff, parser.previous.line);
   writeChunk(currentChunk(), 0xff, parser.previous.line);
@@ -657,6 +657,79 @@ static void whileStatement() {
   endLoop();
 }
 
+static void addSystemLocalVariable() {
+  if (current->localCount == UINT8_COUNT) {
+    error("Too many local variables in function.");
+    return;
+  }
+
+  Local* local = &current->locals[current->localCount++];
+  local->name = syntheticToken(TOKEN_IDENTIFIER, "");;
+  local->depth = current->scopeDepth;
+  local->isCaptured = false;
+}
+
+static void forEachStatement() {
+  uint8_t iterationVariableConstant = parseVariable("Expect for each iteration variable identifier.");
+  consume(TOKEN_OF, "Expect 'of' after for each iteration variable.");
+
+  // manually declaring user iteration name variable 
+  defineVariable(iterationVariableConstant);
+  uint8_t iterationName = makeConstant(NIL_VAL);
+  emitBytes(OP_CONSTANT, iterationName);
+
+  // Below we declare auxiliary variables for the OP_NAMED_LOOP
+  // These variables are cleared once the scope is closed 
+
+  // manually declaring system iteration index variable
+  emitBytes(OP_CONSTANT, makeConstant(NUMBER_VAL(-1)));
+  addSystemLocalVariable();
+
+  // manually declaring system iterator variable.
+  // We keep the expression result variable on the stack
+  // until we reach the end of the scope.
+  expression();
+  addSystemLocalVariable();
+
+  consume(TOKEN_RIGHT_PAREN, "Expect ')' after for clause.");
+
+  int loopGuard = emitLoopGuard() + 2;
+  int loopStart = currentChunk()->count;
+
+  emitByte(OP_NAMED_LOOP);
+  
+  statement();
+
+  emitLoop(loopStart);
+  
+  patchJump(loopGuard, 2);
+  emitByte(OP_LOOP_GUARD_END);
+  
+  // Normal loops are usualy compiled like this:
+  //
+  //  <EXPRESSION>
+  //  OP_JUMP_IF_FALSE     => <END>
+  //  OP_POP
+  //  ...
+  //  <END>
+  //  OP_POP
+  //
+  // The last OP_POP is used to remove the JUMP expression from the stack.
+  //
+  // The LOOP_GUARD implementation is built on top of this concept and whenever it faces
+  // a "break" statement, it adds a dummy value to be consumed by the OP_POP after <END>. 
+  //
+  // Although we dont have any explict expression in this for-each, in order to comply with
+  // the LOOP_GUARD implementation, we will be popping the dummy value it adds. We will also
+  // be adding this dummy value where needed.
+  // pop dummy value 
+  emitByte(OP_POP);
+
+  // The manually declared iteration name is popped from the stack as soon as the block is closed
+  endScope();
+  endLoop();
+}
+
 static void forStatement() {
   beginLoop();
   beginScope();
@@ -664,6 +737,8 @@ static void forStatement() {
   consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
 
   if (match(TOKEN_SEMICOLON)) {
+  } else if (check(TOKEN_IDENTIFIER)) {
+    return forEachStatement();
   } else if (match(TOKEN_VAR)) {
     varDeclaration();
   } else {
@@ -1314,7 +1389,7 @@ static void arrayGetOrSet(bool canAssign) {
     emitByte(OP_SET_ITEM);
   } else {
     // When assign operators other than '=' are used, we need to keep the base + identifier in the stack.
-    // The bool is intended to handled that.
+    // The bool is intended to handle that.
     emitBytes(OP_GET_ITEM, (uint8_t) false);
   }
 }

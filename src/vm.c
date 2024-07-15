@@ -566,6 +566,36 @@ static InterpretResult run() {
         frame->ip -= offset;
         break;
       }
+      case OP_NAMED_LOOP: {   
+        Value iterator = peek(0);
+        Value iterationIdx = peek(1);
+        int nextIdx = AS_NUMBER(iterationIdx) + 1;
+
+        if (!IS_ARRAY(iterator)) {
+          runtimeError("Expected for each iterator variable to be iterable.");
+          return INTERPRET_RUNTIME_ERROR;
+        }
+
+        // Get out of the loop 
+        if (nextIdx >= AS_ARRAY(iterator)->list.count) {
+          Loop* loop = &vm.loopStack[vm.loopStackCount - 1];
+
+
+          frame->ip = loop->outIp;
+          // For loops are usually terminated after an expression that is persisted on the stack.
+          // Although we dont have any explict expression in this for each, in order to comply with
+          // the LOOP_GUARD implementation, we will be popping the dummy value it adds. We will also
+          // be adding this dummy value where needed.
+          vm.stackTop = loop->frameStackTop + 1;
+          break;
+        }
+
+        // update iteration idx
+        vm.stackTop[-2] = NUMBER_VAL(nextIdx); 
+        // update iteration name
+        vm.stackTop[-3] = AS_ARRAY(iterator)->list.values[nextIdx]; 
+        break;
+      }
       case OP_LOOP_GUARD: {
         if (vm.loopStackCount + 1 == LOOP_STACK_MAX) {
           runtimeError("Cant stack more than %d loops.", LOOP_STACK_MAX);
@@ -598,8 +628,9 @@ static InterpretResult run() {
         }
 
         frame->ip = loop->outIp;
-        // Since we are jumping to the OP_LOOP_GUARD_END and right after that we have a OP_POP
-        // (that is intended to pop the loop comparison expression) we need to increment one on the stackTop.
+        // For loops are usually terminated after an expression that is persisted on the stack.
+        // Hence, at the end of the loop there is an OP_POP to get rid of it. In this exceptional 
+        // situation we have to push a dummy value to the stack that will be popped.  
         vm.stackTop = loop->frameStackTop + 1;
 
         closeUpValues(loop->frameStackTop - 1);
