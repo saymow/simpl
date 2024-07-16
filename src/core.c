@@ -65,36 +65,6 @@
         (length) + (idx) + 1 :                                                      \
         0)))     
 
-static inline bool __arityEqualCheck(int expected, int received) {
-    if (expected == received) return true;
-    
-    char * buffer = ALLOCATE(char, 64);
-    int length = sprintf(buffer, "Expected %d arguments but got %d.", expected, received);
-    push(OBJ_VAL(takeString(buffer, length)));
-
-    return false;
-}
-
-static inline bool __arityLessThanOrEqualCheck(int expected, int received) {
-    if (received <= expected) return true;
-    
-    char * buffer = ALLOCATE(char, 64);
-    int length = sprintf(buffer, "Expected at most %d arguments but got %d.", expected, received);
-    push(OBJ_VAL(takeString(buffer, length)));
-
-    return false;
-}
-
-static inline bool __arityMoreThanOrEqualCheck(int expected, int received) {
-    if (received >= expected) return true;
-    
-    char * buffer = ALLOCATE(char, 64);
-    int length = sprintf(buffer, "Expected at least %d arguments but got %d.", expected, received);
-    push(OBJ_VAL(takeString(buffer, length)));
-
-    return false;
-}
-
 static inline void swap(ValueArray* arr, int i, int j) {
     Value tmp = arr->values[i];
     arr->values[i] = arr->values[j];
@@ -102,24 +72,18 @@ static inline void swap(ValueArray* arr, int i, int j) {
 }
 
 static inline bool __nativeClock(int argCount, Value* args) {
-  if (!__arityEqualCheck(0, argCount)) return false;
-
   push(NUMBER_VAL(clock() / (double) CLOCKS_PER_SEC));
   
   return true;
 }
 
 static inline bool __nativeClassToString(int argCount, Value* args) {
-  if (!__arityEqualCheck(0, argCount)) return false;
-
   push(OBJ_VAL(toString(*args)));
   
   return true;  
 }
 
 static inline bool __nativeArrayLength(int argCount, Value* args) {
-  if (!__arityEqualCheck(0, argCount)) return false;
-
   ObjArray* array = AS_ARRAY(*args);
   push(NUMBER_VAL(array->list.count));
 
@@ -127,8 +91,6 @@ static inline bool __nativeArrayLength(int argCount, Value* args) {
 }
 
 static inline bool __nativeArrayPush(int argCount, Value* args) {
-  if (!__arityEqualCheck(1, argCount)) return false;
-
   ObjArray* array = AS_ARRAY(*args);
   Value value = *(++args);
 
@@ -146,8 +108,6 @@ static inline bool __nativeArrayPush(int argCount, Value* args) {
 }
 
 static inline bool __nativeArrayPop(int argCount, Value* args) {
-  if (!__arityEqualCheck(0, argCount)) return false;
-
   ObjArray* array = AS_ARRAY(*args);
 
   if (array->list.count == 0) {
@@ -170,8 +130,6 @@ static inline bool __nativeArrayPop(int argCount, Value* args) {
 }
 
 static inline bool __nativeArrayUnshift(int argCount, Value* args) {
-  if (!__arityEqualCheck(1, argCount)) return false;
-
   ObjArray* array = AS_ARRAY(*args);
   Value value = *(++args);
 
@@ -193,8 +151,6 @@ static inline bool __nativeArrayUnshift(int argCount, Value* args) {
 }
 
 static inline bool __nativeArrayShift(int argCount, Value* args) {
-  if (!__arityEqualCheck(0, argCount)) return false;
-
   ObjArray* array = AS_ARRAY(*args);
 
   if (array->list.count == 0) {
@@ -221,8 +177,6 @@ static inline bool __nativeArrayShift(int argCount, Value* args) {
 }
 
 static inline bool __nativeArraySlice(int argCount, Value* args) {
-  if (!__arityLessThanOrEqualCheck(2, argCount)) return false;
-
   ObjArray* array = AS_ARRAY(*args);
   ObjArray* slicedArray = newArray();
   int start = 0;
@@ -248,8 +202,6 @@ static inline bool __nativeArraySlice(int argCount, Value* args) {
 }
 
 static inline bool __nativeArrayIndexOf(int argCount, Value* args) {
-  if (!__arityEqualCheck(1, argCount)) return false;
-
   ObjArray* array = AS_ARRAY(*args);
   Value value = *(++args);
 
@@ -265,8 +217,6 @@ static inline bool __nativeArrayIndexOf(int argCount, Value* args) {
 }
 
 static inline bool __nativeArrayInsert(int argCount, Value* args) {
-  if (!__arityMoreThanOrEqualCheck(2, argCount)) return false;
-
   ObjArray* array = AS_ARRAY(*args);
   int valuesToInsert = argCount - 1;
   int insertIndex = SAFE_CONSUME_NUMBER(args, "index");
@@ -294,8 +244,6 @@ static inline bool __nativeArrayInsert(int argCount, Value* args) {
 }
 
 static inline bool __nativeArrayJoin(int argCount, Value* args) {
-  if (!__arityMoreThanOrEqualCheck(1, argCount)) return false;
-
   ObjArray* array = AS_ARRAY(*args);
   ObjString* separator = SAFE_CONSUME_STRING(args, "separator");
   ObjArray* tmpArray = newArray();
@@ -331,16 +279,12 @@ static inline bool __nativeArrayJoin(int argCount, Value* args) {
 }
 
 static inline bool __nativeStaticArrayIsArray(int argCount, Value* args) {
-  if (!__arityEqualCheck(1, argCount)) return false;
-
   Value value = *(++args);
   push(IS_ARRAY(value) ? TRUE_VAL : FALSE_VAL);
   return true;
 }
 
 static inline bool __nativeStaticArrayNew(int argCount, Value* args) {
-  if (!__arityLessThanOrEqualCheck(1, argCount)) return false;
-
   ObjArray* array = newArray();
   int length = argCount == 1 ? SAFE_CONSUME_NUMBER(args, "length") : 0;
 

@@ -16,8 +16,6 @@ typedef enum {
   OBJ_MODULE,
   OBJ_CLOSURE,
   OBJ_UPVALUE,
-  OBJ_BOUND_METHOD,
-  OBJ_BOUND_NATIVE_METHOD,
   OBJ_OVERLOADED_METHOD,
   OBJ_BOUND_OVERLOADED_METHOD
 } ObjType;
@@ -85,12 +83,6 @@ typedef struct ObjClosure {
   ObjFunction *function;
 } ObjClosure;
 
-typedef struct ObjBoundMethod {
-  Obj obj;
-  Value base;
-  ObjClosure *method;
-} ObjBoundMethod;
-
 typedef bool (*NativeFn)(int argCount, Value *args);
 
 typedef struct {
@@ -99,12 +91,6 @@ typedef struct {
   Arity arity;
   NativeFn function;
 } ObjNativeFn;
-
-typedef struct ObjBoundNativeMethod {
-  Obj obj;
-  Value base;
-  ObjNativeFn *native;
-} ObjBoundNativeMethod;
 
 typedef struct ObjOverloadedMethod {
   Obj obj;
@@ -151,10 +137,8 @@ typedef struct ObjArray {
 #define IS_BOUND_OVERLOADED_METHOD(value) (isObjType(value, OBJ_BOUND_OVERLOADED_METHOD))
 #define IS_OVERLOADED_METHOD(value) (isObjType(value, OBJ_OVERLOADED_METHOD))
 #define IS_CLOSURE(value) (isObjType(value, OBJ_CLOSURE))
-#define IS_BOUND_NATIVE_METHOD(value) (isObjType(value, OBJ_BOUND_NATIVE_METHOD))
 #define IS_ARRAY(value) (isObjType(value, OBJ_ARRAY))
 #define IS_MODULE(value) (isObjType(value, OBJ_MODULE))
-#define IS_BOUND_METHOD(value) (isObjType(value, OBJ_BOUND_METHOD))
 #define IS_INSTANCE(value) (isObjType(value, OBJ_INSTANCE))
 #define IS_CLASS(value) (isObjType(value, OBJ_CLASS))
 #define IS_STRING(value) (isObjType(value, OBJ_STRING))
@@ -166,11 +150,9 @@ typedef struct ObjArray {
 #define AS_BOUND_OVERLOADED_METHOD(value) ((ObjBoundOverloadedMethod *)AS_OBJ(value))
 #define AS_OVERLOADED_METHOD(value) ((ObjOverloadedMethod *)AS_OBJ(value))
 #define AS_UP_VALUE(value) ((ObjUpValue*)AS_OBJ(value))
-#define AS_BOUND_NATIVE_METHOD(value) ((ObjBoundNativeMethod*)AS_OBJ(value))
 #define AS_ARRAY_LIST(value) (((ObjArray *)AS_OBJ(value))->list)
 #define AS_ARRAY(value) ((ObjArray *)AS_OBJ(value))
 #define AS_MODULE(value) ((ObjModule *)AS_OBJ(value))
-#define AS_BOUND_METHOD(value) ((ObjBoundMethod *)AS_OBJ(value))
 #define AS_INSTANCE(value) ((ObjInstance *)AS_OBJ(value))
 #define AS_CLASS(value) ((ObjClass *)AS_OBJ(value))
 #define AS_STRING(value) ((ObjString *)AS_OBJ(value))
@@ -181,20 +163,16 @@ typedef struct ObjArray {
 #define AS_NATIVE_FN(value) (((ObjNativeFn *)AS_OBJ(value))->function)
 
 
-/*
-* Expands to copyString in compilation time with the correct string literal length.
-* "- 1" is used to remove null terminator char '\0'.
-*/
+//Expands to copyString in compilation time with the correct string literal length.
+//"- 1" is used to remove null terminator char '\0'.
 #define CONSTANT_STRING(str) copyString((str), sizeof(str) - 1) 
 
 ObjBoundOverloadedMethod* newBoundOverloadedMethod(Value base, ObjOverloadedMethod* overloadedMethod);
 ObjOverloadedMethod* newNativeOverloadedMethod(ObjString* name);
 ObjOverloadedMethod* newOverloadedMethod(ObjString* name);
 ObjString* toString(Value value);
-ObjBoundNativeMethod *newBoundNativeFn(Value base, ObjNativeFn* native);
 ObjArray *newArray();
 ObjModule *newModule(ObjFunction *function);
-ObjBoundMethod *newBoundMethod(Value base, ObjClosure *method);
 ObjInstance *newInstance(ObjClass *klass);
 ObjClass *newClass(ObjString *name);
 ObjClosure *newClosure(ObjFunction *function);

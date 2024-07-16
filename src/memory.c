@@ -55,11 +55,6 @@ static void freeObject(Obj* object) {
       FREE(ObjBoundOverloadedMethod, overloadedMethod);
       break;
     }
-    case OBJ_BOUND_NATIVE_METHOD: {
-      ObjBoundNativeMethod* boundNativeFn = (ObjBoundNativeMethod*)object;
-      FREE(ObjBoundNativeMethod, boundNativeFn);
-      break;
-    }
     case OBJ_ARRAY: {
       ObjArray* array = (ObjArray*)object;
       freeValueArray(&array->list);
@@ -70,11 +65,6 @@ static void freeObject(Obj* object) {
       ObjModule* module = (ObjModule*)object;
       freeTable(&module->exports);
       FREE(ObjModule, module);
-      break;
-    }
-    case OBJ_BOUND_METHOD: {
-      ObjBoundMethod* boundMethod = (ObjBoundMethod*)object;
-      FREE(ObjBoundMethod, boundMethod);
       break;
     }
     case OBJ_INSTANCE: {
@@ -228,12 +218,6 @@ static void blackenObject(Obj* obj) {
       }
       break;
     }
-    case OBJ_BOUND_NATIVE_METHOD: {
-      ObjBoundNativeMethod* boundNativeFn = (ObjBoundNativeMethod*)obj;
-      markValue(boundNativeFn->base);
-      markObject((Obj* )boundNativeFn->native);
-      break;
-    }
     case OBJ_ARRAY: {
       ObjArray* array = (ObjArray*)obj;
       markArray(&array->list);
@@ -243,12 +227,6 @@ static void blackenObject(Obj* obj) {
       ObjModule* module = (ObjModule*)obj;
       markTable(&module->exports);
       markObject((Obj* )module->function);
-      break;
-    }
-    case OBJ_BOUND_METHOD: {
-      ObjBoundMethod* boundMethod = (ObjBoundMethod*)obj;
-      markObject((Obj*)boundMethod->method);
-      markValue(boundMethod->base);
       break;
     }
     case OBJ_INSTANCE: {

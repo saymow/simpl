@@ -112,11 +112,6 @@ static void concatenate() {
 }
 
 static bool call(ObjClosure* closure, uint8_t argCount) {
-  if (closure->function->arity != argCount) {
-    runtimeError("Expected %d arguments but got %d.", closure->function->arity,
-                 argCount);
-    return false;
-  }
   if (vm.framesCount == FRAMES_MAX) {
     runtimeError("Stack overflow.");
     return false;
@@ -221,22 +216,24 @@ static bool callValue(Value callee, int argCount) {
         }
         break;
       }
-      case OBJ_BOUND_NATIVE_METHOD: {
-        ObjBoundNativeMethod* boundNativeFn = AS_BOUND_NATIVE_METHOD(callee);
-        // Native class methods expects to receive the callee as the first argument.
-        vm.stackTop[-(argCount + 1)] = boundNativeFn->base;
-        return callNativeFn(boundNativeFn->native->function, argCount, true);
-      }
-      case OBJ_BOUND_METHOD: {
-        ObjBoundMethod* boundMethod = AS_BOUND_METHOD(callee);
-        // The first item of the stack is initilized with the this keyword pointing to the base object
-        vm.stackTop[-(argCount + 1)] = boundMethod->base;
-        return call(boundMethod->method, argCount);
-      }
-      case OBJ_CLOSURE:
+      case OBJ_CLOSURE: {
+        if (AS_CLOSURE(callee)->function->arity != argCount) {
+          runtimeError("Expected %d arguments but got %d.", AS_CLOSURE(callee)->function->arity,
+                      argCount);
+          return false;
+        }      
+
         return call(AS_CLOSURE(callee), argCount);
-      case OBJ_NATIVE_FN:
+      }
+      case OBJ_NATIVE_FN: {
+        if (AS_NATIVE(callee)->arity != argCount) {
+          runtimeError("Expected %d arguments but got %d.", AS_NATIVE(callee)->arity,
+                      argCount);
+          return false;
+        } 
+        
         return callNativeFn(AS_NATIVE_FN(callee), argCount, false);
+      }
       default:
         break;
     }
@@ -336,11 +333,7 @@ static bool objectClassProperty(Value base, ObjString* name, Value* value) {
 
   if (IS_NIL(property)) return false;
 
-  if (IS_NATIVE_FUNCTION(property)) {
-    *value = OBJ_VAL(newBoundNativeFn(base, AS_NATIVE(property)));  
-  } else if (IS_CLOSURE(property)) {
-    *value = OBJ_VAL(newBoundMethod(base, AS_CLOSURE(property)));
-  } else if (IS_OVERLOADED_METHOD(property)) {
+  if (IS_OVERLOADED_METHOD(property)) {
     *value = OBJ_VAL(newBoundOverloadedMethod(base, AS_OVERLOADED_METHOD(property)));
   } else {
     *value = property;
@@ -353,19 +346,9 @@ static bool objectClassProperty(Value base, ObjString* name, Value* value) {
 static bool classBoundMethod(Value base, ObjClass* klass, ObjString* name, Value* value) {
   Value property;
 
-  if (tableGet(&klass->methods, name, &property)) {
-    if (IS_NATIVE_FUNCTION(property)) {
-      *value = OBJ_VAL(newBoundNativeFn(base, AS_NATIVE(property)));  
-      return true;
-    } 
-    if (IS_CLOSURE(property)) {
-      *value = OBJ_VAL(newBoundMethod(base, AS_CLOSURE(property)));
-      return true;
-    }
-    if (IS_OVERLOADED_METHOD(property)) {
-      *value = OBJ_VAL(newBoundOverloadedMethod(base, AS_OVERLOADED_METHOD(property)));
-      return true;
-    }
+  if (tableGet(&klass->methods, name, &property) && IS_OVERLOADED_METHOD(property)) {
+    *value = OBJ_VAL(newBoundOverloadedMethod(base, AS_OVERLOADED_METHOD(property)));
+    return true;
   }
 
   return false;
