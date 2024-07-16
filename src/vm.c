@@ -179,8 +179,8 @@ static bool callModule(ObjModule* module) {
 static bool callValue(Value callee, int argCount) {
   if (IS_OBJ(callee)) {
     switch (OBJ_TYPE(callee)) {
-      case OBJ_BOUND_NATIVE_FN: {
-        ObjBoundNativeFn* boundNativeFn = AS_BOUND_NATIVE_FN(callee);
+      case OBJ_BOUND_NATIVE_METHOD: {
+        ObjBoundNativeMethod* boundNativeFn = AS_BOUND_NATIVE_METHOD(callee);
         // Native class methods expects to receive the callee as the first argument.
         vm.stackTop[-(argCount + 1)] = boundNativeFn->base;
         return callNativeFn(boundNativeFn->native->function, argCount, true);

@@ -45,9 +45,9 @@ static void freeObject(Obj* object) {
 #endif
 
   switch (object->type) {
-    case OBJ_BOUND_NATIVE_FN: {
-      ObjBoundNativeFn* boundNativeFn = (ObjBoundNativeFn*)object;
-      FREE(ObjBoundNativeFn, boundNativeFn);
+    case OBJ_BOUND_NATIVE_METHOD: {
+      ObjBoundNativeMethod* boundNativeFn = (ObjBoundNativeMethod*)object;
+      FREE(ObjBoundNativeMethod, boundNativeFn);
       break;
     }
     case OBJ_ARRAY: {
@@ -204,8 +204,8 @@ static void blackenObject(Obj* obj) {
 #endif
 
   switch (obj->type) {
-    case OBJ_BOUND_NATIVE_FN: {
-      ObjBoundNativeFn* boundNativeFn = (ObjBoundNativeFn*)obj;
+    case OBJ_BOUND_NATIVE_METHOD: {
+      ObjBoundNativeMethod* boundNativeFn = (ObjBoundNativeMethod*)obj;
       markValue(boundNativeFn->base);
       markObject((Obj* )boundNativeFn->native);
       break;

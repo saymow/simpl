@@ -29,8 +29,8 @@ Obj *allocateObj(ObjType type, size_t size) {
   return object;
 }
 
-ObjBoundNativeFn *newBoundNativeFn(Value base, ObjNativeFn* native) {
-  ObjBoundNativeFn *boundNativeFn = ALLOCATE_OBJ(OBJ_BOUND_NATIVE_FN, ObjBoundNativeFn);
+ObjBoundNativeMethod *newBoundNativeFn(Value base, ObjNativeFn* native) {
+  ObjBoundNativeMethod *boundNativeFn = ALLOCATE_OBJ(OBJ_BOUND_NATIVE_METHOD, ObjBoundNativeMethod);
   boundNativeFn->base = base;
   boundNativeFn->native = native;
   boundNativeFn->obj.klass = native->obj.klass;
@@ -230,7 +230,7 @@ static void printValueArray(ValueArray* array) {
 
 void printObject(Value value) {
   switch (AS_OBJ(value)->type) {
-    case OBJ_BOUND_NATIVE_FN:
+    case OBJ_BOUND_NATIVE_METHOD:
       printf("<native fn>");
       break;
     case OBJ_ARRAY:
@@ -309,8 +309,8 @@ static ObjString* functionToString(ObjFunction *function) {
 
 ObjString* objToString(Value value) {
    switch (AS_OBJ(value)->type) {
-    case OBJ_BOUND_NATIVE_FN:
-      return copyString(AS_BOUND_NATIVE_FN(value)->native->name->chars, AS_BOUND_NATIVE_FN(value)->native->name->length);
+    case OBJ_BOUND_NATIVE_METHOD:
+      return copyString(AS_BOUND_NATIVE_METHOD(value)->native->name->chars, AS_BOUND_NATIVE_METHOD(value)->native->name->length);
     case OBJ_BOUND_METHOD:
       return copyString(AS_BOUND_METHOD(value)->method->function->name->chars, AS_BOUND_METHOD(value)->method->function->name->length);
     case OBJ_CLASS:

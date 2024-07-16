@@ -17,7 +17,7 @@ typedef enum {
   OBJ_CLOSURE,
   OBJ_UPVALUE,
   OBJ_BOUND_METHOD,
-  OBJ_BOUND_NATIVE_FN
+  OBJ_BOUND_NATIVE_METHOD
 } ObjType;
 
 typedef struct ObjClass ObjClass;
@@ -37,25 +37,6 @@ struct ObjString {
   uint32_t hash;
   char *chars;
 };
-
-struct ObjClass {
-  Obj obj;
-  ObjString *name;
-  Table methods;
-};
-
-typedef struct {
-  Obj obj;
-  Table properties;
-} ObjInstance;
-
-typedef bool (*NativeFn)(int argCount, Value *args);
-
-typedef struct {
-  Obj obj;
-  ObjString* name;
-  NativeFn function;
-} ObjNativeFn;
 
 typedef struct ObjFunction {
   Obj obj;
@@ -85,6 +66,31 @@ typedef struct ObjBoundMethod {
   ObjClosure *method;
 } ObjBoundMethod;
 
+typedef bool (*NativeFn)(int argCount, Value *args);
+
+typedef struct {
+  Obj obj;
+  ObjString* name;
+  NativeFn function;
+} ObjNativeFn;
+
+typedef struct ObjBoundNativeMethod {
+  Obj obj;
+  Value base;
+  ObjNativeFn *native;
+} ObjBoundNativeMethod;
+
+struct ObjClass {
+  Obj obj;
+  ObjString *name;
+  Table methods;
+};
+
+typedef struct {
+  Obj obj;
+  Table properties;
+} ObjInstance;
+
 typedef struct ObjModule {
   Obj obj;
   ObjFunction *function;
@@ -97,16 +103,11 @@ typedef struct ObjArray {
   ValueArray list;
 } ObjArray;
 
-typedef struct ObjBoundNativeFn {
-  Obj obj;
-  Value base;
-  ObjNativeFn *native;
-} ObjBoundNativeFn;
 
 #define OBJ_TYPE(value) (AS_OBJ(value)->type)
 
 #define IS_CLOSURE(value) (isObjType(value, OBJ_CLOSURE))
-#define IS_BOUND_NATIVE_FN(value) (isObjType(value, OBJ_BOUND_NATIVE_FN))
+#define IS_BOUND_NATIVE_METHOD(value) (isObjType(value, OBJ_BOUND_NATIVE_METHOD))
 #define IS_ARRAY(value) (isObjType(value, OBJ_ARRAY))
 #define IS_MODULE(value) (isObjType(value, OBJ_MODULE))
 #define IS_BOUND_METHOD(value) (isObjType(value, OBJ_BOUND_METHOD))
@@ -117,7 +118,7 @@ typedef struct ObjBoundNativeFn {
 #define IS_NATIVE_FUNCTION(value) (isObjType(value, OBJ_NATIVE_FN))
 
 #define AS_UP_VALUE(value) ((ObjUpValue*)AS_OBJ(value))
-#define AS_BOUND_NATIVE_FN(value) ((ObjBoundNativeFn*)AS_OBJ(value))
+#define AS_BOUND_NATIVE_METHOD(value) ((ObjBoundNativeMethod*)AS_OBJ(value))
 #define AS_ARRAY_LIST(value) (((ObjArray *)AS_OBJ(value))->list)
 #define AS_ARRAY(value) ((ObjArray *)AS_OBJ(value))
 #define AS_MODULE(value) ((ObjModule *)AS_OBJ(value))
@@ -139,7 +140,7 @@ typedef struct ObjBoundNativeFn {
 #define CONSTANT_STRING(str) copyString((str), sizeof(str) - 1) 
 
 ObjString* toString(Value value);
-ObjBoundNativeFn *newBoundNativeFn(Value base, ObjNativeFn* native);
+ObjBoundNativeMethod *newBoundNativeFn(Value base, ObjNativeFn* native);
 ObjArray *newArray();
 ObjModule *newModule(ObjFunction *function);
 ObjBoundMethod *newBoundMethod(Value base, ObjClosure *method);
