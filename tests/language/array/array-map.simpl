@@ -1,0 +1,23 @@
+// Array.map
+
+class MyNumber {
+    MyNumber(num) {
+        this.num = num;
+    }
+}
+
+print [1, 2, 3].map(fun (num) {                                                               // [1, 4, 9]
+    return num * 2;
+});
+
+print [1, 2, 3].map(fun (num) {                                                               // [101, 102, 103]
+    return num + 100;
+});
+
+print [1, 2, 3].map(fun (num) {                                                               // [instance of MyNumber, instance of MyNumber, instance of MyNumber]
+    return MyNumber(num);
+});
+
+print [1, 2, 3].map(fun (num) {                                                               // [pad1, pad2, pad3]
+    return "pad" + num.toString();
+});
