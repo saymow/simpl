@@ -342,17 +342,20 @@ static inline bool __nativeStaticArrayNew(int argCount, Value* args) {
   if (!__arityLessThanOrEqualCheck(1, argCount)) return false;
 
   ObjArray* array = newArray();
-  array->list.count = argCount == 1 ? SAFE_CONSUME_NUMBER(args, "length") : 0;
+  int length = argCount == 1 ? SAFE_CONSUME_NUMBER(args, "length") : 0;
 
-  while (array->list.capacity < array->list.count) {
+  while (array->list.capacity < length) {
     array->list.capacity = GROW_CAPACITY(array->list.capacity);
   }
 
+  beginAssemblyLine((Obj *) array);
   array->list.values = GROW_ARRAY(Value, array->list.values, 0, array->list.capacity);
-  
-  for (int idx = 0; idx < array->list.count; idx++) {
+  endAssemblyLine();
+
+  for (int idx = 0; idx < length; idx++) {
     array->list.values[idx] = NIL_VAL;
   }
+  array->list.count = length;
   
   push(OBJ_VAL(array));
   return true;
