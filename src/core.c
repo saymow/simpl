@@ -4,6 +4,7 @@
 
 #include "core.h"
 
+#include "core-inc.h"
 #include "value.h"
 #include "utils.h"
 #include "object.h"
@@ -374,12 +375,20 @@ static ObjClass* defineNewClass(const char* name) {
   return klass;
 }
 
-static inline void inherit(ObjClass* subclass, ObjClass* superclass) {
-  subclass->obj.klass = superclass;
-  tableAddAll(&superclass->methods, &subclass->methods);
+static inline void inherit(Obj* obj, ObjClass* superclass) {
+  obj->klass = superclass;
+
+  if (IS_CLASS(OBJ_VAL(obj))) {
+    tableAddAll(&superclass->methods, &((ObjClass*) obj)->methods);
+  }
 }
 
 void initializeCore(VM* vm) {
+  //                        System class initialization
+  //
+  // The order which class are initialized is extremely important to ensure the propper
+  // inheritance.  
+
   vm->klass = NULL;
   vm->nativeFunctionClass = NULL;
   vm->nilClass = NULL;
@@ -389,46 +398,43 @@ void initializeCore(VM* vm) {
   vm->functionClass = NULL;
   vm->moduleExportsClass = NULL;
   vm->metaArrayClass = NULL;
-  vm->arrayClass = NULL;
+  vm->arrayClass = NULL; 
 
   vm->klass = defineNewClass("Class");
-
-  /*
-  * "NativeFunction" needs to be defined second and before "Class" methods definition, since:
-  *     
-  *     1. It should extend the "Class" that is defined first
-  *     2. All "ObjNativeFn" extends to "NativeFunction"
-  */  
+  vm->stringClass = defineNewClass("String");
   vm->nativeFunctionClass = defineNewClass("NativeFunction");
 
   defineNativeFunction(vm, &vm->klass->methods, "toString", __nativeClassToString);
-  
-  // But the "NativeFunction" inheritance should come after the "Class" methods are defined
-  inherit(vm->nativeFunctionClass, vm->klass);  
+
+  // Class inherits from itself
+  vm->klass->obj.klass = vm->klass;
+  inherit((Obj *)vm->stringClass, vm->klass);
+  inherit((Obj *)vm->nativeFunctionClass, vm->klass);
+
+  inherit((Obj *)vm->klass->name, vm->stringClass);
+  inherit((Obj *)vm->stringClass->name, vm->stringClass);
+  inherit((Obj *)vm->nativeFunctionClass->name, vm->stringClass);
 
   vm->nilClass = defineNewClass("Nil");
-  inherit(vm->nilClass, vm->klass);
+  inherit((Obj *)vm->nilClass, vm->klass);
 
   vm->boolClass = defineNewClass("Bool");
-  inherit(vm->boolClass, vm->klass);
+  inherit((Obj *)vm->boolClass, vm->klass);
 
   vm->numberClass = defineNewClass("Number");
-  inherit(vm->numberClass, vm->klass);  
-
-  vm->stringClass = defineNewClass("String");
-  inherit(vm->stringClass, vm->klass);  
+  inherit((Obj *)vm->numberClass, vm->klass);  
 
   vm->functionClass = defineNewClass("Function");
-  inherit(vm->functionClass, vm->klass);
+  inherit((Obj *)vm->functionClass, vm->klass);
 
   vm->metaArrayClass = defineNewClass("MetaArray");
-  inherit(vm->metaArrayClass, vm->klass);
+  inherit((Obj *)vm->metaArrayClass, vm->klass);
 
   defineNativeFunction(vm, &vm->metaArrayClass->methods, "isArray", __nativeStaticArrayIsArray);
   defineNativeFunction(vm, &vm->metaArrayClass->methods, "new", __nativeStaticArrayNew);
 
   vm->arrayClass = defineNewClass("Array");
-  inherit(vm->arrayClass, vm->metaArrayClass);
+  inherit((Obj *)vm->arrayClass, vm->metaArrayClass);
 
   defineNativeFunction(vm, &vm->arrayClass->methods, "length", __nativeArrayLength);
   defineNativeFunction(vm, &vm->arrayClass->methods, "push", __nativeArrayPush);
@@ -441,10 +447,13 @@ void initializeCore(VM* vm) {
   defineNativeFunction(vm, &vm->arrayClass->methods, "join", __nativeArrayJoin);
 
   vm->moduleExportsClass = defineNewClass("Exports");
-  inherit(vm->moduleExportsClass, vm->klass);
+  inherit((Obj *)vm->moduleExportsClass, vm->klass);
 
   defineNativeFunction(vm, &vm->global, "clock", __nativeClock);
-  
-  
+
+  vm->state = EXTENDING;
+
+  interpret(coreExtension, NULL);
+
   tableSet(&vm->global, vm->arrayClass->name, OBJ_VAL(vm->arrayClass));
 }

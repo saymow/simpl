@@ -73,19 +73,47 @@ ObjInstance *newInstance(ObjClass *klass) {
   return instance;
 }
 
+
+// System Classes are configured in two phases
+//
+// - When the VM is INITIALIZING we are essentialy creating them
+// and adding native functions.
+// - When the VM is EXTENDING, we are extending their methods using
+// Simpl functions. 
+//
+// During the INITIALIZING phase, all inheritance should be handle
+// manually by the VM. 
+ObjClass *newSystemClass(ObjString *name) {
+  if (vm.state == INITIALIZING) {
+    ObjClass *klass = ALLOCATE_OBJ(OBJ_CLASS, ObjClass);
+    klass->name = name;
+    initTable(&klass->methods);
+
+    return klass;
+  } else {
+    if (name->chars == vm.arrayClass->name->chars) {
+      return vm.arrayClass;
+    } else {
+      // unreachable
+      fprintf(stderr, "Unable to find system class to extend from.");
+      exit(1);
+    }
+  }
+}
+
 ObjClass *newClass(ObjString *name) {
+  if (vm.state != INITIALIZED) {
+    return newSystemClass(name);
+  }
+  
   ObjClass *klass = ALLOCATE_OBJ(OBJ_CLASS, ObjClass);
   klass->name = name;
   initTable(&klass->methods);
 
-  // Inheritance from root Class unless if it is the root class being created.
-  // awkward statement
-  if (vm.klass != NULL) {
-    klass->obj.klass = vm.klass;
-    beginAssemblyLine((Obj *) klass->obj.klass);
-    tableAddAll(&vm.klass->methods, &klass->methods);
-    endAssemblyLine();
-  }
+  klass->obj.klass = vm.klass;
+  beginAssemblyLine((Obj *) klass->obj.klass);
+  tableAddAll(&vm.klass->methods, &klass->methods);
+  endAssemblyLine();
 
   return klass;
 }

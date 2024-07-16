@@ -13,6 +13,8 @@
 
 typedef enum { FRAME_TYPE_CLOSURE, FRAME_TYPE_MODULE } CallFrameType;
 
+typedef enum { INITIALIZING, EXTENDING, INITIALIZED  } VMState; 
+
 typedef struct {
   uint8_t* ip;
   Value* slots;
@@ -106,6 +108,19 @@ typedef struct {
   int grayCount;
   int grayCapacity;
   Obj** grayStack;
+
+  // The process of initializing the VM is complex and need VM itself to interpret
+  // some core functionalities. For this, we have a few states to tweak the VM behavior
+  // a little:
+  //
+  //  INITIALIZING: Where the heap memory allocation, system classes, native functions 
+  // and settings are established.
+  //  
+  //  EXTENDING: Where Simpl code is interpreted to extend core functionalities.
+  //
+  //  INTIALIZED: Where it is ready to interpret user code.
+  //  
+  VMState state;
 } VM;
 
 typedef enum {

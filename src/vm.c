@@ -22,6 +22,8 @@ Value pop();
 static void resetStack() { vm.stackTop = vm.stack; }
 
 void initVM() {
+  vm.state = INITIALIZING;
+  
   resetStack();
   initTable(&vm.strings);
   initTable(&vm.global);
@@ -39,8 +41,9 @@ void initVM() {
   vm.bytesAllocated = 0;
   vm.GCThreshold = 1024 * 1024;
 
-
   initializeCore(&vm);
+
+  vm.state = INITIALIZED;
 }
 
 // All objects created after beginAssemblyLine is called (and the obj argument) 
