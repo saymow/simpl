@@ -141,7 +141,7 @@ static bool callNativeFn(NativeFn function, int argCount, bool isMethod) {
   } 
 
   Value fnReturn = pop();
-  vm.stackTop -= argCount + isMethod; // pop from the stack the callee? + function arguments 
+  vm.stackTop -= argCount + 1; // pop from the stack the callee? + function arguments 
   push(fnReturn);
   return true;
 }
