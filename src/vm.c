@@ -16,6 +16,7 @@
 
 VM vm;
 
+static bool callValue(Value callee, int argCount);
 void push(Value value);
 Value pop();
 
@@ -146,13 +147,34 @@ static bool callNativeFn(NativeFn function, int argCount, bool isMethod) {
   return true;
 }
 
+static inline bool ensureOverloadedMethodArity(ObjOverloadedMethod *overloadedMethod, int argCount) {
+  if (overloadedMethod->type == NATIVE_METHOD ? 
+    overloadedMethod->as.nativeMethods[argCount] != NULL : 
+    overloadedMethod->as.userMethods[argCount] != NULL
+  ) {
+    return true; 
+  } 
+
+  // todo: a heuristic to find a good x
+  runtimeError("Expected x arguments but got %d.", argCount);
+  return false;
+}
+
 static bool callConstructor(ObjClass* klass, int argCount) {
   ObjInstance* instance = newInstance(klass);
+  Value initializer;
+  
   vm.stackTop[-(argCount + 1)] = OBJ_VAL(instance);
 
-  Value initializer;
+  // we MUST restrict the class name to ALWAYS be the constructor
+  // i.e, blocking it to be a property
   if (tableGet(&klass->methods, klass->name, &initializer)) {
-    call(AS_CLOSURE(initializer), argCount);
+    if (!ensureOverloadedMethodArity(AS_OVERLOADED_METHOD(initializer), argCount)) {
+      return false;
+    }
+
+    ObjClosure* function = AS_OVERLOADED_METHOD(initializer)->as.userMethods[argCount];
+    call(function, argCount);
   } else if (argCount != 0) {
     runtimeError("Expected 0 arguments but got %d.", argCount);
     return false;
@@ -179,6 +201,26 @@ static bool callModule(ObjModule* module) {
 static bool callValue(Value callee, int argCount) {
   if (IS_OBJ(callee)) {
     switch (OBJ_TYPE(callee)) {
+      case OBJ_CLASS:
+        return callConstructor(AS_CLASS(callee), argCount);
+      case OBJ_BOUND_OVERLOADED_METHOD: {
+        ObjBoundOverloadedMethod* overloadedMethod = AS_BOUND_OVERLOADED_METHOD(callee);
+        
+        vm.stackTop[-(argCount + 1)] = overloadedMethod->base;
+
+        if (!ensureOverloadedMethodArity(overloadedMethod->overloadedMethod, argCount)) {
+          return false;
+        }
+
+        if (overloadedMethod->overloadedMethod->type == NATIVE_METHOD) {
+          ObjNativeFn* function = AS_NATIVE_BOUND_OVERLOADED_METHOD(callee, argCount); 
+          return callNativeFn(function->function, argCount, true);
+        } else {
+          ObjClosure* function = AS_USER_BOUND_OVERLOADED_METHOD(callee, argCount);  
+          return call(function, argCount);
+        }
+        break;
+      }
       case OBJ_BOUND_NATIVE_METHOD: {
         ObjBoundNativeMethod* boundNativeFn = AS_BOUND_NATIVE_METHOD(callee);
         // Native class methods expects to receive the callee as the first argument.
@@ -191,8 +233,6 @@ static bool callValue(Value callee, int argCount) {
         vm.stackTop[-(argCount + 1)] = boundMethod->base;
         return call(boundMethod->method, argCount);
       }
-      case OBJ_CLASS:
-        return callConstructor(AS_CLASS(callee), argCount);
       case OBJ_CLOSURE:
         return call(AS_CLOSURE(callee), argCount);
       case OBJ_NATIVE_FN:
@@ -259,8 +299,20 @@ static void closeUpValues(Value* last) {
 static void defineMethod(ObjString* name) {
   Value method = peek(0);
   ObjClass* klass = AS_CLASS(peek(1));
+  Value value;
 
-  tableSet(&klass->methods, name, method);
+  // Overloading existing method
+  if (tableGet(&klass->methods, name, &value) && IS_OVERLOADED_METHOD(value)) {
+    AS_OVERLOADED_METHOD(value)->as.userMethods[AS_CLOSURE(method)->function->arity] = AS_CLOSURE(method);
+    pop();
+    return;  
+  }
+
+  // Creating new method overload and Assign the function to its slot
+  ObjOverloadedMethod* overloadedMethod = newOverloadedMethod(name);
+  overloadedMethod->as.userMethods[AS_CLOSURE(method)->function->arity] = AS_CLOSURE(method);
+
+  tableSet(&klass->methods, name, OBJ_VAL(overloadedMethod));
   pop();
 }
 
@@ -288,6 +340,8 @@ static bool objectClassProperty(Value base, ObjString* name, Value* value) {
     *value = OBJ_VAL(newBoundNativeFn(base, AS_NATIVE(property)));  
   } else if (IS_CLOSURE(property)) {
     *value = OBJ_VAL(newBoundMethod(base, AS_CLOSURE(property)));
+  } else if (IS_OVERLOADED_METHOD(property)) {
+    *value = OBJ_VAL(newBoundOverloadedMethod(base, AS_OVERLOADED_METHOD(property)));
   } else {
     *value = property;
   } 
@@ -306,6 +360,10 @@ static bool classBoundMethod(Value base, ObjClass* klass, ObjString* name, Value
     } 
     if (IS_CLOSURE(property)) {
       *value = OBJ_VAL(newBoundMethod(base, AS_CLOSURE(property)));
+      return true;
+    }
+    if (IS_OVERLOADED_METHOD(property)) {
+      *value = OBJ_VAL(newBoundOverloadedMethod(base, AS_OVERLOADED_METHOD(property)));
       return true;
     }
   }
@@ -850,7 +908,7 @@ static InterpretResult run() {
           return INTERPRET_RUNTIME_ERROR;
         }
 
-        tableAddAll(&AS_CLASS(superclass)->methods, &klass->methods);
+        tableAddAllInherintance(&AS_CLASS(superclass)->methods, &klass->methods);
         break;
       }
       case OP_SUPER: {

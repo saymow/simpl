@@ -29,6 +29,41 @@ Obj *allocateObj(ObjType type, size_t size) {
   return object;
 }
 
+ObjBoundOverloadedMethod* newBoundOverloadedMethod(Value value, ObjOverloadedMethod* overloadedMethod) {
+  ObjBoundOverloadedMethod* boundOverloadedMethod = ALLOCATE_OBJ(OBJ_BOUND_OVERLOADED_METHOD, ObjBoundOverloadedMethod);
+  boundOverloadedMethod->obj.klass = overloadedMethod->obj.klass;
+  boundOverloadedMethod->overloadedMethod = overloadedMethod;
+  boundOverloadedMethod->base = value;
+
+  return boundOverloadedMethod;
+}
+
+ObjOverloadedMethod* newNativeOverloadedMethod(ObjString* name) {
+  ObjOverloadedMethod* overloadedMethod = ALLOCATE_OBJ(OBJ_OVERLOADED_METHOD, ObjOverloadedMethod);
+  overloadedMethod->obj.klass = vm.nativeFunctionClass;
+  overloadedMethod->type = NATIVE_METHOD;
+  overloadedMethod->name = name;
+
+  for (int idx = 0; idx < ARGS_ARITY_MAX; idx++) {
+    overloadedMethod->as.nativeMethods[idx] = NULL;  
+  }
+
+  return overloadedMethod;
+}
+
+ObjOverloadedMethod* newOverloadedMethod(ObjString* name) {
+  ObjOverloadedMethod* overloadedMethod = ALLOCATE_OBJ(OBJ_OVERLOADED_METHOD, ObjOverloadedMethod);
+  overloadedMethod->obj.klass = vm.functionClass;
+  overloadedMethod->type = USER_METHOD;
+  overloadedMethod->name = name;
+  
+  for (int idx = 0; idx < ARGS_ARITY_MAX; idx++) {
+    overloadedMethod->as.nativeMethods[idx] = NULL;  
+  }
+
+  return overloadedMethod;
+}
+
 ObjBoundNativeMethod *newBoundNativeFn(Value base, ObjNativeFn* native) {
   ObjBoundNativeMethod *boundNativeFn = ALLOCATE_OBJ(OBJ_BOUND_NATIVE_METHOD, ObjBoundNativeMethod);
   boundNativeFn->base = base;
@@ -112,7 +147,7 @@ ObjClass *newClass(ObjString *name) {
 
   klass->obj.klass = vm.klass;
   beginAssemblyLine((Obj *) klass->obj.klass);
-  tableAddAll(&vm.klass->methods, &klass->methods);
+  tableAddAllInherintance(&vm.klass->methods, &klass->methods);
   endAssemblyLine();
 
   return klass;
@@ -148,7 +183,7 @@ ObjClosure *newClosure(ObjFunction *function) {
 
 ObjFunction *newFunction() {
   ObjFunction *function = ALLOCATE_OBJ(OBJ_FUNCTION, ObjFunction);
-  function->arity = 0;
+  function->arity = ARGS_ARITY_0;
   function->upvalueCount = 0;
   function->name = NULL;
   function->obj.klass = vm.functionClass;
@@ -158,9 +193,10 @@ ObjFunction *newFunction() {
   return function;
 }
 
-ObjNativeFn *newNativeFunction(NativeFn function, ObjString* name) {
+ObjNativeFn *newNativeFunction(NativeFn function, ObjString* name, Arity arity) {
   ObjNativeFn *nativeFn = ALLOCATE_OBJ(OBJ_NATIVE_FN, ObjNativeFn);
   nativeFn->name = name;
+  nativeFn->arity = arity;
   nativeFn->function = function;
   nativeFn->obj.klass = vm.nativeFunctionClass;
   
@@ -230,6 +266,17 @@ static void printValueArray(ValueArray* array) {
 
 void printObject(Value value) {
   switch (AS_OBJ(value)->type) {
+    case OBJ_BOUND_OVERLOADED_METHOD: {
+      printf("%s", AS_BOUND_OVERLOADED_METHOD(value)->overloadedMethod->name->chars);
+      break;
+    }
+    case OBJ_OVERLOADED_METHOD: {
+      printf("%s", AS_OVERLOADED_METHOD(value)->name->chars);
+      break;
+    }
+    case OBJ_BOUND_METHOD:
+      printf("%s", AS_BOUND_METHOD(value)->method->function->name->chars);
+      break;
     case OBJ_BOUND_NATIVE_METHOD:
       printf("<native fn>");
       break;
@@ -238,9 +285,6 @@ void printObject(Value value) {
       break;
     case OBJ_MODULE:
       printf("<module %s>", AS_MODULE(value)->function->name->chars);
-      break;
-    case OBJ_BOUND_METHOD:
-      printf("%s", AS_BOUND_METHOD(value)->method->function->name->chars);
       break;
     case OBJ_INSTANCE:
       printf("instance of %s", AS_INSTANCE(value)->obj.klass->name->chars);
@@ -309,6 +353,10 @@ static ObjString* functionToString(ObjFunction *function) {
 
 ObjString* objToString(Value value) {
    switch (AS_OBJ(value)->type) {
+    case OBJ_BOUND_OVERLOADED_METHOD: 
+      return copyString(AS_BOUND_OVERLOADED_METHOD(value)->overloadedMethod->name->chars, AS_BOUND_OVERLOADED_METHOD(value)->overloadedMethod->name->length);
+    case OBJ_OVERLOADED_METHOD: 
+      return copyString(AS_OVERLOADED_METHOD(value)->name->chars, AS_OVERLOADED_METHOD(value)->name->length);
     case OBJ_BOUND_NATIVE_METHOD:
       return copyString(AS_BOUND_NATIVE_METHOD(value)->native->name->chars, AS_BOUND_NATIVE_METHOD(value)->native->name->length);
     case OBJ_BOUND_METHOD:

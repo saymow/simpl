@@ -45,6 +45,16 @@ static void freeObject(Obj* object) {
 #endif
 
   switch (object->type) {
+    case OBJ_BOUND_OVERLOADED_METHOD: {
+      ObjBoundOverloadedMethod* boundOverloadedMethod = (ObjBoundOverloadedMethod*)object;
+      FREE(ObjBoundOverloadedMethod, boundOverloadedMethod);
+      break;
+    }
+    case OBJ_OVERLOADED_METHOD: {
+      ObjOverloadedMethod* overloadedMethod = (ObjOverloadedMethod*)object;
+      FREE(ObjBoundOverloadedMethod, overloadedMethod);
+      break;
+    }
     case OBJ_BOUND_NATIVE_METHOD: {
       ObjBoundNativeMethod* boundNativeFn = (ObjBoundNativeMethod*)object;
       FREE(ObjBoundNativeMethod, boundNativeFn);
@@ -204,6 +214,20 @@ static void blackenObject(Obj* obj) {
 #endif
 
   switch (obj->type) {
+    case OBJ_BOUND_OVERLOADED_METHOD: {
+      ObjBoundOverloadedMethod* boundOverloadedMethod = (ObjBoundOverloadedMethod*)obj;
+      markValue(boundOverloadedMethod->base);
+      markObject((Obj *) boundOverloadedMethod->overloadedMethod);
+      break;
+    }
+    case OBJ_OVERLOADED_METHOD: {
+      ObjOverloadedMethod* overloadedMethod = (ObjOverloadedMethod*)obj;
+      markObject((Obj *) overloadedMethod->name);
+      for (int idx = 0; idx < ARGS_ARITY_MAX; idx++) {
+        markObject((Obj *) overloadedMethod->as.nativeMethods[idx]);  
+      }
+      break;
+    }
     case OBJ_BOUND_NATIVE_METHOD: {
       ObjBoundNativeMethod* boundNativeFn = (ObjBoundNativeMethod*)obj;
       markValue(boundNativeFn->base);

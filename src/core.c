@@ -361,11 +361,23 @@ static inline bool __nativeStaticArrayNew(int argCount, Value* args) {
   return true;
 }
 
-static void defineNativeFunction(VM* vm, Table* methods, const char* name, NativeFn function) {
-  ObjString* string = copyString(name, strlen(name));
-  beginAssemblyLine((Obj *) string); 
-  ObjNativeFn* native = newNativeFunction(function, string);
-  tableSet(methods, string, OBJ_VAL(native));
+static void defineNativeFunction(VM* vm, Table* methods, const char* string, NativeFn function, Arity arity) {
+  ObjString* name = copyString(string, strlen(string));
+  beginAssemblyLine((Obj *) name); 
+  ObjNativeFn* native = newNativeFunction(function, name, arity);
+  Value value;
+
+  // Overloading existing method
+  if (tableGet(methods, name, &value) && IS_OVERLOADED_METHOD(value)) {
+    AS_OVERLOADED_METHOD(value)->as.nativeMethods[arity] = native;
+    return;  
+  }
+
+  // Creating new method overload and Assign the function to its slot
+  ObjOverloadedMethod* overloadedMethod = newNativeOverloadedMethod(name);
+  overloadedMethod->as.nativeMethods[arity] = native;
+
+  tableSet(methods, name, OBJ_VAL(overloadedMethod));
   endAssemblyLine();
 }
 
@@ -382,7 +394,7 @@ static inline void inherit(Obj* obj, ObjClass* superclass) {
   obj->klass = superclass;
 
   if (IS_CLASS(OBJ_VAL(obj))) {
-    tableAddAll(&superclass->methods, &((ObjClass*) obj)->methods);
+    tableAddAllInherintance(&superclass->methods, &((ObjClass*) obj)->methods);
   }
 }
 
@@ -407,7 +419,7 @@ void initializeCore(VM* vm) {
   vm->stringClass = defineNewClass("String");
   vm->nativeFunctionClass = defineNewClass("NativeFunction");
 
-  defineNativeFunction(vm, &vm->klass->methods, "toString", __nativeClassToString);
+  defineNativeFunction(vm, &vm->klass->methods, "toString", __nativeClassToString, ARGS_ARITY_0);
 
   // Class inherits from itself
   vm->klass->obj.klass = vm->klass;
@@ -433,26 +445,57 @@ void initializeCore(VM* vm) {
   vm->metaArrayClass = defineNewClass("MetaArray");
   inherit((Obj *)vm->metaArrayClass, vm->klass);
 
-  defineNativeFunction(vm, &vm->metaArrayClass->methods, "isArray", __nativeStaticArrayIsArray);
-  defineNativeFunction(vm, &vm->metaArrayClass->methods, "new", __nativeStaticArrayNew);
+  // Array static methods 
+
+  defineNativeFunction(vm, &vm->metaArrayClass->methods, "isArray", __nativeStaticArrayIsArray, ARGS_ARITY_1);
+
+  defineNativeFunction(vm, &vm->metaArrayClass->methods, "new", __nativeStaticArrayNew, ARGS_ARITY_0);
+  defineNativeFunction(vm, &vm->metaArrayClass->methods, "new", __nativeStaticArrayNew, ARGS_ARITY_1);
+
 
   vm->arrayClass = defineNewClass("Array");
   inherit((Obj *)vm->arrayClass, vm->metaArrayClass);
 
-  defineNativeFunction(vm, &vm->arrayClass->methods, "length", __nativeArrayLength);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "push", __nativeArrayPush);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "pop", __nativeArrayPop);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "unshift", __nativeArrayUnshift);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "shift", __nativeArrayShift);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "slice", __nativeArraySlice);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "indexOf", __nativeArrayIndexOf);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "join", __nativeArrayJoin);
+  // Array methods
+
+  defineNativeFunction(vm, &vm->arrayClass->methods, "length", __nativeArrayLength, ARGS_ARITY_0);
+
+  defineNativeFunction(vm, &vm->arrayClass->methods, "push", __nativeArrayPush, ARGS_ARITY_1);
+
+  defineNativeFunction(vm, &vm->arrayClass->methods, "pop", __nativeArrayPop, ARGS_ARITY_0);
+
+  defineNativeFunction(vm, &vm->arrayClass->methods, "unshift", __nativeArrayUnshift, ARGS_ARITY_1);
+
+  defineNativeFunction(vm, &vm->arrayClass->methods, "shift", __nativeArrayShift, ARGS_ARITY_0);
+
+  defineNativeFunction(vm, &vm->arrayClass->methods, "slice", __nativeArraySlice, ARGS_ARITY_0);
+  defineNativeFunction(vm, &vm->arrayClass->methods, "slice", __nativeArraySlice, ARGS_ARITY_1);
+  defineNativeFunction(vm, &vm->arrayClass->methods, "slice", __nativeArraySlice, ARGS_ARITY_2);
+
+  defineNativeFunction(vm, &vm->arrayClass->methods, "indexOf", __nativeArrayIndexOf, ARGS_ARITY_1);
+  
+  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_2);
+  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_3);
+  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_4);
+  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_5);
+  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_6);
+  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_7);
+  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_8);
+  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_9);
+  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_10);
+  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_11);
+  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_12);
+  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_13);
+  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_14);
+  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_15);
+  
+  defineNativeFunction(vm, &vm->arrayClass->methods, "join", __nativeArrayJoin, ARGS_ARITY_1);
+
 
   vm->moduleExportsClass = defineNewClass("Exports");
   inherit((Obj *)vm->moduleExportsClass, vm->klass);
 
-  defineNativeFunction(vm, &vm->global, "clock", __nativeClock);
+  defineNativeFunction(vm, &vm->global, "clock", __nativeClock, ARGS_ARITY_0);
 
   vm->state = EXTENDING;
 

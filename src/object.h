@@ -17,8 +17,33 @@ typedef enum {
   OBJ_CLOSURE,
   OBJ_UPVALUE,
   OBJ_BOUND_METHOD,
-  OBJ_BOUND_NATIVE_METHOD
+  OBJ_BOUND_NATIVE_METHOD,
+  OBJ_OVERLOADED_METHOD,
+  OBJ_BOUND_OVERLOADED_METHOD
 } ObjType;
+
+typedef enum { USER_METHOD, NATIVE_METHOD } MethodType;
+
+typedef enum {
+  ARGS_ARITY_0,
+  ARGS_ARITY_1,
+  ARGS_ARITY_2,
+  ARGS_ARITY_3,
+  ARGS_ARITY_4,
+  ARGS_ARITY_5,
+  ARGS_ARITY_6,
+  ARGS_ARITY_7,
+  ARGS_ARITY_8,
+  ARGS_ARITY_9,
+  ARGS_ARITY_10,
+  ARGS_ARITY_11,
+  ARGS_ARITY_12,
+  ARGS_ARITY_13,
+  ARGS_ARITY_14,
+  ARGS_ARITY_15,
+} Arity;
+
+#define ARGS_ARITY_MAX ARGS_ARITY_15 + 1
 
 typedef struct ObjClass ObjClass;
 
@@ -40,7 +65,7 @@ struct ObjString {
 
 typedef struct ObjFunction {
   Obj obj;
-  int arity;
+  Arity arity;
   int upvalueCount;
   Chunk chunk;
   ObjString *name;
@@ -71,6 +96,7 @@ typedef bool (*NativeFn)(int argCount, Value *args);
 typedef struct {
   Obj obj;
   ObjString* name;
+  Arity arity;
   NativeFn function;
 } ObjNativeFn;
 
@@ -79,6 +105,22 @@ typedef struct ObjBoundNativeMethod {
   Value base;
   ObjNativeFn *native;
 } ObjBoundNativeMethod;
+
+typedef struct ObjOverloadedMethod {
+  Obj obj;
+  ObjString* name;
+  MethodType type;
+  union {
+    ObjClosure* userMethods[ARGS_ARITY_MAX];
+    ObjNativeFn* nativeMethods[ARGS_ARITY_MAX];
+  } as;
+} ObjOverloadedMethod;
+
+typedef struct ObjBoundOverloadedMethod {
+  Obj obj;
+  Value base;
+  ObjOverloadedMethod* overloadedMethod;
+} ObjBoundOverloadedMethod;
 
 struct ObjClass {
   Obj obj;
@@ -106,6 +148,8 @@ typedef struct ObjArray {
 
 #define OBJ_TYPE(value) (AS_OBJ(value)->type)
 
+#define IS_BOUND_OVERLOADED_METHOD(value) (isObjType(value, OBJ_BOUND_OVERLOADED_METHOD))
+#define IS_OVERLOADED_METHOD(value) (isObjType(value, OBJ_OVERLOADED_METHOD))
 #define IS_CLOSURE(value) (isObjType(value, OBJ_CLOSURE))
 #define IS_BOUND_NATIVE_METHOD(value) (isObjType(value, OBJ_BOUND_NATIVE_METHOD))
 #define IS_ARRAY(value) (isObjType(value, OBJ_ARRAY))
@@ -117,6 +161,10 @@ typedef struct ObjArray {
 #define IS_FUNCTION(value) (isObjType(value, OBJ_FUNCTION))
 #define IS_NATIVE_FUNCTION(value) (isObjType(value, OBJ_NATIVE_FN))
 
+#define AS_USER_BOUND_OVERLOADED_METHOD(value, arity) (((ObjBoundOverloadedMethod *)AS_OBJ(value))->overloadedMethod->as.userMethods[arity])
+#define AS_NATIVE_BOUND_OVERLOADED_METHOD(value, arity) (((ObjBoundOverloadedMethod *)AS_OBJ(value))->overloadedMethod->as.nativeMethods[arity])
+#define AS_BOUND_OVERLOADED_METHOD(value) ((ObjBoundOverloadedMethod *)AS_OBJ(value))
+#define AS_OVERLOADED_METHOD(value) ((ObjOverloadedMethod *)AS_OBJ(value))
 #define AS_UP_VALUE(value) ((ObjUpValue*)AS_OBJ(value))
 #define AS_BOUND_NATIVE_METHOD(value) ((ObjBoundNativeMethod*)AS_OBJ(value))
 #define AS_ARRAY_LIST(value) (((ObjArray *)AS_OBJ(value))->list)
@@ -139,6 +187,9 @@ typedef struct ObjArray {
 */
 #define CONSTANT_STRING(str) copyString((str), sizeof(str) - 1) 
 
+ObjBoundOverloadedMethod* newBoundOverloadedMethod(Value base, ObjOverloadedMethod* overloadedMethod);
+ObjOverloadedMethod* newNativeOverloadedMethod(ObjString* name);
+ObjOverloadedMethod* newOverloadedMethod(ObjString* name);
 ObjString* toString(Value value);
 ObjBoundNativeMethod *newBoundNativeFn(Value base, ObjNativeFn* native);
 ObjArray *newArray();
@@ -149,7 +200,7 @@ ObjClass *newClass(ObjString *name);
 ObjClosure *newClosure(ObjFunction *function);
 ObjUpValue *newUpValue(Value *value);
 ObjFunction *newFunction();
-ObjNativeFn *newNativeFunction(NativeFn function, ObjString* name);
+ObjNativeFn *newNativeFunction(NativeFn function, ObjString* name, Arity arity);
 ObjString *copyString(const char *chars, int length);
 ObjString *takeString(char *chars, int length);
 void printObject(Value value);
