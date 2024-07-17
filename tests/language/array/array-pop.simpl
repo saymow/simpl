@@ -2,7 +2,7 @@
 
 var arr = [1, 2, 3, "d", "e", "f"];
 
-print arr.pop();                                                                         // expect f
-print arr.pop();                                                                         // expect e
-print arr.pop();                                                                         // expect d
-print arr;                                                                               // expect [1, 2, 3]
+System.log(arr.pop());                                                                         // expect f
+System.log(arr.pop());                                                                         // expect e
+System.log(arr.pop());                                                                         // expect d
+System.log(arr);                                                                               // expect [1, 2, 3]

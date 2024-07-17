@@ -25,5 +25,5 @@ try {
     shouldThrowEnclosuredFn();
 } catch(enclosured) {
     stackFiller(10);                                                                   // this ensure the stack is filled with garbage and test closed upvalues 
-    print enclosured();                                                                // expect 3
+    System.log(enclosured());                                                                // expect 3
 }

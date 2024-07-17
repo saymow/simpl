@@ -24,6 +24,6 @@ class Human extends Mammal {
 
 var human = Human();
 
-print human.isAnimal();                                                                             // expect true
-print human.getGroup();                                                                             // expect mammals
-print human.getOrder();                                                                             // expect carnivora
+System.log(human.isAnimal());                                                                             // expect true
+System.log(human.getGroup());                                                                             // expect mammals
+System.log(human.getOrder());                                                                             // expect carnivora

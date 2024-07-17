@@ -2,6 +2,6 @@
 
 import module1 from "/level1/module1.simpl";
 
-print "module2.simpl";
+System.log("module2.simpl");
 
 export module1;

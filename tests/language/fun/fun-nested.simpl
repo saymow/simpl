@@ -2,7 +2,7 @@
 
 fun withNested1() {
     fun nested() {
-        print "nested";
+        System.log("nested");
     }
 
     nested();                                                         
@@ -10,7 +10,7 @@ fun withNested1() {
 
 fun withNested2() {
     fun nested() {
-        print "nested";
+        System.log("nested");
     }
 
     return nested;                                                         

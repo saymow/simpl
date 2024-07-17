@@ -1,7 +1,7 @@
 // Function declaration
 
 fun helloWorld() {
-    print "hello-world";                                                         
+    System.log("hello-world");                                                         
 }
 
 helloWorld();                                                               // expect hello-world

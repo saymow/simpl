@@ -8,29 +8,29 @@ var arr = [1, 2, 3];
 var emptyArr = [];
 
 // Numbers
-print !!0;                                      // expect true
-print !!1;                                      // expect true
-print !!99;                                     // expect true
-print !!-1;                                     // expect true
-print !!3.14;                                   // expect true
-print !!-3.14;                                  // expect true
+System.log(!!0);                                      // expect true
+System.log(!!1);                                      // expect true
+System.log(!!99);                                     // expect true
+System.log(!!-1);                                     // expect true
+System.log(!!3.14);                                   // expect true
+System.log(!!-3.14);                                  // expect true
 
 // Strings
-print !!"";                                     // expect true
-print !!"abc";                                  // expect true
-print !!" ";                                    // expect true
-print !!"\n";                                   // expect true
+System.log(!!"");                                     // expect true
+System.log(!!"abc");                                  // expect true
+System.log(!!" ");                                    // expect true
+System.log(!!"\n");                                   // expect true
 
 // Arrays
-print !!arr;                                    // expect true
-print !!emptyArr;                               // expect true
+System.log(!!arr);                                    // expect true
+System.log(!!emptyArr);                               // expect true
 
 // Functions and classes
-print !!MyClass;                                // expect true
-print !!myFun;                                  // expect true
-print !!objectInstance;                         // expect true
+System.log(!!MyClass);                                // expect true
+System.log(!!myFun);                                  // expect true
+System.log(!!objectInstance);                         // expect true
 
 // Booleans and nil
-print !!true;                                   // expect true
-print !!nil;                                    // expect false
-print !!false;                                  // expect false
+System.log(!!true);                                   // expect true
+System.log(!!nil);                                    // expect false
+System.log(!!false);                                  // expect false

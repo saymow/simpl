@@ -9,7 +9,7 @@ class Person {
 }
 
 fun presentPerson(person) {
-    print "Hi, i'm " + person.name + " " + person.lastname + ".";  
+    System.log("Hi, i'm " + person.name + " " + person.lastname + ".");  
 }
 
 var person1 = Person("John", "Doe", 47);

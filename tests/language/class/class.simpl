@@ -4,8 +4,8 @@ class MyClass {}
 
 var myObject = MyClass(); 
 
-print MyClass;                                                                // expect class MyClass
-print myObject;                                                               // expect instance of MyClass
+System.log(MyClass);                                                                // expect class MyClass
+System.log(myObject);                                                               // expect instance of MyClass
 
 myObject.name = "Simpl";
 myObject.version = 0;
@@ -13,10 +13,10 @@ myObject.funExpr = fun () {
     return "funExpr";
 };
 
-print myObject.name;                                                          // expect Simpl
-print myObject.version;                                                       // expect 0
-print myObject.funExpr();                                                     // expect funExpr
-print myObject.defNotAProperty;                                               // expect nil
+System.log(myObject.name);                                                          // expect Simpl
+System.log(myObject.version);                                                       // expect 0
+System.log(myObject.funExpr());                                                     // expect funExpr
+System.log(myObject.defNotAProperty);                                               // expect nil
 
 myObject.name = "Simpler";                                                    
 myObject.version = 1;                                                         
@@ -25,33 +25,33 @@ myObject.funExpr = fun () {
 };
 myObject.defNotAProperty = "something";
 
-print myObject.name;                                                          // expect Simpler
-print myObject.version;                                                       // expect 1
-print myObject.funExpr();                                                     // expect funExpr is cool
-print myObject.defNotAProperty;                                               // expect something
+System.log(myObject.name);                                                          // expect Simpler
+System.log(myObject.version);                                                       // expect 1
+System.log(myObject.funExpr());                                                     // expect funExpr is cool
+System.log(myObject.defNotAProperty);                                               // expect something
 
 // += operator
 myObject.name += "s";
 myObject.version += 9;
 
 // Test += operator results
-print myObject.name;                                                          // expect Simplers
-print myObject.version;                                                       // expect 10
+System.log(myObject.name);                                                          // expect Simplers
+System.log(myObject.version);                                                       // expect 10
 
 // -= operator
 myObject.version -= 5;
 
 // Test -= operator results
-print myObject.version;                                                       // expect 5
+System.log(myObject.version);                                                       // expect 5
 
 // *= operator
 myObject.version *= 2;
 
 // Test *= operator results
-print myObject.version;                                                       // expect 10
+System.log(myObject.version);                                                       // expect 10
 
 // /= operator
 myObject.version /= 2;
 
 // Test *= operator results
-print myObject.version;                                                       // expect 5
+System.log(myObject.version);                                                       // expect 5

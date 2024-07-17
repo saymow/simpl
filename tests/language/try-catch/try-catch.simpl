@@ -1,32 +1,32 @@
 // Try catch
 
 try {
-    print "try";                                                                // expect try
+    System.log("try");                                                                // expect try
 } catch {
-    print "never";
+    System.log("never");
 }
-print "after";                                                                  // expect after
+System.log("after");                                                                  // expect after
 
 try {
-    print "try";                                                                // expect try
+    System.log("try");                                                                // expect try
     throw "error";
 } catch {
-    print "never";                                                              // expect never
+    System.log("never");                                                              // expect never
 }
-print "after";                                                                  // expect after
+System.log("after");                                                                  // expect after
 
 try {
     throw "error";
-    print "try";                                                                
+    System.log("try");                                                                
 } catch {
-    print "never";                                                              // expect never
+    System.log("never");                                                              // expect never
 }
-print "after";                                                                  // expect after
+System.log("after");                                                                  // expect after
 
 try {
     throw "error message";
-    print "try";                                                                
+    System.log("try");                                                                
 } catch(err) {
-    print err;                                                                  // expect error message
+    System.log(err);                                                                  // expect error message
 }
-print "after";                                                                  // expect after
+System.log("after");                                                                  // expect after

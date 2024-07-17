@@ -1,7 +1,7 @@
 // While loop nested break
 
 
-print "before";
+System.log("before");
 
 var i = 0;
 while (true) {
@@ -9,20 +9,20 @@ while (true) {
     while (true) {
         var k = 100;
         while (true) {
-            print k;
+            System.log(k);
             k = k + 1;
             if (k >= 103) break;    
         }
-        print j;
+        System.log(j);
         j = j + 1;
         if (j >= 13) break;
     }
-    print i;
+    System.log(i);
     i = i + 1;
     if (i >= 3) break;
 }
 
-print "after";
+System.log("after");
 
 // expect before
 // expect 100

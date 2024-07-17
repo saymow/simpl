@@ -17,17 +17,17 @@ class Person {
 var person = Person("John");
 var arr = [1, 2, 3];
 
-print Array.isArray(arr);                                                                                          // expect true
-print Array.isArray([]);                                                                                           // expect true
-print Array.isArray([-1]);                                                                                         // expect true
+System.log(Array.isArray(arr));                                                                                          // expect true
+System.log(Array.isArray([]));                                                                                           // expect true
+System.log(Array.isArray([-1]));                                                                                         // expect true
 
-print Array.isArray(nil);                                                                                          // expect false
-print Array.isArray(true);                                                                                         // expect false
-print Array.isArray(false);                                                                                        // expect false
-print Array.isArray("str");                                                                                        // expect false
-print Array.isArray(5.555);                                                                                        // expect false
-print Array.isArray(closure);                                                                                      // expect false
-print Array.isArray(Person);                                                                                       // expect false
-print Array.isArray(person);                                                                                       // expect false
-print Array.isArray((fun() {}));                                                                                   // expect false
-print Array.isArray(closure()());                                                                                  // expect false
+System.log(Array.isArray(nil));                                                                                          // expect false
+System.log(Array.isArray(true));                                                                                         // expect false
+System.log(Array.isArray(false));                                                                                        // expect false
+System.log(Array.isArray("str"));                                                                                        // expect false
+System.log(Array.isArray(5.555));                                                                                        // expect false
+System.log(Array.isArray(closure));                                                                                      // expect false
+System.log(Array.isArray(Person));                                                                                       // expect false
+System.log(Array.isArray(person));                                                                                       // expect false
+System.log(Array.isArray((fun() {})));                                                                                   // expect false
+System.log(Array.isArray(closure()()));                                                                                  // expect false

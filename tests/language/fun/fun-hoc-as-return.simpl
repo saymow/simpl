@@ -1,7 +1,7 @@
 // Function HOC as return
 
 fun callback() {
-    print "callback";
+    System.log("callback");
 }
 
 fun hoc1() {
@@ -10,7 +10,7 @@ fun hoc1() {
 
 fun hoc2() {
     return fun () {
-        print "callback-expr";
+        System.log("callback-expr");
     };
 }
 
@@ -21,4 +21,4 @@ fun hoc3(callback) {
 hoc1()();                                                                   // expect callback
 hoc2()();                                                                   // expect callback-expr
 hoc3(callback)();                                                           // expect callback
-hoc3(fun () { print "callback-expr"; })();                                  // expect callback-expr
+hoc3(fun () { System.log("callback-expr"); })();                                  // expect callback-expr

@@ -8,7 +8,7 @@ fun loopReturn() {
         if (idx >= 5) {
             return;
         }
-        print idx;
+        System.log(idx);
     }
 }
 

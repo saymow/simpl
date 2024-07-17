@@ -1,16 +1,16 @@
 // For loop continue
 
-print "before";
+System.log("before");
 
 for (var idx = 0; idx < 10; idx = idx + 1) {
     if (idx == 5) {
         continue;
     }
 
-    print idx;
+    System.log(idx);
 }
 
-print "after";
+System.log("after");
 
 // expect before
 // expect 0

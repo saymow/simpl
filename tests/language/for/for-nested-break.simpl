@@ -1,7 +1,7 @@
 // For loop nested break
 
 
-print "before";
+System.log("before");
 
 for (var i = 0;;i = i + 1) {
     if (i >= 3) break;
@@ -9,14 +9,14 @@ for (var i = 0;;i = i + 1) {
         if (j >= 13) break;
         for (var k = 100;;k = k + 1) {
             if (k >= 103) break;    
-            print k;
+            System.log(k);
         }
-        print j;
+        System.log(j);
     }
-    print i;
+    System.log(i);
 }
 
-print "after";
+System.log("after");
 
 // expect before
 // expect 100

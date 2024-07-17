@@ -1,95 +1,95 @@
 // If, else if, and else statements
 
 if (true) {
-    print "if-ran";                                        // expect if-ran
+    System.log("if-ran");                                        // expect if-ran
 } else if (true) {
-    print "else-if-ran";
+    System.log("else-if-ran");
 } else {
-    print "else-ran";
+    System.log("else-ran");
 }
-print "after";                                             // expect after
+System.log("after");                                             // expect after
 
 if (false) {
-    print "if-ran";                                        
+    System.log("if-ran");                                        
 } else if (true) {
-    print "else-if-ran";                                   // expect else-if-ran
+    System.log("else-if-ran");                                   // expect else-if-ran
 } else {
-    print "else-ran";
+    System.log("else-ran");
 }
-print "after";                                             // expect after
+System.log("after");                                             // expect after
 
 if (false) {
-    print "if-ran";                                        
+    System.log("if-ran");                                        
 } else if (false) {
-    print "else-if-ran";
+    System.log("else-if-ran");
 } else {
-    print "else-ran";                                      // expect else-ran
+    System.log("else-ran");                                      // expect else-ran
 }
-print "after";                                             // expect after
+System.log("after");                                             // expect after
 
 if (2 > 1) {
-    print "if-ran";                                        // expect if-ran
+    System.log("if-ran");                                        // expect if-ran
 } else if (1 > 2) {
-    print "else-if-ran";
+    System.log("else-if-ran");
 } else {
-    print "else-ran";
+    System.log("else-ran");
 }
-print "after";                                             // expect after
+System.log("after");                                             // expect after
 
 if (1 > 2) {
-    print "if-ran";                                        
+    System.log("if-ran");                                        
 } else if (2 > 1) {
-    print "else-if-ran";                                   // expect else-if-ran
+    System.log("else-if-ran");                                   // expect else-if-ran
 } else {
-    print "else-ran";
+    System.log("else-ran");
 }
-print "after";                                             // expect after
+System.log("after");                                             // expect after
 
 if (3 == 3) {
-    print "if-ran";                                        // expect if-ran
+    System.log("if-ran");                                        // expect if-ran
 } else if (3 != 3) {
-    print "else-if-ran";
+    System.log("else-if-ran");
 } else {
-    print "else-ran";
+    System.log("else-ran");
 }
-print "after";                                             // expect after
+System.log("after");                                             // expect after
 
 if (3 != 3) {
-    print "if-ran";                                        
+    System.log("if-ran");                                        
 } else if (3 == 3) {
-    print "else-if-ran";                                   // expect else-if-ran
+    System.log("else-if-ran");                                   // expect else-if-ran
 } else {
-    print "else-ran";
+    System.log("else-ran");
 }
-print "after";                                             // expect after
+System.log("after");                                             // expect after
 
 if (4 < 4) {
-    print "if-ran";                                        
+    System.log("if-ran");                                        
 } else if (4 >= 4) {
-    print "else-if-ran";                                   // expect else-if-ran
+    System.log("else-if-ran");                                   // expect else-if-ran
 } else {
-    print "else-ran";
+    System.log("else-ran");
 }
-print "after";                                             // expect after
+System.log("after");                                             // expect after
 
 if (false) {
-    print "if-ran";                                        
+    System.log("if-ran");                                        
 } else if (false) {
-    print "else-if-ran";
+    System.log("else-if-ran");
 } else if (true) {
-    print "second-else-if-ran";                            // expect second-else-if-ran
+    System.log("second-else-if-ran");                            // expect second-else-if-ran
 } else {
-    print "else-ran";
+    System.log("else-ran");
 }
-print "after";                                             // expect after
+System.log("after");                                             // expect after
 
 if (false) {
-    print "if-ran";                                        
+    System.log("if-ran");                                        
 } else if (false) {
-    print "else-if-ran";
+    System.log("else-if-ran");
 } else if (false) {
-    print "second else-if-ran";
+    System.log("second else-if-ran");
 } else {
-    print "else-ran";                                      // expect else-ran
+    System.log("else-ran");                                      // expect else-ran
 }
-print "after";                                             // expect after
+System.log("after");                                             // expect after

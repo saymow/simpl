@@ -1,12 +1,12 @@
 // Standard foor each loop
 
-print "before";
+System.log("before");
 
 for (idx of ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]) {
-    print idx;
+    System.log(idx);
 }
 
-print "after";
+System.log("after");
 
 // expect before
 // expect a

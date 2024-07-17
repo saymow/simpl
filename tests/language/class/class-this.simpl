@@ -2,7 +2,7 @@
 
 class Person {
     sayName() {
-        print "my name is " + this.name + " " + this.lastname;
+        System.log("my name is " + this.name + " " + this.lastname);
     }
 }
 

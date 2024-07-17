@@ -8,7 +8,7 @@ class Person {
     }
 
     sayName() {
-        print "my name is " + this.name + " " + this.lastname;
+        System.log("my name is " + this.name + " " + this.lastname);
     }
 
     incrementAge() {
@@ -19,11 +19,11 @@ class Person {
 var person = Person("John", "Doe", 47); 
 
 person.sayName();                                                     // expect my name is John Doe
-print person.age;                                                     // expect 47
+System.log(person.age);                                                     // expect 47
 
 person.incrementAge();
 person.incrementAge();
 person.incrementAge();
 
 person.sayName();                                                     // expect my name is John Doe
-print person.age;                                                     // expect 50
+System.log(person.age);                                                     // expect 50

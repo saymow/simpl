@@ -8,13 +8,13 @@ fun fn() {}
 
 var arr = [Person, person, fn, "str", 1, nil, true];
 
-print arr.indexOf(Person);                                              // expect 0
-print arr.indexOf(1);                                                   // expect 4
-print arr.indexOf(person);                                              // expect 1
-print arr.indexOf(fn);                                                  // expect 2
-print arr.indexOf(true);                                                // expect 6
-print arr.indexOf("str");                                               // expect 3
-print arr.indexOf(nil);                                                 // expect 5
+System.log(arr.indexOf(Person));                                              // expect 0
+System.log(arr.indexOf(1));                                                   // expect 4
+System.log(arr.indexOf(person));                                              // expect 1
+System.log(arr.indexOf(fn));                                                  // expect 2
+System.log(arr.indexOf(true));                                                // expect 6
+System.log(arr.indexOf("str"));                                               // expect 3
+System.log(arr.indexOf(nil));                                                 // expect 5
 
-print arr.indexOf(77);                                                  // expect -1
-print arr.indexOf("def not there");                                     // expect -1
+System.log(arr.indexOf(77));                                                  // expect -1
+System.log(arr.indexOf("def not there"));                                     // expect -1

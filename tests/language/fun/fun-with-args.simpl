@@ -1,7 +1,7 @@
 // Function with arguments
 
 fun sum(a, b) {
-    print a + b;
+    System.log(a + b);
 }
 
 sum(1, 2);                                                          // expect 3

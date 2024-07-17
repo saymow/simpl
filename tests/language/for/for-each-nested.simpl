@@ -1,20 +1,20 @@
 // For each loop nested break
 
 
-print "before";
+System.log("before");
 
 
 for (i of [0, 1, 2]) {
     for (j of [10, 11, 12]) {
         for (k of [100, 101, 102]) {
-            print k;
+            System.log(k);
         }
-        print j;
+        System.log(j);
     }
-    print i;
+    System.log(i);
 }
 
-print "after";
+System.log("after");
 
 // expect before
 // expect 100

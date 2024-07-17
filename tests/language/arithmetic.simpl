@@ -1,67 +1,67 @@
 // Arithmetic expressions
 
 // Test addition
-print 1 + 2;                                                // expect 3
-print 1 + 2 + 3;                                            // expect 6
-print 10 + 5;                                               // expect 15
-print 100 + 200 + 300;                                      // expect 600
+System.log(1 + 2);                                                // expect 3
+System.log(1 + 2 + 3);                                            // expect 6
+System.log(10 + 5);                                               // expect 15
+System.log(100 + 200 + 300);                                      // expect 600
 
 // Test subtraction
-print 5 - 3;                                                // expect 2
-print 10 - 5 - 2;                                           // expect 3
-print 50 - 20;                                              // expect 30
-print 200 - 50 - 25;                                        // expect 125
+System.log(5 - 3);                                                // expect 2
+System.log(10 - 5 - 2);                                           // expect 3
+System.log(50 - 20);                                              // expect 30
+System.log(200 - 50 - 25);                                        // expect 125
 
 // Test multiplication
-print 2 * 3;                                                // expect 6
-print 2 * 3 * 4;                                            // expect 24
-print 5 * 4;                                                // expect 20
-print 10 * 5 * 2;                                           // expect 100
+System.log(2 * 3);                                                // expect 6
+System.log(2 * 3 * 4);                                            // expect 24
+System.log(5 * 4);                                                // expect 20
+System.log(10 * 5 * 2);                                           // expect 100
 
 // Test division
-print 6 / 2;                                                // expect 3
-print 12 / 4;                                               // expect 3
-print 100 / 5;                                              // expect 20
-print 50 / 2 / 5;                                           // expect 5
+System.log(6 / 2);                                                // expect 3
+System.log(12 / 4);                                               // expect 3
+System.log(100 / 5);                                              // expect 20
+System.log(50 / 2 / 5);                                           // expect 5
 
 // Test mixed operations with precedence
-print 1 + 2 * 3;                                            // expect 7
-print 2 * 3 + 1;                                            // expect 7
-print 1 + 6 / 2;                                            // expect 4
-print 10 / 2 + 5;                                           // expect 10
-print 3 + 4 * 2 / 2 - 1;                                    // expect 6
+System.log(1 + 2 * 3);                                            // expect 7
+System.log(2 * 3 + 1);                                            // expect 7
+System.log(1 + 6 / 2);                                            // expect 4
+System.log(10 / 2 + 5);                                           // expect 10
+System.log(3 + 4 * 2 / 2 - 1);                                    // expect 6
 
 // Test parentheses to override precedence
-print (1 + 2) * 3;                                          // expect 9
-print 2 * (3 + 1);                                          // expect 8
-print (10 - 5) * 2;                                         // expect 10
-print 50 / (2 + 3);                                         // expect 10
-print (2 + 3) * (4 - 1);                                    // expect 15
+System.log((1 + 2) * 3);                                          // expect 9
+System.log(2 * (3 + 1));                                          // expect 8
+System.log((10 - 5) * 2);                                         // expect 10
+System.log(50 / (2 + 3));                                         // expect 10
+System.log((2 + 3) * (4 - 1));                                    // expect 15
 
 // Test negative numbers
-print -1 + 2;                                               // expect 1
-print -1 - 2;                                               // expect -3
-print -2 * 3;                                               // expect -6
-print -6 / 2;                                               // expect -3
-print -2 * -3;                                              // expect 6
+System.log(-1 + 2);                                               // expect 1
+System.log(-1 - 2);                                               // expect -3
+System.log(-2 * 3);                                               // expect -6
+System.log(-6 / 2);                                               // expect -3
+System.log(-2 * -3);                                              // expect 6
 
 // Test operations with zero
-print 0 + 5;                                                // expect 5
-print 0 - 5;                                                // expect -5
-print 0 * 5;                                                // expect 0
-print 5 / 1;                                                // expect 5
-print 0 / 5;                                                // expect 0
+System.log(0 + 5);                                                // expect 5
+System.log(0 - 5);                                                // expect -5
+System.log(0 * 5);                                                // expect 0
+System.log(5 / 1);                                                // expect 5
+System.log(0 / 5);                                                // expect 0
 
 // Test complex expressions
-print (1 + 2) * (3 + 4);                                    // expect 21
-print 10 + (20 / 2) * 3;                                    // expect 40
-print (2 * 3) + (4 / 2);                                    // expect 8
-print ((5 - 2) * (3 + 1)) / 2;                              // expect 6
-print (6 / 2) + (8 * 2) - (10 / 5);                         // expect 17
+System.log((1 + 2) * (3 + 4));                                    // expect 21
+System.log(10 + (20 / 2) * 3);                                    // expect 40
+System.log((2 * 3) + (4 / 2));                                    // expect 8
+System.log(((5 - 2) * (3 + 1)) / 2);                              // expect 6
+System.log((6 / 2) + (8 * 2) - (10 / 5));                         // expect 17
 
 // Even more complex expressions with fractions
-print ((3 + (2 / (1 + 1))) * ((5 / 2) - (3 / 5)));          // expect 7.6
-print (((5 * (2 + 3)) / (8 - 4)) + (7 / (1 + 6)));          // expect 7.25
-print ((2 * (3 + (4 / 2)) - (5 / (2 + 6))));                // expect 9.375
-print (((6 / (2 + 4)) * (3 + (5 / 2))) - (4 / 2));          // expect 3.5
-print ((((8 / 4) + (3 * 2)) - (7 / (1 + 1))) / 2);          // expect 2.25
+System.log(((3 + (2 / (1 + 1))) * ((5 / 2) - (3 / 5))));          // expect 7.6
+System.log((((5 * (2 + 3)) / (8 - 4)) + (7 / (1 + 6))));          // expect 7.25
+System.log(((2 * (3 + (4 / 2)) - (5 / (2 + 6)))));                // expect 9.375
+System.log((((6 / (2 + 4)) * (3 + (5 / 2))) - (4 / 2)));          // expect 3.5
+System.log(((((8 / 4) + (3 * 2)) - (7 / (1 + 1))) / 2));          // expect 2.25

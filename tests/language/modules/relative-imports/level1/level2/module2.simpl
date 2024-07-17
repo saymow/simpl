@@ -2,4 +2,4 @@
 
 import "../module1.simpl";
 
-print "module2.simpl";
+System.log("module2.simpl");

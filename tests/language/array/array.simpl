@@ -1,12 +1,12 @@
 // Array declaration, get, and assignment
 
-var arr = [1, fun () { print "funExpr";}, nil, "str"];
+var arr = [1, fun () { System.log("funExpr");}, nil, "str"];
 
-print arr;                                                                          // expect [1, <fn fun>, nil, str]
-print arr[0];                                                                       // expect 1
-print arr[2];                                                                       // expect nil
-print arr[-1];                                                                      // expect nil
-print arr[99];                                                                      // expect nil
+System.log(arr);                                                                          // expect [1, <fn fun>, nil, str]
+System.log(arr[0]);                                                                       // expect 1
+System.log(arr[2]);                                                                       // expect nil
+System.log(arr[-1]);                                                                      // expect nil
+System.log(arr[99]);                                                                      // expect nil
 arr[1]();                                                                           // expect funExpr
 
 // += operator
@@ -14,34 +14,34 @@ arr[3] += "ing";
 arr[0] += 9;
 
 // Test += operator results
-print arr[3];                                                                       // expect string
-print arr[0];                                                                       // expect 10
+System.log(arr[3]);                                                                       // expect string
+System.log(arr[0]);                                                                       // expect 10
 
 // -= operator
 arr[0] -= 5;
 
 // Test -= operator results
-print arr[0];                                                                       // expect 5
+System.log(arr[0]);                                                                       // expect 5
 
 // *= operator
 arr[0] *= 2;
 
 // Test *= operator results
-print arr[0];                                                                       // expect 10
+System.log(arr[0]);                                                                       // expect 10
 
 // /= operator
 arr[0] /= 2;
 
 // Test /= operator results
-print arr[0];                                                                       // expect 5
+System.log(arr[0]);                                                                       // expect 5
 
 arr[0] = "a";
 arr[1] = "b";
 arr[2] = "c";
 arr[3] = "d";
 
-print arr;                                                                          // expect [a, b, c, d]
-print arr[0];                                                                       // expect a
-print arr[1];                                                                       // expect b
-print arr[2];                                                                       // expect c
-print arr[3];                                                                       // expect d
+System.log(arr);                                                                          // expect [a, b, c, d]
+System.log(arr[0]);                                                                       // expect a
+System.log(arr[1]);                                                                       // expect b
+System.log(arr[2]);                                                                       // expect c
+System.log(arr[3]);                                                                       // expect d

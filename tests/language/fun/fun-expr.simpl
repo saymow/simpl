@@ -1,7 +1,7 @@
 // Function expression
 
 var funExpr = fun () {
-    print "hello-world";
+    System.log("hello-world");
 };
 
 funExpr();                                                               // expect hello-world

@@ -1,6 +1,6 @@
 // While loop nested continue
 
-print "before";
+System.log("before");
 
 var i = 0;
 while (i < 3) {
@@ -20,17 +20,17 @@ while (i < 3) {
                 k = k + 1;
                 continue;
             }
-            print k;
+            System.log(k);
             k = k + 1;
         }
-        print j;
+        System.log(j);
         j = j + 1;
     }
-    print i;
+    System.log(i);
     i = i + 1;
 }
 
-print "after";
+System.log("after");
 
 // expect before
 // expect 100

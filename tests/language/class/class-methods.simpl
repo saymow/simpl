@@ -21,10 +21,10 @@ class Math {
 
 var math = Math(); 
 
-print math.abs(0);                                                     // expect 0
-print math.abs(1);                                                     // expect 1
-print math.abs(-5);                                                    // expect 5
+System.log(math.abs(0));                                                     // expect 0
+System.log(math.abs(1));                                                     // expect 1
+System.log(math.abs(-5));                                                    // expect 5
 
-print math.exp(0, 0);                                                  // expect 0
-print math.exp(2, 3);                                                  // expect 8
-print math.exp(-2, 3);                                                 // expect -8
+System.log(math.exp(0, 0));                                                  // expect 0
+System.log(math.exp(2, 3));                                                  // expect 8
+System.log(math.exp(-2, 3));                                                 // expect -8

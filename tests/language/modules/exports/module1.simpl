@@ -1,7 +1,7 @@
 // !skip
 
 fun greetings() {
-    print "Hello world!";
+    System.log("Hello world!");
 }
 
 class Person {
@@ -10,7 +10,7 @@ class Person {
     }
 
     sayName() {
-        print "My name is " + this.name;
+        System.log("My name is " + this.name);
     }
 }
 

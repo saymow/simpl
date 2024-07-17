@@ -1,6 +1,6 @@
 // While loop continue
 
-print "before";
+System.log("before");
 
 var idx = 0;
 
@@ -9,11 +9,11 @@ while (idx < 10) {
         idx = idx + 1;
         continue;
     }
-    print idx;
+    System.log(idx);
     idx = idx + 1;
 }
 
-print "after";
+System.log("after");
 
 // expect before
 // expect 0

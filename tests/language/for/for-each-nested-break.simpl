@@ -1,7 +1,7 @@
 // For each loop nested break
 
 
-print "before";
+System.log("before");
 
 for (i of [0, 1, 2, 3, 4, 5]) {
     if (i >= 3) break;
@@ -9,14 +9,14 @@ for (i of [0, 1, 2, 3, 4, 5]) {
         if (j >= 13) break;
         for (k of [100, 101, 102, 103, 104, 105]) {
             if (k >= 103) break;    
-            print k;
+            System.log(k);
         }
-        print j;
+        System.log(j);
     }
-    print i;
+    System.log(i);
 }
 
-print "after";
+System.log("after");
 
 // expect before
 // expect 100

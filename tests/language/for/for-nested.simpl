@@ -1,20 +1,20 @@
 // For loop nested break
 
 
-print "before";
+System.log("before");
 
 
 for (var i = 0; i < 3; i = i + 1) {
     for (var j = 10; j < 13; j = j + 1) {
         for (var k = 100; k < 103; k = k + 1) {
-            print k;
+            System.log(k);
         }
-        print j;
+        System.log(j);
     }
-    print i;
+    System.log(i);
 }
 
-print "after";
+System.log("after");
 
 // expect before
 // expect 100

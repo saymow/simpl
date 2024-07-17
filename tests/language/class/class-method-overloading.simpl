@@ -1,22 +1,22 @@
 // Class method overloading
 
 class Test {
-    test() { print "arity 0"; }
-    test(a) { print "arity 1"; }
-    test(a, b) { print "arity 2"; }
-    test(a, b, c) { print "arity 3"; }
-    test(a, b, c, d) { print "arity 4"; }
-    test(a, b, c, d, e) { print "arity 5"; }
-    test(a, b, c, d, e, f) { print "arity 6"; }
-    test(a, b, c, d, e, f, g) { print "arity 7"; }
-    test(a, b, c, d, e, f, g, h) { print "arity 8"; }
-    test(a, b, c, d, e, f, g, h, i) { print "arity 9"; }
-    test(a, b, c, d, e, f, g, h, i, j) { print "arity 10"; }
-    test(a, b, c, d, e, f, g, h, i, j, k) { print "arity 11"; }
-    test(a, b, c, d, e, f, g, h, i, j, k, l) { print "arity 12"; }
-    test(a, b, c, d, e, f, g, h, i, j, k, l, m) { print "arity 13"; }
-    test(a, b, c, d, e, f, g, h, i, j, k, l, m, n) { print "arity 14"; }
-    test(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o) { print "arity 15"; }
+    test() { System.log("arity 0"); }
+    test(a) { System.log("arity 1"); }
+    test(a, b) { System.log("arity 2"); }
+    test(a, b, c) { System.log("arity 3"); }
+    test(a, b, c, d) { System.log("arity 4"); }
+    test(a, b, c, d, e) { System.log("arity 5"); }
+    test(a, b, c, d, e, f) { System.log("arity 6"); }
+    test(a, b, c, d, e, f, g) { System.log("arity 7"); }
+    test(a, b, c, d, e, f, g, h) { System.log("arity 8"); }
+    test(a, b, c, d, e, f, g, h, i) { System.log("arity 9"); }
+    test(a, b, c, d, e, f, g, h, i, j) { System.log("arity 10"); }
+    test(a, b, c, d, e, f, g, h, i, j, k) { System.log("arity 11"); }
+    test(a, b, c, d, e, f, g, h, i, j, k, l) { System.log("arity 12"); }
+    test(a, b, c, d, e, f, g, h, i, j, k, l, m) { System.log("arity 13"); }
+    test(a, b, c, d, e, f, g, h, i, j, k, l, m, n) { System.log("arity 14"); }
+    test(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o) { System.log("arity 15"); }
 }
 
 var instance = Test();

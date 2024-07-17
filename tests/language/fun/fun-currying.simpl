@@ -24,14 +24,14 @@ var sumBy5 = sumBy(5);
 var multBy5 = multBy(5);
 var concatenateByHello = concatenateBy("Hello"); 
 
-print sumBy5(3);                                                                 // expect 8
-print sumBy5(9);                                                                 // expect 14
-print sumBy5(-5);                                                                // expect 0
+System.log(sumBy5(3));                                                                 // expect 8
+System.log(sumBy5(9));                                                                 // expect 14
+System.log(sumBy5(-5));                                                                // expect 0
 
-print multBy5(3);                                                                // expect 15
-print multBy5(9);                                                                // expect 45
-print multBy5(-5);                                                               // expect -25
+System.log(multBy5(3));                                                                // expect 15
+System.log(multBy5(9));                                                                // expect 45
+System.log(multBy5(-5));                                                               // expect -25
 
-print concatenateByHello(" World");                                              // expect Hello World
-print concatenateByHello(" Earth");                                              // expect Hello Earth
-print concatenateByHello(" Lng");                                                // expect Hello Lng
+System.log(concatenateByHello(" World"));                                              // expect Hello World
+System.log(concatenateByHello(" Earth"));                                              // expect Hello Earth
+System.log(concatenateByHello(" Lng"));                                                // expect Hello Lng

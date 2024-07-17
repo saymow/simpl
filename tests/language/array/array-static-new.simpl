@@ -1,8 +1,8 @@
 // static Array.new
 
 
-print Array.new(3);                                                                          // expect [nil, nil, nil]
-print Array.new();                                                                           // expect []
-print Array.new(0);                                                                          // expect []
-print Array.new(100).length();                                                               // expect 100
-print Array.new(10000).length();                                                             // expect 10000
+System.log(Array.new(3));                                                                          // expect [nil, nil, nil]
+System.log(Array.new());                                                                           // expect []
+System.log(Array.new(0));                                                                          // expect []
+System.log(Array.new(100).length());                                                               // expect 100
+System.log(Array.new(10000).length());                                                             // expect 10000

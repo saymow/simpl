@@ -11,14 +11,14 @@ var str2 = "something";
 var str3 = str1 + str2;
 
 // Test numerical variables
-print num1;                                         // expect 1
-print num2;                                         // expect 2
-print num3;                                         // expect 3
+System.log(num1);                                         // expect 1
+System.log(num2);                                         // expect 2
+System.log(num3);                                         // expect 3
 
 // Test string variables
-print str1;                                         // expect test
-print str2;                                         // expect something
-print str3;                                         // expect testsomething
+System.log(str1);                                         // expect test
+System.log(str2);                                         // expect something
+System.log(str3);                                         // expect testsomething
 
 // Test reassignment
 num1 = 10;
@@ -30,14 +30,14 @@ str2 = "world";
 str3 = str1 + "-" + str2;
 
 // Reassigned numerical variables
-print num1;                                         // expect 10
-print num2;                                         // expect 20
-print num3;                                         // expect 30
+System.log(num1);                                         // expect 10
+System.log(num2);                                         // expect 20
+System.log(num3);                                         // expect 30
 
 // Reassigned string variables
-print str1;                                         // expect hello
-print str2;                                         // expect world
-print str3;                                         // expect hello-world
+System.log(str1);                                         // expect hello
+System.log(str2);                                         // expect world
+System.log(str3);                                         // expect hello-world
 
 // += operator
 num1 += 5;
@@ -49,13 +49,13 @@ str2 += "!";
 str3 += "123";
 
 // Test += operator results
-print num1;                                         // expect 15
-print num2;                                         // expect 30
-print num3;                                         // expect 45
+System.log(num1);                                         // expect 15
+System.log(num2);                                         // expect 30
+System.log(num3);                                         // expect 45
 
-print str1;                                         // expect hello 
-print str2;                                         // expect world!
-print str3;                                         // expect hello-world123
+System.log(str1);                                         // expect hello 
+System.log(str2);                                         // expect world!
+System.log(str3);                                         // expect hello-world123
 
 // -= operator
 num1 -= 5;
@@ -63,9 +63,9 @@ num2 -= 10;
 num3 -= 15;
 
 // Test -= operator results
-print num1;                                         // expect 10
-print num2;                                         // expect 20
-print num3;                                         // expect 30
+System.log(num1);                                         // expect 10
+System.log(num2);                                         // expect 20
+System.log(num3);                                         // expect 30
 
 // *= operator
 num1 *= 2;
@@ -73,9 +73,9 @@ num2 *= 3;
 num3 *= 4;
 
 // Test *= operator results
-print num1;                                         // expect 20
-print num2;                                         // expect 60
-print num3;                                         // expect 120
+System.log(num1);                                         // expect 20
+System.log(num2);                                         // expect 60
+System.log(num3);                                         // expect 120
 
 // /= operator
 num1 /= 2;
@@ -83,6 +83,6 @@ num2 /= 3;
 num3 /= 4;
 
 // Test /= operator results
-print num1;                                         // expect 10
-print num2;                                         // expect 20
-print num3;                                         // expect 30
+System.log(num1);                                         // expect 10
+System.log(num2);                                         // expect 20
+System.log(num3);                                         // expect 30

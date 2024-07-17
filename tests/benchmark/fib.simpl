@@ -11,7 +11,7 @@ var start = System.clock();
 
 fib(N);
 
-print System.clock() - start;
+System.log(System.clock() - start);
 
 // -- Tests recorded with a relatively small dataset N = 30
 // -- In order to have a better runtime benchmark and correctly evalute perfomance improvements,

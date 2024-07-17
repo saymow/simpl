@@ -5,7 +5,7 @@ fun closure1() {
     var b = 2;
     
     fun enclosured() {
-        print a + b;
+        System.log(a + b);
     }
 
     return enclosured;                                                         
@@ -13,7 +13,7 @@ fun closure1() {
 
 fun closure2(a, b) {
     fun enclosured() {
-        print a + b;
+        System.log(a + b);
     }
 
     return enclosured;                                                         
@@ -22,7 +22,7 @@ fun closure2(a, b) {
 fun closure3(a) {
     fun enclosured(b) {
         fun really_enclosured(c) {
-            print a + b + c;
+            System.log(a + b + c);
         }
 
         return really_enclosured;
@@ -33,7 +33,7 @@ fun closure3(a) {
 
 fun closure0(a) {
     var enclosured = fun (b) {
-        print a + b;
+        System.log(a + b);
     };
 
     return enclosured;                                                         

@@ -2,7 +2,7 @@
 
 var arr = ["a", "b", "c", 4, 5, 6];
 
-print arr.shift();                                                                          // expect a
-print arr.shift();                                                                          // expect b
-print arr.shift();                                                                          // expect c
-print arr;                                                                                  // expect [4, 5, 6]
+System.log(arr.shift());                                                                          // expect a
+System.log(arr.shift());                                                                          // expect b
+System.log(arr.shift());                                                                          // expect c
+System.log(arr);                                                                                  // expect [4, 5, 6]
