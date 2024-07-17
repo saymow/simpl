@@ -22,7 +22,7 @@ class Zoo {
 var zoo = Zoo();
 
 var sum = 0;
-var start = clock();
+var start = System.clock();
 
 while (sum < N) {
  sum = sum + zoo.ant()
@@ -34,7 +34,7 @@ while (sum < N) {
 }
 
 print sum;
-print clock() - start;
+print System.clock() - start;
 
 
 // -- Tests recorded with a relatively small dataset N = 50000000

@@ -47,4 +47,4 @@ print person.toString();                                                        
 print (fun() {}).toString();                                                                        // expect fun
 print closure()().toString();                                                                       // expect some strange string
 print 5.toString.toString();                                                                        // expect toString
-print clock.toString();                                                                             // expect clock
+print System.clock.toString();                                                                             // expect clock
