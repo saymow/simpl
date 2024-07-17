@@ -19,11 +19,23 @@ class Array {
     var length = this.length();                
 
     for (var idx = 0; idx < length; idx += 1)  {
-      if (callback(this[idx])) {
-        newArray.push(this[idx], idx, this); 
+      if (callback(this[idx], idx, this)) {
+        newArray.push(this[idx]); 
       }
     }
 
     return newArray;
+  }
+
+  find(callback) {
+    var length = this.length();                
+
+    for (var idx = 0; idx < length; idx += 1)  {
+      if (callback(this[idx], idx, this)) {
+        return this[idx];
+      }
+    }
+
+    return nil;
   }
 }
