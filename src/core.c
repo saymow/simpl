@@ -439,7 +439,11 @@ void initializeCore(VM* vm) {
   vm->moduleExportsClass = defineNewClass("Exports");
   inherit((Obj *)vm->moduleExportsClass, vm->klass);
 
-  defineNativeFunction(vm, &vm->global, "clock", __nativeClock, ARGS_ARITY_0);
+  ObjString* name = copyString("clock", strlen("clock"));
+  beginAssemblyLine((Obj *) name); 
+  ObjNativeFn* native = newNativeFunction(__nativeClock, name, ARGS_ARITY_0);
+  tableSet(&vm->global, name, OBJ_VAL(native));
+  endAssemblyLine();
 
   vm->state = EXTENDING;
 

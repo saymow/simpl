@@ -155,20 +155,50 @@ static inline bool ensureOverloadedMethodArity(ObjOverloadedMethod *overloadedMe
   return false;
 }
 
+
+// You can call whatever function as long as the argCount >= arity.
+// consequences are:
+//
+// 1. If the function is not variadic, all arguments after the function
+// arity are ignored.
+// 
+// 2. If the function is variadic, the function expect to receive N >= arity
+// arguments and this should handle that.  
+static inline void* resolveOverloadedMethod(void** methods, int argCount) {
+  int arity = argCount >= ARGS_ARITY_MAX ? ARGS_ARITY_15 : argCount;
+
+  for (int idx = arity; idx >= 0; idx--) {
+    if (methods[idx] != NULL) {
+      return methods[idx]; 
+    }
+  }
+
+  for (int idx = arity + 1; idx < ARGS_ARITY_MAX; idx++) {
+    if (methods[idx] != NULL) {
+      runtimeError("Expected %d arguments but got %d.", idx, argCount);
+      return NULL;
+    }
+  }
+
+  // unreachable
+  return NULL;
+}
+
 static bool callConstructor(ObjClass* klass, int argCount) {
   ObjInstance* instance = newInstance(klass);
   Value initializer;
   
   vm.stackTop[-(argCount + 1)] = OBJ_VAL(instance);
 
-  // we MUST restrict the class name to ALWAYS be the constructor
+  // MUST restrict the class name to ALWAYS be the constructor
   // i.e, blocking it to be a property
   if (tableGet(&klass->methods, klass->name, &initializer)) {
-    if (!ensureOverloadedMethodArity(AS_OVERLOADED_METHOD(initializer), argCount)) {
+    ObjClosure* function = (ObjClosure *) resolveOverloadedMethod((void **) AS_OVERLOADED_METHOD(initializer)->as.userMethods, argCount);
+    
+    if (!function) {
       return false;
     }
 
-    ObjClosure* function = AS_OVERLOADED_METHOD(initializer)->as.userMethods[argCount];
     call(function, argCount);
   } else if (argCount != 0) {
     runtimeError("Expected 0 arguments but got %d.", argCount);
@@ -203,21 +233,37 @@ static bool callValue(Value callee, int argCount) {
         
         vm.stackTop[-(argCount + 1)] = overloadedMethod->base;
 
-        if (!ensureOverloadedMethodArity(overloadedMethod->overloadedMethod, argCount)) {
-          return false;
-        }
-
         if (overloadedMethod->overloadedMethod->type == NATIVE_METHOD) {
-          ObjNativeFn* function = AS_NATIVE_BOUND_OVERLOADED_METHOD(callee, argCount); 
-          return callNativeFn(function->function, argCount, true);
+          ObjNativeFn* native = 
+            (ObjNativeFn*) resolveOverloadedMethod(((void **) &overloadedMethod->overloadedMethod->as.nativeMethods), argCount); 
+
+          if (native == NULL) {
+            return false;
+          }
+
+          return callNativeFn(native->function, argCount, true);
         } else {
-          ObjClosure* function = AS_USER_BOUND_OVERLOADED_METHOD(callee, argCount);  
+          ObjClosure* function = 
+            (ObjClosure*) resolveOverloadedMethod(((void **) &overloadedMethod->overloadedMethod->as.userMethods), argCount);
+
+          if (function == NULL) {
+            return false;
+          }
+
           return call(function, argCount);
         }
         break;
       }
       case OBJ_CLOSURE: {
-        if (AS_CLOSURE(callee)->function->arity != argCount) {
+        // You can call whatever function as long as the argCount >= arity.
+        // consequences are:
+        //
+        // 1. If the function is not variadic, all arguments after the function
+        // arity are ignored.
+        // 
+        // 2. If the function is variadic, the function expect to receive N >= arity
+        // arguments and this should handle that.
+        if (AS_CLOSURE(callee)->function->arity > argCount) {
           runtimeError("Expected %d arguments but got %d.", AS_CLOSURE(callee)->function->arity,
                       argCount);
           return false;
@@ -226,7 +272,15 @@ static bool callValue(Value callee, int argCount) {
         return call(AS_CLOSURE(callee), argCount);
       }
       case OBJ_NATIVE_FN: {
-        if (AS_NATIVE(callee)->arity != argCount) {
+        // You can call whatever function as long as the argCount >= arity.
+        // consequences are:
+        //
+        // 1. If the function is not variadic, all arguments after the function
+        // arity are ignored.
+        // 
+        // 2. If the function is variadic, the function expect to receive N >= arity
+        // arguments and this should handle that.
+        if (AS_NATIVE(callee)->arity > argCount) {
           runtimeError("Expected %d arguments but got %d.", AS_NATIVE(callee)->arity,
                       argCount);
           return false;
