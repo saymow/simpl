@@ -1,0 +1,25 @@
+// Array.find
+
+class Person {}
+
+var person = Person();
+
+print [1, 2, 3, 4, 5].find(fun (num) {                                                               // expect 3
+    return num == 3;
+});
+
+print [1, 2, 3, 4, 5].find(fun (num) {                                                               // expect 4
+    return num > 3;
+});
+
+print [1, 2, 3, person, 5].find(fun (item) {                                                         // expect instance of Person
+    return item == person;
+});
+
+print ["a", "b", "c"].find(fun (item, idx, arr) {                                                    // expect nil
+    return item == "d";
+});
+
+print ["a", "b", "c"].find(fun (item, idx, arr) {                                                    // expect c
+    return idx == 2;
+});

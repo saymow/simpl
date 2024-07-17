@@ -12,6 +12,6 @@ print [1, 2, 3, 4, 5].filter(fun (num) {                                        
     return num > 0;
 });
 
-print ["a", "b", "c"].filter(fun (_, idx, arr) {                                                        // expect [a]
+print ["a", "b", "c"].filter(fun (_, idx, arr) {                                                       // expect [a]
     return idx < 1;
 });
