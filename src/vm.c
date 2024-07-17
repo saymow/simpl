@@ -111,6 +111,19 @@ static void concatenate() {
   push(OBJ_VAL(takeString(buffer, length)));
 }
 
+static bool callEntry(ObjClosure* closure) {
+  CallFrame* frame = &vm.frames[vm.framesCount++];
+  frame->type = FRAME_TYPE_CLOSURE;
+  frame->as.closure = closure;
+  frame->ip = closure->function->chunk.code;
+  frame->slots = vm.stackTop - 1;
+
+  initTable(&frame->namespace);
+  tableAddAll(&vm.global, &frame->namespace);
+
+  return true;
+}
+
 static bool call(ObjClosure* closure, uint8_t argCount) {
   if (vm.framesCount == FRAMES_MAX) {
     runtimeError("Stack overflow.");
@@ -119,9 +132,28 @@ static bool call(ObjClosure* closure, uint8_t argCount) {
 
   CallFrame* frame = &vm.frames[vm.framesCount++];
   frame->type = FRAME_TYPE_CLOSURE;
+  frame->namespace = vm.frames[vm.framesCount - 2].namespace;
   frame->as.closure = closure;
   frame->ip = closure->function->chunk.code;
   frame->slots = vm.stackTop - argCount - 1;
+
+  return true;
+}
+
+static bool callModule(ObjModule* module) {
+  if (vm.framesCount == FRAMES_MAX) {
+    runtimeError("Stack overflow.");
+    return false;
+  }
+
+  CallFrame* frame = &vm.frames[vm.framesCount++];
+  frame->type = FRAME_TYPE_MODULE;
+  frame->as.module = module;
+  frame->ip = module->function->chunk.code;
+  frame->slots = vm.stackTop - 1;
+
+  initTable(&frame->namespace);
+  tableAddAll(&vm.global, &frame->namespace);
 
   return true;
 }
@@ -154,7 +186,6 @@ static inline bool ensureOverloadedMethodArity(ObjOverloadedMethod *overloadedMe
   runtimeError("Expected x arguments but got %d.", argCount);
   return false;
 }
-
 
 // You can call whatever function as long as the argCount >= arity.
 // consequences are:
@@ -204,21 +235,6 @@ static bool callConstructor(ObjClass* klass, int argCount) {
     runtimeError("Expected 0 arguments but got %d.", argCount);
     return false;
   }
-
-  return true;
-}
-
-static bool callModule(ObjModule* module) {
-  if (vm.framesCount == FRAMES_MAX) {
-    runtimeError("Stack overflow.");
-    return false;
-  }
-
-  CallFrame* frame = &vm.frames[vm.framesCount++];
-  frame->type = FRAME_TYPE_MODULE;
-  frame->as.module = module;
-  frame->ip = module->function->chunk.code;
-  frame->slots = vm.stackTop - 1;
 
   return true;
 }
@@ -497,14 +513,14 @@ static InterpretResult run() {
         break;
       }
       case OP_DEFINE_GLOBAL: {
-        tableSet(&vm.global, READ_STRING(), pop());
+        tableSet(&frame->namespace, READ_STRING(), pop());
         break;
       }
       case OP_GET_GLOBAL: {
         ObjString* name = READ_STRING();
         Value value;
 
-        if (!tableGet(&vm.global, name, &value)) {
+        if (!tableGet(&frame->namespace, name, &value)) {
           runtimeError("Undefined variable '%s'", name->chars);
           return INTERPRET_RUNTIME_ERROR;
         }
@@ -515,8 +531,8 @@ static InterpretResult run() {
       case OP_SET_GLOBAL: {
         ObjString* name = READ_STRING();
 
-        if (tableSet(&vm.global, name, peek(0))) {
-          tableDelete(&vm.global, name);
+        if (tableSet(&frame->namespace, name, peek(0))) {
+          tableDelete(&frame->namespace, name);
           runtimeError("Undefined variable '%s'", name->chars);
           return INTERPRET_RUNTIME_ERROR;
         }
@@ -885,11 +901,6 @@ static InterpretResult run() {
         push(NUMBER_VAL(-AS_NUMBER(pop())));
         break;
       }
-      case OP_PRINT: {
-        printfValue(pop());
-        printf("\n");
-        break;
-      }
       case OP_POP: {
         pop();
         break;
@@ -968,14 +979,16 @@ static InterpretResult run() {
         ObjModule* module = AS_MODULE(READ_CONSTANT());
 
         if (!module->evaluated) {
+          // Call module function
           push(OBJ_VAL(module->function));
 
-          if (!module || !callModule(module)) {
+          if (!callModule(module)) {
             return INTERPRET_RUNTIME_ERROR;
           }
 
           frame = &vm.frames[vm.framesCount - 1];
         } else {
+          // If resolved, just copy it exports properties
           ObjInstance* exports = newInstance(vm.moduleExportsClass);
           tableAddAll(&module->exports, &exports->properties);
           push(OBJ_VAL(exports));
@@ -989,10 +1002,14 @@ static InterpretResult run() {
         closeUpValues(frame->slots);
 
         if (IS_FRAME_MODULE(frame)) {
+          // Free module variables namespace and flag as evaluated 
+          freeTable(&frame->namespace);
+          FRAME_AS_MODULE(frame)->evaluated = true;
+
+          // Copy it exports properties to frame call result
           ObjInstance* exports = newInstance(vm.moduleExportsClass);
           tableAddAll(&FRAME_AS_MODULE(frame)->exports, &exports->properties);
           result = OBJ_VAL(exports);
-          FRAME_AS_MODULE(frame)->evaluated = true;
         } 
 
         // Ensure loop blocks are popped if returned inside them
@@ -1040,7 +1057,7 @@ InterpretResult interpret(const char* source, char* absPath) {
   vm.objectsAssemblyLineEnd = NULL;
 
   push(OBJ_VAL(closure));
-  callValue(OBJ_VAL(closure), 0);
+  callEntry(closure);
 
   InterpretResult result = run();
 

@@ -99,8 +99,7 @@ Compiler* current;
 ClassCompiler* currentClass;
 char* basePath;
 
-#define GLOBAL_VARIABLES() \
-  (current->scopeDepth == 0 && current->type != TYPE_MODULE)
+#define GLOBAL_VARIABLES() (current->scopeDepth == 0)
 
 static Chunk* currentChunk() { return &current->function->chunk; }
 
@@ -362,7 +361,6 @@ static void synchronize() {
       case TOKEN_IF:
       case TOKEN_WHILE:
       case TOKEN_FOR:
-      case TOKEN_PRINT:
       case TOKEN_RETURN:
         return;
       default:
@@ -517,12 +515,6 @@ static void declaration() {
   }
 
   if (parser.panicMode) synchronize();
-}
-
-static void printStatement() {
-  expression();
-  consume(TOKEN_SEMICOLON, "Expect ';' after value.");
-  emitByte(OP_PRINT);
 }
 
 static void expressionStatement() {
@@ -987,8 +979,6 @@ static void statement() {
     importStatement();
   } else if (match(TOKEN_EXPORT)) {
     exportStatement();
-  } else if (match(TOKEN_PRINT)) {
-    printStatement();
   } else if (match(TOKEN_LEFT_BRACE)) {
     beginScope();
     block();
@@ -1200,12 +1190,6 @@ static void namedVariable(Token token, bool canAssign) {
     getOp = OP_GET_UPVALUE;
     setOp = OP_SET_UPVALUE;
   } else {
-    if (current->topLevelType == TYPE_MODULE) {
-      // todo: print variable name
-      error("Undefined variable.");
-      return;
-    }
-
     arg = identifierConstant(&token);
     getOp = OP_GET_GLOBAL;
     setOp = OP_SET_GLOBAL;

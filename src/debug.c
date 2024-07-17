@@ -201,8 +201,6 @@ int disassembleInstruction(Chunk* chunk, int offset) {
       return simpleInstruction("OP_TRY_CATCH_TRY_END", offset);
     case OP_THROW:
       return simpleInstruction("OP_THROW", offset);
-    case OP_PRINT:
-      return simpleInstruction("OP_PRINT", offset);
     case OP_IMPORT:
       return byteInstruction("OP_IMPORT", chunk, offset);
     case OP_RETURN:

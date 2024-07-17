@@ -71,12 +71,6 @@ static inline void swap(ValueArray* arr, int i, int j) {
     arr->values[j] = tmp;
 }
 
-static inline bool __nativeClock(int argCount, Value* args) {
-  push(NUMBER_VAL(clock() / (double) CLOCKS_PER_SEC));
-  
-  return true;
-}
-
 static inline bool __nativeClassToString(int argCount, Value* args) {
   push(OBJ_VAL(toString(*args)));
   
@@ -305,6 +299,18 @@ static inline bool __nativeStaticArrayNew(int argCount, Value* args) {
   return true;
 }
 
+static inline bool __nativeSystemLog(int argCount, Value* args) {
+  printfValue(*(++args));
+  printf("\n");
+  push(NIL_VAL);  
+  return true;
+}
+
+static inline bool __nativeSystemClock(int argCount, Value* args) {
+  push(NUMBER_VAL(clock() / (double) CLOCKS_PER_SEC));
+  return true;
+}
+
 static void defineNativeFunction(VM* vm, Table* methods, const char* string, NativeFn function, Arity arity) {
   ObjString* name = copyString(string, strlen(string));
   beginAssemblyLine((Obj *) name); 
@@ -441,7 +447,8 @@ void initializeCore(VM* vm) {
   vm->metaSystemClass = defineNewClass("MetaSystem");
   inherit((Obj *)vm->metaSystemClass, vm->klass);
 
-  defineNativeFunction(vm, &vm->metaSystemClass->methods, "clock", __nativeClock, ARGS_ARITY_0);
+  defineNativeFunction(vm, &vm->metaSystemClass->methods, "clock", __nativeSystemClock, ARGS_ARITY_0);
+  defineNativeFunction(vm, &vm->metaSystemClass->methods, "log", __nativeSystemLog, ARGS_ARITY_1);
 
   vm->systemClass = defineNewClass("System");
   inherit((Obj *)vm->systemClass, vm->metaSystemClass);

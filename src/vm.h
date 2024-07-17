@@ -15,10 +15,23 @@ typedef enum { FRAME_TYPE_CLOSURE, FRAME_TYPE_MODULE } CallFrameType;
 
 typedef enum { INITIALIZING, EXTENDING, INITIALIZED  } VMState; 
 
+
+// CallFrames are either function calls or modules, both have their own 
+// intruction pointer (ip) and share of the stack (slots). the namespace
+// table changes a little based on the frame type. 
+//
+//    FRAME_TYPE_MODULE: namespace table refers to the module namespace. 
+// It is: 
+//       vm global namespace + 
+//       user defined global variables.
+//
+//    FRAME_TYPE_CLOSURE: namespace table refers to the enclosing module
+// namespace.   
 typedef struct {
   uint8_t* ip;
   Value* slots;
   CallFrameType type;
+  Table namespace;
   union {
     ObjClosure* closure;
     ObjModule* module;
