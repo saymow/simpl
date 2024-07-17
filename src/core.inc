@@ -38,4 +38,30 @@ class Array {
 
     return nil;
   }
+
+  reduce(callback) {
+    var length = this.length();
+    
+    if (length == 0) {
+      return nil;
+    }
+
+    var acc = this[0];
+
+    for (var idx = 1; idx < length; idx += 1) {
+      acc = callback(acc, this[idx], idx, this);
+    }
+
+    return acc;     
+  }
+
+  reduce(callback, acc) {
+    var length = this.length();
+    
+    for (var idx = 0; idx < length; idx += 1) {
+      acc = callback(acc, this[idx], idx, this);
+    }
+
+    return acc;     
+  }
 }
