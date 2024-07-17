@@ -435,19 +435,21 @@ void initializeCore(VM* vm) {
   
   defineNativeFunction(vm, &vm->arrayClass->methods, "join", __nativeArrayJoin, ARGS_ARITY_1);
 
-
   vm->moduleExportsClass = defineNewClass("Exports");
   inherit((Obj *)vm->moduleExportsClass, vm->klass);
 
-  ObjString* name = copyString("clock", strlen("clock"));
-  beginAssemblyLine((Obj *) name); 
-  ObjNativeFn* native = newNativeFunction(__nativeClock, name, ARGS_ARITY_0);
-  tableSet(&vm->global, name, OBJ_VAL(native));
-  endAssemblyLine();
+  vm->metaSystemClass = defineNewClass("MetaSystem");
+  inherit((Obj *)vm->metaSystemClass, vm->klass);
+
+  defineNativeFunction(vm, &vm->metaSystemClass->methods, "clock", __nativeClock, ARGS_ARITY_0);
+
+  vm->systemClass = defineNewClass("System");
+  inherit((Obj *)vm->systemClass, vm->metaSystemClass);
 
   vm->state = EXTENDING;
 
   interpret(coreExtension, NULL);
 
   tableSet(&vm->global, vm->arrayClass->name, OBJ_VAL(vm->arrayClass));
+  tableSet(&vm->global, vm->systemClass->name, OBJ_VAL(vm->systemClass));
 }

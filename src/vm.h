@@ -59,6 +59,7 @@ typedef struct {
   // Meta Classes are used to define static methods and are exposed to the global namespace
   // These are superclasses of the Data Type Classes
   ObjClass* metaArrayClass;
+  ObjClass* metaSystemClass;
 
   // Data Type Classes are superclasses of all data types
   ObjClass* nilClass;
@@ -69,6 +70,7 @@ typedef struct {
   ObjClass* nativeFunctionClass;
   ObjClass* arrayClass;
   ObjClass* moduleExportsClass;
+  ObjClass* systemClass;
 
   Loop loopStack[LOOP_STACK_MAX];
   int loopStackCount;

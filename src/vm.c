@@ -271,23 +271,6 @@ static bool callValue(Value callee, int argCount) {
 
         return call(AS_CLOSURE(callee), argCount);
       }
-      case OBJ_NATIVE_FN: {
-        // You can call whatever function as long as the argCount >= arity.
-        // consequences are:
-        //
-        // 1. If the function is not variadic, all arguments after the function
-        // arity are ignored.
-        // 
-        // 2. If the function is variadic, the function expect to receive N >= arity
-        // arguments and this should handle that.
-        if (AS_NATIVE(callee)->arity > argCount) {
-          runtimeError("Expected %d arguments but got %d.", AS_NATIVE(callee)->arity,
-                      argCount);
-          return false;
-        } 
-        
-        return callNativeFn(AS_NATIVE_FN(callee), argCount, false);
-      }
       default:
         break;
     }
