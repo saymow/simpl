@@ -45,4 +45,4 @@ instance.test("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "
 
 
 superTestInstance.test("a", "b", "c", "d", "e", "f", "g", "h");                                     // expect arity 8
-superTestInstance.test("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o");  // error SOFTWARE_ERR
+superTestInstance.test("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o");  // expect arity 8
