@@ -21,3 +21,11 @@ print [1, 2, 3].map(fun (num) {                                                 
 print [1, 2, 3].map(fun (num) {                                                               // expect [pad1, pad2, pad3]
     return "pad" + num.toString();
 });
+
+print ["a", "b", "c"].map(fun (_, idx) {                                                      // expect [0, 1, 2]
+    return idx;
+});
+
+print ["a", "b", "c"].map(fun (_, __, arr) {                                                  // expect [[a, b, c], [a, b, c], [a, b, c]]
+    return arr;
+});
