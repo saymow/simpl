@@ -4,7 +4,7 @@ class Array {
     var newArray = Array.new(length);
 
     for (var idx = 0; idx < length; idx += 1)  {
-      newArray[idx] = callback(this[idx]); 
+      newArray[idx] = callback(this[idx], idx, this); 
     }
 
     return newArray;
@@ -20,7 +20,7 @@ class Array {
 
     for (var idx = 0; idx < length; idx += 1)  {
       if (callback(this[idx])) {
-        newArray.push(this[idx]); 
+        newArray.push(this[idx], idx, this); 
       }
     }
 
