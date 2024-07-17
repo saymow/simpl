@@ -6,18 +6,18 @@ class MyNumber {
     }
 }
 
-print [1, 2, 3].map(fun (num) {                                                               // [1, 4, 9]
+print [1, 2, 3].map(fun (num) {                                                               // expect [2, 4, 6]
     return num * 2;
 });
 
-print [1, 2, 3].map(fun (num) {                                                               // [101, 102, 103]
+print [1, 2, 3].map(fun (num) {                                                               // expect [101, 102, 103]
     return num + 100;
 });
 
-print [1, 2, 3].map(fun (num) {                                                               // [instance of MyNumber, instance of MyNumber, instance of MyNumber]
+print [1, 2, 3].map(fun (num) {                                                               // expect [instance of MyNumber, instance of MyNumber, instance of MyNumber]
     return MyNumber(num);
 });
 
-print [1, 2, 3].map(fun (num) {                                                               // [pad1, pad2, pad3]
+print [1, 2, 3].map(fun (num) {                                                               // expect [pad1, pad2, pad3]
     return "pad" + num.toString();
 });

@@ -1,13 +1,13 @@
 // Array.filter
 
-print [1, 2, 3, 4, 5].filter(fun (num) {                                                               // [4, 5]
+print [1, 2, 3, 4, 5].filter(fun (num) {                                                               // expect [4, 5]
     return num > 3;
 });
 
-print [1, 2, 3, 4, 5].filter(fun (num) {                                                               // []
+print [1, 2, 3, 4, 5].filter(fun (num) {                                                               // expect []
     return num > 10;
 });
 
-print [1, 2, 3, 4, 5].filter(fun (num) {                                                               // [1, 2, 3, 4, 5]
+print [1, 2, 3, 4, 5].filter(fun (num) {                                                               // expect [1, 2, 3, 4, 5]
     return num > 0;
 });
