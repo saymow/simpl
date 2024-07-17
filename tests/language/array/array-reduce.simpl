@@ -1,0 +1,35 @@
+// Array.reduce
+
+print [1, 2, 3, 4, 5].reduce(fun (acc, num) {                                                               // expect 15
+    return acc + num;
+});
+
+print [1, 2, 3, 4, 5].reduce(fun (acc, num) {                                                               // expect 55
+    return acc + num * num;
+});
+
+print [].reduce(fun (acc, num) {                                                                            // expect nil
+    return acc + num * num;
+});
+
+// Array.join is way faster for this 
+print ["h", "e", "l", "l", "o"].reduce(fun (acc, char) {                                                    // expect hello
+    return acc + char;
+});
+
+print [1, 2, 3, 4, 5].reduce(fun (acc, num) {                                                               // expect 115
+    return acc + num;
+}, 100);
+
+print [1, 2, 3, 4, 5].reduce(fun (acc, num) {                                                               // expect 155
+    return acc + num * num;
+}, 100);
+
+print [].reduce(fun (acc, num) {                                                                            // expect 100
+    return acc + num * num;
+}, 100);
+
+// Array.join is way faster for this 
+print ["h", "e", "l", "l", "o"].reduce(fun (acc, char) {                                                    // expect you should say hello
+    return acc + char;
+}, "you should say ");
