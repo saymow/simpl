@@ -72,6 +72,7 @@ typedef struct {
   // Meta Classes are used to define static methods and are exposed to the global namespace
   // These are superclasses of the Data Type Classes
   ObjClass* metaArrayClass;
+  ObjClass* metaStringClass;
   ObjClass* metaSystemClass;
 
   // Data Type Classes are superclasses of all data types

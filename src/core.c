@@ -344,6 +344,12 @@ static inline bool __nativeStringToLowerCase(int argCount, Value* args) {
   return true;
 }
 
+static inline bool __nativeStaticStringIsString(int argCount, Value* args) {
+  Value value = *(++args);
+  push(IS_STRING(value) ? TRUE_VAL : FALSE_VAL);
+  return true;
+}
+
 static void defineNativeFunction(VM* vm, Table* methods, const char* string, NativeFn function, Arity arity) {
   ObjString* name = copyString(string, strlen(string));
   beginAssemblyLine((Obj *) name); 
@@ -392,21 +398,28 @@ void initializeCore(VM* vm) {
   vm->nilClass = NULL;
   vm->boolClass = NULL;
   vm->numberClass = NULL;
-  vm->stringClass = NULL;
   vm->functionClass = NULL;
   vm->moduleExportsClass = NULL;
   vm->metaArrayClass = NULL;
   vm->arrayClass = NULL; 
+  vm->metaStringClass = NULL;
+  vm->stringClass = NULL;
 
   vm->klass = defineNewClass("Class");
+  vm->metaStringClass = defineNewClass("MetaString");
   vm->stringClass = defineNewClass("String");
   vm->nativeFunctionClass = defineNewClass("NativeFunction");
 
   defineNativeFunction(vm, &vm->klass->methods, "toString", __nativeClassToString, ARGS_ARITY_0);
-
+  
   // Class inherits from itself
   vm->klass->obj.klass = vm->klass;
-  inherit((Obj *)vm->stringClass, vm->klass);
+
+  inherit((Obj *)vm->metaStringClass,  vm->klass);
+
+  defineNativeFunction(vm, &vm->metaStringClass->methods, "isString", __nativeStaticStringIsString, ARGS_ARITY_1);
+
+  inherit((Obj *)vm->stringClass, vm->metaStringClass);
 
   defineNativeFunction(vm, &vm->stringClass->methods, "toUpperCase", __nativeStringToUpperCase, ARGS_ARITY_0);
   defineNativeFunction(vm, &vm->stringClass->methods, "toLowerCase", __nativeStringToLowerCase, ARGS_ARITY_0);
@@ -414,6 +427,7 @@ void initializeCore(VM* vm) {
   inherit((Obj *)vm->nativeFunctionClass, vm->klass);
 
   inherit((Obj *)vm->klass->name, vm->stringClass);
+  inherit((Obj *)vm->metaStringClass->name, vm->stringClass);
   inherit((Obj *)vm->stringClass->name, vm->stringClass);
   inherit((Obj *)vm->nativeFunctionClass->name, vm->stringClass);
 
@@ -492,6 +506,7 @@ void initializeCore(VM* vm) {
 
   interpret(coreExtension, NULL);
 
+  tableSet(&vm->global, vm->stringClass->name, OBJ_VAL(vm->stringClass));
   tableSet(&vm->global, vm->arrayClass->name, OBJ_VAL(vm->arrayClass));
   tableSet(&vm->global, vm->systemClass->name, OBJ_VAL(vm->systemClass));
 }
