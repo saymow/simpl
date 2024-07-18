@@ -6,26 +6,26 @@ class MyNumber {
     }
 }
 
-print [1, 2, 3].map(fun (num) {                                                               // expect [2, 4, 6]
+System.log([1, 2, 3].map(fun (num) {                                                               // expect [2, 4, 6]
     return num * 2;
-});
+}));
 
-print [1, 2, 3].map(fun (num) {                                                               // expect [101, 102, 103]
+System.log([1, 2, 3].map(fun (num) {                                                               // expect [101, 102, 103]
     return num + 100;
-});
+}));
 
-print [1, 2, 3].map(fun (num) {                                                               // expect [instance of MyNumber, instance of MyNumber, instance of MyNumber]
+System.log([1, 2, 3].map(fun (num) {                                                               // expect [instance of MyNumber, instance of MyNumber, instance of MyNumber]
     return MyNumber(num);
-});
+}));
 
-print [1, 2, 3].map(fun (num) {                                                               // expect [pad1, pad2, pad3]
+System.log([1, 2, 3].map(fun (num) {                                                               // expect [pad1, pad2, pad3]
     return "pad" + num.toString();
-});
+}));
 
-print ["a", "b", "c"].map(fun (_, idx) {                                                      // expect [0, 1, 2]
+System.log(["a", "b", "c"].map(fun (_, idx) {                                                      // expect [0, 1, 2]
     return idx;
-});
+}));
 
-print ["a", "b", "c"].map(fun (_, __, arr) {                                                  // expect [[a, b, c], [a, b, c], [a, b, c]]
+System.log(["a", "b", "c"].map(fun (_, __, arr) {                                                  // expect [[a, b, c], [a, b, c], [a, b, c]]
     return arr;
-});
+}));

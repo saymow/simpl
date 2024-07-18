@@ -1,0 +1,7 @@
+// String.toUpperCase
+
+System.log("test".toUpperCase());                                                               // expect TEST
+System.log("some-strange-thing".toUpperCase());                                                 // expect SOME-STRANGE-THING
+System.log("123".toUpperCase());                                                                // expect 123
+System.log("TEST".toUpperCase());                                                               // expect TEST
+System.log("abcdefghijklmnopqrstuvwxyz123456789-/*ABCDEFGHIJKLMNOPQRSTUVWXYZ".toUpperCase());   // expect ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789-/*ABCDEFGHIJKLMNOPQRSTUVWXYZ
