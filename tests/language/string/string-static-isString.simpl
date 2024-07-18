@@ -1,0 +1,10 @@
+// String.isString
+
+System.log(String.isString("TEST"));                                                  // expect true
+System.log(String.isString(1));                                                       // expect false
+System.log(String.isString(nil));                                                     // expect false
+System.log(String.isString(false));                                                   // expect false
+System.log(String.isString(false));                                                   // expect false
+System.log(String.isString([]));                                                      // expect false
+System.log(String.isString(false.toString()));                                        // expect true
+System.log(String.isString((fun () {})));                                             // expect false
