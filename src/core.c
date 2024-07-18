@@ -66,6 +66,13 @@
         (length) + (idx) + 1 :                                                      \
         0)))     
 
+#define SAFE_NEGATIVE_INDEX(idx, length)                                            \
+    ((idx) >= 0 ?                                                                   \
+        (idx) :                                                                     \
+        (-(idx) < (length) ?                                                        \
+            (length) + (idx) :                                                      \
+            0))
+
 static inline void swap(ValueArray* arr, int i, int j) {
     Value tmp = arr->values[i];
     arr->values[i] = arr->values[j];
@@ -344,6 +351,41 @@ static inline bool __nativeStringToLowerCase(int argCount, Value* args) {
   return true;
 }
 
+static inline bool __nativeStringIncludes(int argCount, Value* args) {
+  ObjString* string = AS_STRING(*args);
+  ObjString* searchString = SAFE_CONSUME_STRING(args, "searchString");
+  int start = 0;
+
+  if (argCount > 1) {
+    start = (int) SAFE_CONSUME_NUMBER(args, "start");
+    start = SAFE_NEGATIVE_INDEX(start, string->length); 
+  }
+
+  if (searchString->length == 0) {
+    push(TRUE_VAL);
+    return true;
+  }
+
+  for (int i = start; i < string->length; i++) {
+    int j = 0;
+    while (
+      i + j < string->length &&
+      j < searchString->length &&
+      string->chars[i + j] == searchString->chars[j] 
+    ) {
+      j++;
+    }
+
+    if (j == searchString->length) {
+      push(TRUE_VAL);
+      return true;
+    }
+  }
+
+  push(FALSE_VAL);
+  return true;
+}
+
 static inline bool __nativeStaticStringIsString(int argCount, Value* args) {
   Value value = *(++args);
   push(IS_STRING(value) ? TRUE_VAL : FALSE_VAL);
@@ -423,6 +465,8 @@ void initializeCore(VM* vm) {
 
   defineNativeFunction(vm, &vm->stringClass->methods, "toUpperCase", __nativeStringToUpperCase, ARGS_ARITY_0);
   defineNativeFunction(vm, &vm->stringClass->methods, "toLowerCase", __nativeStringToLowerCase, ARGS_ARITY_0);
+  defineNativeFunction(vm, &vm->stringClass->methods, "includes", __nativeStringIncludes, ARGS_ARITY_0);
+  defineNativeFunction(vm, &vm->stringClass->methods, "includes", __nativeStringIncludes, ARGS_ARITY_1);
 
   inherit((Obj *)vm->nativeFunctionClass, vm->klass);
 
