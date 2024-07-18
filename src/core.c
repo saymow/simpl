@@ -10,6 +10,7 @@
 #include "object.h"
 #include "memory.h"
 
+#define ASCII_UPPERCASE_TO_LOWERCASE_OFFSET 32
 
 #define SAFE_CONSUME_NUMBER(args, name)                                             \
     (double) (                                                                      \
@@ -317,7 +318,23 @@ static inline bool __nativeStringToUpperCase(int argCount, Value* args) {
 
   for (int idx = 0; idx < string->length; idx++) {
     if (string->chars[idx] >= 'a' && string->chars[idx] <= 'z') {
-      buffer[idx] = string->chars[idx] - 32;
+      buffer[idx] = string->chars[idx] - ASCII_UPPERCASE_TO_LOWERCASE_OFFSET;
+    } else {
+      buffer[idx] = string->chars[idx];
+    }
+  }
+
+  push(OBJ_VAL(copyString(buffer, string->length)));
+  return true;
+}
+
+static inline bool __nativeStringToLowerCase(int argCount, Value* args) {
+  ObjString* string = AS_STRING(*args);
+  char buffer[string->length];
+
+  for (int idx = 0; idx < string->length; idx++) {
+    if (string->chars[idx] >= 'A' && string->chars[idx] <= 'Z') {
+      buffer[idx] = string->chars[idx] + ASCII_UPPERCASE_TO_LOWERCASE_OFFSET;
     } else {
       buffer[idx] = string->chars[idx];
     }
@@ -392,6 +409,7 @@ void initializeCore(VM* vm) {
   inherit((Obj *)vm->stringClass, vm->klass);
 
   defineNativeFunction(vm, &vm->stringClass->methods, "toUpperCase", __nativeStringToUpperCase, ARGS_ARITY_0);
+  defineNativeFunction(vm, &vm->stringClass->methods, "toLowerCase", __nativeStringToLowerCase, ARGS_ARITY_0);
 
   inherit((Obj *)vm->nativeFunctionClass, vm->klass);
 
