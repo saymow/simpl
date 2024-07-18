@@ -386,6 +386,39 @@ static inline bool __nativeStringIncludes(int argCount, Value* args) {
   return true;
 }
 
+static inline bool __nativeStringSplit(int argCount, Value* args) {
+  ObjString* string = AS_STRING(*args);
+  ObjString* separator = SAFE_CONSUME_STRING(args, "separator");
+  ObjArray* response = newArray();
+
+  int k = 0;  
+  for (int i = 0; i < string->length; i++) {
+    int j = 0;
+
+    while (
+      i + j < string->length &&
+      j < separator->length &&
+      string->chars[i + j] == separator->chars[j] 
+    ) {
+      j++;
+    }
+
+    // separator found
+    if (j == separator->length) {
+      writeValueArray(&response->list, OBJ_VAL(copyString(&string->chars[k], i - k + (separator->length == 0))));
+      k = i + (separator->length == 0 ? 1 : j);
+      i = i + (separator->length == 0 ? 0 : j - 1);
+    }
+  }
+
+  if (separator->length > 0) {
+    writeValueArray(&response->list, OBJ_VAL(copyString(&string->chars[k], string->length - k)));
+  }
+  
+  push(OBJ_VAL(response));
+  return true;
+}
+
 static inline bool __nativeStaticStringIsString(int argCount, Value* args) {
   Value value = *(++args);
   push(IS_STRING(value) ? TRUE_VAL : FALSE_VAL);
@@ -467,6 +500,7 @@ void initializeCore(VM* vm) {
   defineNativeFunction(vm, &vm->stringClass->methods, "toLowerCase", __nativeStringToLowerCase, ARGS_ARITY_0);
   defineNativeFunction(vm, &vm->stringClass->methods, "includes", __nativeStringIncludes, ARGS_ARITY_0);
   defineNativeFunction(vm, &vm->stringClass->methods, "includes", __nativeStringIncludes, ARGS_ARITY_1);
+  defineNativeFunction(vm, &vm->stringClass->methods, "split", __nativeStringSplit, ARGS_ARITY_1);
 
   inherit((Obj *)vm->nativeFunctionClass, vm->klass);
 
