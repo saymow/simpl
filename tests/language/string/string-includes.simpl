@@ -1,0 +1,50 @@
+// String.includes
+
+// Basic functionality
+System.log("HELLO".includes("HEL"));               // expect true
+System.log("HELLO".includes("LO"));                // expect true
+System.log("HELLO".includes("O"));                 // expect true
+
+// Case sensitivity
+System.log("HELLO".includes("hello"));             // expect false
+System.log("HELLO".includes("Hello"));             // expect false
+
+// Start index functionality
+System.log("HELLO".includes("HEL", 0));            // expect true
+System.log("HELLO".includes("HEL", 1));            // expect false
+System.log("HELLO".includes("LO", 3));             // expect true
+System.log("HELLO".includes("LO", 4));             // expect false
+
+// Edge cases
+System.log("".includes(""));                       // expect true
+System.log("HELLO".includes(""));                  // expect true
+System.log("".includes("H"));                      // expect false
+System.log("HELLO".includes("LLO", -3));           // expect true
+System.log("HELLO".includes("H", -1));             // expect false
+System.log("HELLO".includes("H", 0));              // expect true
+System.log("HELLO".includes("H", 1));              // expect false
+System.log("HELLO".includes("E", 1));              // expect true
+
+// Overlapping substrings
+System.log("AAAA".includes("AA"));                 // expect true
+System.log("AAAA".includes("AA", 1));              // expect true
+System.log("AAAA".includes("AA", 2));              // expect true
+System.log("AAAA".includes("AA", 3));              // expect false
+
+// Boundary cases
+System.log("boundary".includes(""));               // expect true
+System.log("boundary".includes("boundary"));       // expect true
+System.log("boundary".includes("boundary!"));      // expect false
+System.log("boundary".includes("bound"));          // expect true
+System.log("boundary".includes("ary"));            // expect true
+System.log("boundary".includes("ry", 6));          // expect true
+System.log("boundary".includes("ry", 8));          // expect false
+
+// Various positions and substrings
+System.log("position".includes("pos", 0));         // expect true
+System.log("position".includes("pos", 1));         // expect false
+System.log("position".includes("ition", 3));       // expect true
+System.log("position".includes("ition", 5));       // expect false
+System.log("position".includes("n", 7));           // expect true
+System.log("position".includes("n", 8));           // expect false
+
