@@ -1,0 +1,18 @@
+// String.split
+
+
+System.log("a-bb-cccc-ddddd---".split("cccc"));                     // expect [a-bb-, -ddddd---]
+System.log("a-bb-cccc-ddddd---".split("-"));                        // expect [a, bb, cccc, ddddd, , , ]
+System.log("a-bb-cccc-ddddd---".split(""));                         // expect [a, -, b, b, -, c, c, c, c, -, d, d, d, d, d, -, -, -]
+System.log("a-bb-cccc-ddddd---".split("a"));                        // expect [, -bb-cccc-ddddd---]
+System.log("a-bb-cccc-ddddd---".split("d"));                        // expect [a-bb-cccc-, , , , , ---]
+System.log("a-bb-cccc-ddddd---".split("bb"));                       // expect [a-, -cccc-ddddd---]
+System.log("a-bb-cccc-ddddd---".split("x"));                        // expect [a-bb-cccc-ddddd---]
+System.log("a-bb-cccc-ddddd---".split("---"));                      // expect [a-bb-cccc-ddddd, ]
+System.log("a-bb-cccc-ddddd---".split("a-bb-cccc-ddddd---"));       // expect [, ]
+System.log("".split("-"));                                          // expect []
+System.log("a--b--c".split("--"));                                  // expect [a, b, c]
+System.log("one,two,three".split(","));                             // expect [one, two, three]
+System.log("123456789".split("4"));                                 // expect [123, 56789]
+System.log("this is a test".split(" "));                            // expect [this, is, a, test]
+System.log("repeated--repeated--repeated".split("--"));             // expect [repeated, repeated, repeated]
