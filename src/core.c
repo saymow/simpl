@@ -311,6 +311,22 @@ static inline bool __nativeSystemClock(int argCount, Value* args) {
   return true;
 }
 
+static inline bool __nativeStringToUpperCase(int argCount, Value* args) {
+  ObjString* string = AS_STRING(*args);
+  char buffer[string->length];
+
+  for (int idx = 0; idx < string->length; idx++) {
+    if (string->chars[idx] >= 'a' && string->chars[idx] <= 'z') {
+      buffer[idx] = string->chars[idx] - 32;
+    } else {
+      buffer[idx] = string->chars[idx];
+    }
+  }
+
+  push(OBJ_VAL(copyString(buffer, string->length)));
+  return true;
+}
+
 static void defineNativeFunction(VM* vm, Table* methods, const char* string, NativeFn function, Arity arity) {
   ObjString* name = copyString(string, strlen(string));
   beginAssemblyLine((Obj *) name); 
@@ -374,6 +390,9 @@ void initializeCore(VM* vm) {
   // Class inherits from itself
   vm->klass->obj.klass = vm->klass;
   inherit((Obj *)vm->stringClass, vm->klass);
+
+  defineNativeFunction(vm, &vm->stringClass->methods, "toUpperCase", __nativeStringToUpperCase, ARGS_ARITY_0);
+
   inherit((Obj *)vm->nativeFunctionClass, vm->klass);
 
   inherit((Obj *)vm->klass->name, vm->stringClass);
@@ -396,7 +415,6 @@ void initializeCore(VM* vm) {
   inherit((Obj *)vm->metaArrayClass, vm->klass);
 
   // Array static methods 
-
   defineNativeFunction(vm, &vm->metaArrayClass->methods, "isArray", __nativeStaticArrayIsArray, ARGS_ARITY_1);
 
   defineNativeFunction(vm, &vm->metaArrayClass->methods, "new", __nativeStaticArrayNew, ARGS_ARITY_0);
@@ -407,7 +425,6 @@ void initializeCore(VM* vm) {
   inherit((Obj *)vm->arrayClass, vm->metaArrayClass);
 
   // Array methods
-
   defineNativeFunction(vm, &vm->arrayClass->methods, "length", __nativeArrayLength, ARGS_ARITY_0);
 
   defineNativeFunction(vm, &vm->arrayClass->methods, "push", __nativeArrayPush, ARGS_ARITY_1);
