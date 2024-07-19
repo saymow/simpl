@@ -419,6 +419,30 @@ static inline bool __nativeStringSplit(int argCount, Value* args) {
   return true;
 }
 
+static inline bool __nativeStringSubstr(int argCount, Value* args) {
+  ObjString* string = AS_STRING(*args);
+  int start = 0;
+  int end = string->length;
+
+  start = SAFE_CONSUME_NUMBER(args, "startIdx");
+  start = SAFE_NEGATIVE_INDEX(start, string->length);
+
+  if (argCount > 1) {
+    end = SAFE_CONSUME_NUMBER(args, "endIdx");
+    end = SAFE_INDEX_INCLUSIVE(end, string->length);
+  }
+
+  int length = (end - start) > 0 ? end - start : 0; 
+  char buffer[length];
+
+  for (int idx = start; idx < end; idx++) {
+    buffer[idx - start] = string->chars[idx];
+  }
+
+  push(OBJ_VAL(copyString(buffer, length)));
+  return true;
+}
+
 static inline bool __nativeStaticStringIsString(int argCount, Value* args) {
   Value value = *(++args);
   push(IS_STRING(value) ? TRUE_VAL : FALSE_VAL);
@@ -501,6 +525,8 @@ void initializeCore(VM* vm) {
   defineNativeFunction(vm, &vm->stringClass->methods, "includes", __nativeStringIncludes, ARGS_ARITY_0);
   defineNativeFunction(vm, &vm->stringClass->methods, "includes", __nativeStringIncludes, ARGS_ARITY_1);
   defineNativeFunction(vm, &vm->stringClass->methods, "split", __nativeStringSplit, ARGS_ARITY_1);
+  defineNativeFunction(vm, &vm->stringClass->methods, "substr", __nativeStringSubstr, ARGS_ARITY_1);
+  defineNativeFunction(vm, &vm->stringClass->methods, "substr", __nativeStringSubstr, ARGS_ARITY_2);
 
   inherit((Obj *)vm->nativeFunctionClass, vm->klass);
 
