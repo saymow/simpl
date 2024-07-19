@@ -72,6 +72,12 @@
         (-(idx) < (length) ?                                                        \
             (length) + (idx) :                                                      \
             0))
+      
+#define NATIVE_RETURN(value)                                                        \
+    do {                                                                            \
+      push(value);                                                                  \
+      return true;                                                                  \
+    } while(false)                                                                  \
 
 static inline void swap(ValueArray* arr, int i, int j) {
     Value tmp = arr->values[i];
@@ -80,16 +86,12 @@ static inline void swap(ValueArray* arr, int i, int j) {
 }
 
 static inline bool __nativeClassToString(int argCount, Value* args) {
-  push(OBJ_VAL(toString(*args)));
-  
-  return true;  
+  NATIVE_RETURN(OBJ_VAL(toString(*args)));
 }
 
 static inline bool __nativeArrayLength(int argCount, Value* args) {
   ObjArray* array = AS_ARRAY(*args);
-  push(NUMBER_VAL(array->list.count));
-
-  return true;
+  NATIVE_RETURN(NUMBER_VAL(array->list.count));
 }
 
 static inline bool __nativeArrayPush(int argCount, Value* args) {
@@ -104,17 +106,14 @@ static inline bool __nativeArrayPush(int argCount, Value* args) {
 
   array->list.values[array->list.count++] = value;
 
-  push(NUMBER_VAL(array->list.count));
-
-  return true;
+  NATIVE_RETURN(NUMBER_VAL(array->list.count));
 }
 
 static inline bool __nativeArrayPop(int argCount, Value* args) {
   ObjArray* array = AS_ARRAY(*args);
 
   if (array->list.count == 0) {
-    push(NIL_VAL);
-    return true;
+    NATIVE_RETURN(NIL_VAL);
   }
 
   Value value = array->list.values[--array->list.count];
@@ -126,9 +125,7 @@ static inline bool __nativeArrayPop(int argCount, Value* args) {
     array->list.values = GROW_ARRAY(Value, array->list.values, oldCapacity, array->list.capacity);
   }
 
-  push(value);
-  
-  return true; 
+  NATIVE_RETURN(value);
 }
 
 static inline bool __nativeArrayUnshift(int argCount, Value* args) {
@@ -147,17 +144,14 @@ static inline bool __nativeArrayUnshift(int argCount, Value* args) {
   
   array->list.values[0] = value;
 
-  push(NUMBER_VAL(++array->list.count)); 
-
-  return true;
+  NATIVE_RETURN(NUMBER_VAL(++array->list.count)); 
 }
 
 static inline bool __nativeArrayShift(int argCount, Value* args) {
   ObjArray* array = AS_ARRAY(*args);
 
   if (array->list.count == 0) {
-    push(NIL_VAL);
-    return true;
+    NATIVE_RETURN(NIL_VAL);
   }
 
   Value value = array->list.values[0];
@@ -174,8 +168,7 @@ static inline bool __nativeArrayShift(int argCount, Value* args) {
     array->list.values = GROW_ARRAY(Value, array->list.values, oldCapacity, array->list.capacity);
   }
 
-  push(value);
-  return true; 
+  NATIVE_RETURN(value);
 }
 
 static inline bool __nativeArraySlice(int argCount, Value* args) {
@@ -199,8 +192,7 @@ static inline bool __nativeArraySlice(int argCount, Value* args) {
     writeValueArray(&slicedArray->list, array->list.values[start]);        
   }
 
-  push(OBJ_VAL(slicedArray));
-  return true;
+  NATIVE_RETURN(OBJ_VAL(slicedArray));
 }
 
 static inline bool __nativeArrayIndexOf(int argCount, Value* args) {
@@ -209,13 +201,11 @@ static inline bool __nativeArrayIndexOf(int argCount, Value* args) {
 
   for (int idx = 0; idx < array->list.count; idx++) {
     if (valuesEqual(array->list.values[idx], value)) {
-      push(NUMBER_VAL(idx));
-      return true;
+      NATIVE_RETURN(NUMBER_VAL(idx));
     }
   }
 
-  push(NUMBER_VAL(-1));
-  return true;
+  NATIVE_RETURN(NUMBER_VAL(-1));
 }
 
 static inline bool __nativeArrayInsert(int argCount, Value* args) {
@@ -241,8 +231,7 @@ static inline bool __nativeArrayInsert(int argCount, Value* args) {
     array->list.values[idx + insertIndex] = *(++args);
   }
 
-  push(OBJ_VAL(array));
-  return true;
+  NATIVE_RETURN(OBJ_VAL(array));
 }
 
 static inline bool __nativeArrayJoin(int argCount, Value* args) {
@@ -276,14 +265,12 @@ static inline bool __nativeArrayJoin(int argCount, Value* args) {
 
   buffer[length] = '\0';
 
-  push(OBJ_VAL(takeString(buffer, length)));
-  return true;
+  NATIVE_RETURN(OBJ_VAL(takeString(buffer, length)));
 }
 
 static inline bool __nativeStaticArrayIsArray(int argCount, Value* args) {
   Value value = *(++args);
-  push(IS_ARRAY(value) ? TRUE_VAL : FALSE_VAL);
-  return true;
+  NATIVE_RETURN(IS_ARRAY(value) ? TRUE_VAL : FALSE_VAL);
 }
 
 static inline bool __nativeStaticArrayNew(int argCount, Value* args) {
@@ -303,20 +290,17 @@ static inline bool __nativeStaticArrayNew(int argCount, Value* args) {
   }
   array->list.count = length;
   
-  push(OBJ_VAL(array));
-  return true;
+  NATIVE_RETURN(OBJ_VAL(array));
 }
 
 static inline bool __nativeSystemLog(int argCount, Value* args) {
   printfValue(*(++args));
   printf("\n");
-  push(NIL_VAL);  
-  return true;
+  NATIVE_RETURN(NIL_VAL);  
 }
 
 static inline bool __nativeSystemClock(int argCount, Value* args) {
-  push(NUMBER_VAL(clock() / (double) CLOCKS_PER_SEC));
-  return true;
+  NATIVE_RETURN(NUMBER_VAL(clock() / (double) CLOCKS_PER_SEC));
 }
 
 static inline bool __nativeStringToUpperCase(int argCount, Value* args) {
@@ -331,8 +315,7 @@ static inline bool __nativeStringToUpperCase(int argCount, Value* args) {
     }
   }
 
-  push(OBJ_VAL(copyString(buffer, string->length)));
-  return true;
+  NATIVE_RETURN(OBJ_VAL(copyString(buffer, string->length)));
 }
 
 static inline bool __nativeStringToLowerCase(int argCount, Value* args) {
@@ -347,8 +330,7 @@ static inline bool __nativeStringToLowerCase(int argCount, Value* args) {
     }
   }
 
-  push(OBJ_VAL(copyString(buffer, string->length)));
-  return true;
+  NATIVE_RETURN(OBJ_VAL(copyString(buffer, string->length)));
 }
 
 static inline bool __nativeStringIncludes(int argCount, Value* args) {
@@ -362,8 +344,7 @@ static inline bool __nativeStringIncludes(int argCount, Value* args) {
   }
 
   if (searchString->length == 0) {
-    push(TRUE_VAL);
-    return true;
+    NATIVE_RETURN(TRUE_VAL);
   }
 
   for (int i = start; i < string->length; i++) {
@@ -377,13 +358,11 @@ static inline bool __nativeStringIncludes(int argCount, Value* args) {
     }
 
     if (j == searchString->length) {
-      push(TRUE_VAL);
-      return true;
+      NATIVE_RETURN(TRUE_VAL);
     }
   }
 
-  push(FALSE_VAL);
-  return true;
+  NATIVE_RETURN(FALSE_VAL);
 }
 
 static inline bool __nativeStringSplit(int argCount, Value* args) {
@@ -415,8 +394,7 @@ static inline bool __nativeStringSplit(int argCount, Value* args) {
     writeValueArray(&response->list, OBJ_VAL(copyString(&string->chars[k], string->length - k)));
   }
   
-  push(OBJ_VAL(response));
-  return true;
+  NATIVE_RETURN(OBJ_VAL(response));
 }
 
 static inline bool __nativeStringSubstr(int argCount, Value* args) {
@@ -439,14 +417,12 @@ static inline bool __nativeStringSubstr(int argCount, Value* args) {
     buffer[idx - start] = string->chars[idx];
   }
 
-  push(OBJ_VAL(copyString(buffer, length)));
-  return true;
+  NATIVE_RETURN(OBJ_VAL(copyString(buffer, length)));
 }
 
 static inline bool __nativeStringLength(int argCount, Value* args) {
   ObjString* string = AS_STRING(*args);
-  push(NUMBER_VAL(string->length));
-  return true;
+  NATIVE_RETURN(NUMBER_VAL(string->length));
 }
 
 static inline bool __nativeStringEndsWith(int argCount, Value* args) {
@@ -456,19 +432,16 @@ static inline bool __nativeStringEndsWith(int argCount, Value* args) {
 
   // searchString length is greater than string length
   if (start < 0) {
-    push(FALSE_VAL);
-    return true;
+    NATIVE_RETURN(FALSE_VAL);
   }
 
   for (int idx = 0; idx < searchString->length; idx++) {
     if (searchString->chars[idx] != string->chars[start + idx]) {
-      push(FALSE_VAL);
-      return true;
+      NATIVE_RETURN(FALSE_VAL);
     }
   }
 
-  push(TRUE_VAL);
-  return true;
+  NATIVE_RETURN(TRUE_VAL);
 }
 
 static inline bool __nativeStringStarsWith(int argCount, Value* args) {
@@ -476,8 +449,7 @@ static inline bool __nativeStringStarsWith(int argCount, Value* args) {
   ObjString* searchString = SAFE_CONSUME_STRING(args, "searchString");
 
   if (searchString->length > string->length) {
-    push(FALSE_VAL);
-    return true;
+    NATIVE_RETURN(FALSE_VAL);
   }
 
   for (int idx = 0; idx < searchString->length; idx++) {
@@ -487,20 +459,16 @@ static inline bool __nativeStringStarsWith(int argCount, Value* args) {
     }
   }
 
-  push(TRUE_VAL);
-  return true;
+  NATIVE_RETURN(TRUE_VAL);
 }
 
 static inline bool __nativeStaticStringIsString(int argCount, Value* args) {
   Value value = *(++args);
-  push(IS_STRING(value) ? TRUE_VAL : FALSE_VAL);
-  return true;
+  NATIVE_RETURN(IS_STRING(value) ? TRUE_VAL : FALSE_VAL);
 }
 
 static inline bool __nativeStaticStringNew(int argCount, Value* args) {
-  push(OBJ_VAL(toString(*(++args))));
-  
-  return true;  
+  NATIVE_RETURN(OBJ_VAL(toString(*(++args))));
 }
 
 static void defineNativeFunction(VM* vm, Table* methods, const char* string, NativeFn function, Arity arity) {
