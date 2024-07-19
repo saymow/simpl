@@ -449,6 +449,28 @@ static inline bool __nativeStringLength(int argCount, Value* args) {
   return true;
 }
 
+static inline bool __nativeStringEndsWith(int argCount, Value* args) {
+  ObjString* string = AS_STRING(*args);
+  ObjString* searchString = SAFE_CONSUME_STRING(args, "searchString");
+  int start = string->length - searchString->length;
+
+  // searchString length is greater than string length
+  if (start < 0) {
+    push(FALSE_VAL);
+    return true;
+  }
+
+  for (int idx = 0; idx < searchString->length; idx++) {
+    if (searchString->chars[idx] != string->chars[start + idx]) {
+      push(FALSE_VAL);
+      return true;
+    }
+  }
+
+  push(TRUE_VAL);
+  return true;
+}
+
 static inline bool __nativeStaticStringIsString(int argCount, Value* args) {
   Value value = *(++args);
   push(IS_STRING(value) ? TRUE_VAL : FALSE_VAL);
@@ -534,6 +556,7 @@ void initializeCore(VM* vm) {
   defineNativeFunction(vm, &vm->stringClass->methods, "substr", __nativeStringSubstr, ARGS_ARITY_1);
   defineNativeFunction(vm, &vm->stringClass->methods, "substr", __nativeStringSubstr, ARGS_ARITY_2);
   defineNativeFunction(vm, &vm->stringClass->methods, "length", __nativeStringLength, ARGS_ARITY_0);
+  defineNativeFunction(vm, &vm->stringClass->methods, "endsWith", __nativeStringEndsWith, ARGS_ARITY_1);
 
   inherit((Obj *)vm->nativeFunctionClass, vm->klass);
 
@@ -559,7 +582,6 @@ void initializeCore(VM* vm) {
 
   // Array static methods 
   defineNativeFunction(vm, &vm->metaArrayClass->methods, "isArray", __nativeStaticArrayIsArray, ARGS_ARITY_1);
-
   defineNativeFunction(vm, &vm->metaArrayClass->methods, "new", __nativeStaticArrayNew, ARGS_ARITY_0);
   defineNativeFunction(vm, &vm->metaArrayClass->methods, "new", __nativeStaticArrayNew, ARGS_ARITY_1);
 
