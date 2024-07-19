@@ -1,0 +1,39 @@
+// String.endsWith
+
+System.log("John".endsWith("hn-"));                                                                   // expect false
+System.log("John".endsWith("hn"));                                                                    // expect true
+System.log("John".endsWith("Jo"));                                                                    // expect false
+System.log("John".endsWith("John"));                                                                  // expect true
+System.log("John".endsWith("john"));                                                                  // expect false
+System.log("".endsWith(""));                                                                          // expect true
+System.log("John".endsWith(""));                                                                      // expect true
+System.log("a".endsWith("a"));                                                                        // expect true
+System.log("a".endsWith("b"));                                                                        // expect false
+System.log("Hello, World!".endsWith("World!"));                                                       // expect true
+System.log("Hello, World!".endsWith("world!"));                                                       // expect false
+System.log("1234567890".endsWith("7890"));                                                            // expect true
+System.log("1234567890".endsWith("890"));                                                             // expect true
+System.log("1234567890".endsWith("123"));                                                             // expect false
+System.log("The quick brown fox jumps over the lazy dog.".endsWith("dog."));                          // expect true
+System.log("The quick brown fox jumps over the lazy dog.".endsWith("lazy dog."));                     // expect true
+System.log("The quick brown fox jumps over the lazy dog.".endsWith("over the lazy dog."));            // expect true
+System.log("The quick brown fox jumps over the lazy dog.".endsWith("brown fox jumps."));              // expect false
+System.log("\n".endsWith("\n"));                                                                      // expect true
+System.log("\t".endsWith("\t"));                                                                      // expect true
+System.log("    ".endsWith(" "));                                                                     // expect true
+System.log("    ".endsWith("    "));                                                                  // expect true
+System.log("a b c".endsWith("b c"));                                                                  // expect true
+System.log("a b c".endsWith("a b"));                                                                  // expect false
+System.log("null".endsWith("null"));                                                                  // expect true
+System.log("undefined".endsWith("defined"));                                                          // expect true
+System.log("true".endsWith("ue"));                                                                    // expect true
+System.log("false".endsWith("lse"));                                                                  // expect true
+System.log("abcdefghijklmnopqrstuvwxyz".endsWith("xyz"));                                             // expect true
+System.log("ABCDEFGHIJKLMNOPQRSTUVWXYZ".endsWith("XYZ"));                                             // expect true
+System.log("ABCDEFGHIJKLMNOPQRSTUVWXYZ".endsWith("xyz"));                                             // expect false
+System.log("Lorem ipsum dolor sit amet, consectetur adipiscing elit.".endsWith("elit."));             // expect true
+System.log("Lorem ipsum dolor sit amet, consectetur adipiscing elit.".endsWith("ipsum."));            // expect false
+System.log("!@#$%^&*()_+-=[]{}|;':,.<>/?".endsWith("/?"));                                            // expect true
+System.log("!@#$%^&*()_+-=[]{}|;':,.<>/?".endsWith("[]{}|;':,.<>/?"));                                // expect true
+System.log("`~".endsWith("~"));                                                                       // expect true
+System.log("`~".endsWith("dsadadsadsaads~"));                                                         // expect false
