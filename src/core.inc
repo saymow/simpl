@@ -1,3 +1,9 @@
+class String {
+  String(value) {
+    return value.toString();
+  }
+}
+
 class Array {
   map(callback) {
     var length = this.length();

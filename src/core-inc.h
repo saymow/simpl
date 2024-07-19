@@ -3,7 +3,13 @@
 #ifndef CORE_EXT
 #define CORE_EXT
 
-char* coreExtension = 
+char* coreExtension =
+    "class String {\n"
+    "  String(value) {\n"
+    "    this = value.toString();\n"
+    "  }\n"
+    "}\n"
+    "\n"
     "class Array {\n"
     "  map(callback) {\n"
     "    var length = this.length();\n"
