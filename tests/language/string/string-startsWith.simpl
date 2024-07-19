@@ -1,0 +1,39 @@
+// String.startsWith
+
+System.log("John".startsWith("Jo"));                                                                   // expect true
+System.log("John".startsWith("john"));                                                                 // expect false
+System.log("John".startsWith("hn"));                                                                   // expect false
+System.log("John".startsWith("John"));                                                                 // expect true
+System.log("".startsWith(""));                                                                         // expect true
+System.log("John".startsWith(""));                                                                     // expect true
+System.log("a".startsWith("a"));                                                                       // expect true
+System.log("a".startsWith("b"));                                                                       // expect false
+System.log("Hello, World!".startsWith("Hello"));                                                       // expect true
+System.log("Hello, World!".startsWith("hello"));                                                       // expect false
+System.log("1234567890".startsWith("123"));                                                            // expect true
+System.log("1234567890".startsWith("789"));                                                            // expect false
+System.log("The quick brown fox jumps over the lazy dog.".startsWith("The"));                          // expect true
+System.log("The quick brown fox jumps over the lazy dog.".startsWith("quick"));                        // expect false
+System.log("The quick brown fox jumps over the lazy dog.".startsWith("The quick brown fox"));          // expect true
+System.log("\n".startsWith("\n"));                                                                     // expect true
+System.log("\t".startsWith("\t"));                                                                     // expect true
+System.log("    ".startsWith(" "));                                                                    // expect true
+System.log("    ".startsWith("    "));                                                                 // expect true
+System.log("a b c".startsWith("a b"));                                                                 // expect true
+System.log("a b c".startsWith("b c"));                                                                 // expect false
+System.log("null".startsWith("null"));                                                                 // expect true
+System.log("undefined".startsWith("unde"));                                                            // expect true
+System.log("true".startsWith("tr"));                                                                   // expect true
+System.log("false".startsWith("fal"));                                                                 // expect true
+System.log("abcdefghijklmnopqrstuvwxyz".startsWith("abc"));                                            // expect true
+System.log("ABCDEFGHIJKLMNOPQRSTUVWXYZ".startsWith("ABC"));                                            // expect true
+System.log("ABCDEFGHIJKLMNOPQRSTUVWXYZ".startsWith("abc"));                                            // expect false
+System.log("Lorem ipsum dolor sit amet, consectetur adipiscing elit.".startsWith("Lorem"));            // expect true
+System.log("Lorem ipsum dolor sit amet, consectetur adipiscing elit.".startsWith("ipsum"));            // expect false
+System.log("!@#$%^&*()_+-=[]{}|;':,.<>/?".startsWith("!@#"));                                          // expect true
+System.log("!@#$%^&*()_+-=[]{}|;':,.<>/?".startsWith("[]{}|;':,.<>/?"));                               // expect false
+System.log("`~".startsWith("`"));                                                                      // expect true
+System.log("`~".startsWith("~"));                                                                      // expect false
+System.log("abcdef".startsWith("abcdefg"));                                                            // expect false
+System.log("abcdef".startsWith("abcde"));                                                              // expect true
+System.log("abcdef".startsWith("bcdef"));                                                              // expect false
