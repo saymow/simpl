@@ -497,6 +497,12 @@ static inline bool __nativeStaticStringIsString(int argCount, Value* args) {
   return true;
 }
 
+static inline bool __nativeStaticStringNew(int argCount, Value* args) {
+  push(OBJ_VAL(toString(*(++args))));
+  
+  return true;  
+}
+
 static void defineNativeFunction(VM* vm, Table* methods, const char* string, NativeFn function, Arity arity) {
   ObjString* name = copyString(string, strlen(string));
   beginAssemblyLine((Obj *) name); 
@@ -565,6 +571,7 @@ void initializeCore(VM* vm) {
   inherit((Obj *)vm->metaStringClass,  vm->klass);
 
   defineNativeFunction(vm, &vm->metaStringClass->methods, "isString", __nativeStaticStringIsString, ARGS_ARITY_1);
+  defineNativeFunction(vm, &vm->metaStringClass->methods, "new", __nativeStaticStringNew, ARGS_ARITY_1);
 
   inherit((Obj *)vm->stringClass, vm->metaStringClass);
 

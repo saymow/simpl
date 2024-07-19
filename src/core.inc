@@ -1,10 +1,18 @@
 class String {
   String(value) {
-    return value.toString();
+    this = value.toString();
   }
 }
 
 class Array {
+  Array() {
+    this = Array.new();
+  }
+  
+  Array(length) {
+    this = Array.new(length);
+  }
+
   map(callback) {
     var length = this.length();
     var newArray = Array.new(length);

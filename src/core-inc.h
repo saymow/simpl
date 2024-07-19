@@ -3,7 +3,7 @@
 #ifndef CORE_EXT
 #define CORE_EXT
 
-char* coreExtension =
+char* coreExtension = 
     "class String {\n"
     "  String(value) {\n"
     "    this = value.toString();\n"
@@ -11,6 +11,14 @@ char* coreExtension =
     "}\n"
     "\n"
     "class Array {\n"
+    "  Array() {\n"
+    "    this = Array.new();\n"
+    "  }\n"
+    "\n"
+    "  Array(length) {\n"
+    "    this = Array.new(length);\n"
+    "  }\n"
+    "\n"
     "  map(callback) {\n"
     "    var length = this.length();\n"
     "    var newArray = Array.new(length);\n"
@@ -66,7 +74,7 @@ char* coreExtension =
     "\n"
     "    return acc;\n"
     "  }\n"
-     "\n"
+    "\n"
     "  reduce(callback, acc) {\n"
     "    var length = this.length();\n"
     "\n"
@@ -77,6 +85,7 @@ char* coreExtension =
     "    return acc;\n"
     "  }\n"
     "}";
+
 
 
 #endif
