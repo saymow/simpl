@@ -443,6 +443,12 @@ static inline bool __nativeStringSubstr(int argCount, Value* args) {
   return true;
 }
 
+static inline bool __nativeStringLength(int argCount, Value* args) {
+  ObjString* string = AS_STRING(*args);
+  push(NUMBER_VAL(string->length));
+  return true;
+}
+
 static inline bool __nativeStaticStringIsString(int argCount, Value* args) {
   Value value = *(++args);
   push(IS_STRING(value) ? TRUE_VAL : FALSE_VAL);
@@ -527,6 +533,7 @@ void initializeCore(VM* vm) {
   defineNativeFunction(vm, &vm->stringClass->methods, "split", __nativeStringSplit, ARGS_ARITY_1);
   defineNativeFunction(vm, &vm->stringClass->methods, "substr", __nativeStringSubstr, ARGS_ARITY_1);
   defineNativeFunction(vm, &vm->stringClass->methods, "substr", __nativeStringSubstr, ARGS_ARITY_2);
+  defineNativeFunction(vm, &vm->stringClass->methods, "length", __nativeStringLength, ARGS_ARITY_0);
 
   inherit((Obj *)vm->nativeFunctionClass, vm->klass);
 
@@ -562,21 +569,14 @@ void initializeCore(VM* vm) {
 
   // Array methods
   defineNativeFunction(vm, &vm->arrayClass->methods, "length", __nativeArrayLength, ARGS_ARITY_0);
-
   defineNativeFunction(vm, &vm->arrayClass->methods, "push", __nativeArrayPush, ARGS_ARITY_1);
-
   defineNativeFunction(vm, &vm->arrayClass->methods, "pop", __nativeArrayPop, ARGS_ARITY_0);
-
   defineNativeFunction(vm, &vm->arrayClass->methods, "unshift", __nativeArrayUnshift, ARGS_ARITY_1);
-
   defineNativeFunction(vm, &vm->arrayClass->methods, "shift", __nativeArrayShift, ARGS_ARITY_0);
-
   defineNativeFunction(vm, &vm->arrayClass->methods, "slice", __nativeArraySlice, ARGS_ARITY_0);
   defineNativeFunction(vm, &vm->arrayClass->methods, "slice", __nativeArraySlice, ARGS_ARITY_1);
   defineNativeFunction(vm, &vm->arrayClass->methods, "slice", __nativeArraySlice, ARGS_ARITY_2);
-
   defineNativeFunction(vm, &vm->arrayClass->methods, "indexOf", __nativeArrayIndexOf, ARGS_ARITY_1);
-  
   defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_2);
   defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_3);
   defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_4);
@@ -591,7 +591,6 @@ void initializeCore(VM* vm) {
   defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_13);
   defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_14);
   defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_15);
-  
   defineNativeFunction(vm, &vm->arrayClass->methods, "join", __nativeArrayJoin, ARGS_ARITY_1);
 
   vm->moduleExportsClass = defineNewClass("Exports");
