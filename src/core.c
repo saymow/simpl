@@ -471,6 +471,26 @@ static inline bool __nativeStringEndsWith(int argCount, Value* args) {
   return true;
 }
 
+static inline bool __nativeStringStarsWith(int argCount, Value* args) {
+  ObjString* string = AS_STRING(*args);
+  ObjString* searchString = SAFE_CONSUME_STRING(args, "searchString");
+
+  if (searchString->length > string->length) {
+    push(FALSE_VAL);
+    return true;
+  }
+
+  for (int idx = 0; idx < searchString->length; idx++) {
+    if (searchString->chars[idx] != string->chars[idx]) {
+      push(FALSE_VAL);
+      return true;
+    }
+  }
+
+  push(TRUE_VAL);
+  return true;
+}
+
 static inline bool __nativeStaticStringIsString(int argCount, Value* args) {
   Value value = *(++args);
   push(IS_STRING(value) ? TRUE_VAL : FALSE_VAL);
@@ -557,6 +577,7 @@ void initializeCore(VM* vm) {
   defineNativeFunction(vm, &vm->stringClass->methods, "substr", __nativeStringSubstr, ARGS_ARITY_2);
   defineNativeFunction(vm, &vm->stringClass->methods, "length", __nativeStringLength, ARGS_ARITY_0);
   defineNativeFunction(vm, &vm->stringClass->methods, "endsWith", __nativeStringEndsWith, ARGS_ARITY_1);
+  defineNativeFunction(vm, &vm->stringClass->methods, "startsWith", __nativeStringStarsWith, ARGS_ARITY_1);
 
   inherit((Obj *)vm->nativeFunctionClass, vm->klass);
 
