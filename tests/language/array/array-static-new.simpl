@@ -1,8 +1,0 @@
-// static Array.new
-
-
-System.log(Array.new(3));                                                                          // expect [nil, nil, nil]
-System.log(Array.new());                                                                           // expect []
-System.log(Array.new(0));                                                                          // expect []
-System.log(Array.new(100).length());                                                               // expect 100
-System.log(Array.new(10000).length());                                                             // expect 10000

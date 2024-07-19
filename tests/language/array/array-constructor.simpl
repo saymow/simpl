@@ -1,0 +1,17 @@
+// Array constructor
+
+
+System.log(Array(3));                                                                          // expect [nil, nil, nil]
+System.log(Array());                                                                           // expect []
+System.log(Array(0));                                                                          // expect []
+System.log(Array(100).length());                                                               // expect 100
+System.log(Array(10000).length());                                                             // expect 10000
+
+
+// Alternative more performant syntax
+
+System.log(Array.new(3));                                                                          // expect [nil, nil, nil]
+System.log(Array.new());                                                                           // expect []
+System.log(Array.new(0));                                                                          // expect []
+System.log(Array.new(100).length());                                                               // expect 100
+System.log(Array.new(10000).length());                                                             // expect 10000
