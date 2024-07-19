@@ -1,0 +1,13 @@
+// String.substr
+
+System.log("123456789".substr(3));                                      // expect 456789
+System.log("123456789".substr(1, 3));                                   // expect 23
+System.log("123456789".substr(1, -2));                                  // expect 2345678
+
+System.log("123456789".substr(0));                                         // expect 123456789
+System.log("123456789".substr(1));                                         // expect 23456789
+System.log("123456789".substr(-1));                                        // expect 9
+System.log("123456789".substr(-5));                                        // expect 56789
+System.log("123456789".substr(-10));                                       // expect 123456789
+System.log("123456789".substr(0, 1));                                      // expect 1
+System.log("123456789".substr(3, -1));                                     // expect 456789
