@@ -1,0 +1,18 @@
+// String constructor
+
+class Person {}
+
+var person = Person();
+
+fun add() {}
+
+System.log(String(Person));                                                           // expect Person
+System.log(String.isString(String(Person)));                                          // expect true
+System.log(String(person));                                                           // expect instance of Person
+System.log(String.isString(String(person)));                                          // expect true
+System.log(String(add));                                                              // expect add
+System.log(String.isString(String(add)));                                             // expect true
+System.log(String(212));                                                              // expect 212
+System.log(String.isString(String(212)));                                             // expect true
+System.log(String([1, 2, 3]));                                                        // expect instance of Array
+System.log(String.isString(String(212)));                                             // expect true
