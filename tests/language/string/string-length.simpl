@@ -1,0 +1,22 @@
+// String.length
+
+System.log("".length());                                                                   // expect 0
+System.log("a".length());                                                                  // expect 1
+System.log(" ".length());                                                                  // expect 1
+System.log("John".length());                                                               // expect 4
+System.log("Hello, World!".length());                                                      // expect 13
+System.log("1234567890".length());                                                         // expect 10
+System.log("The quick brown fox jumps over the lazy dog.".length());                       // expect 44
+System.log("\n".length());                                                                 // expect 2
+System.log("\t".length());                                                                 // expect 2
+System.log("    ".length());                                                               // expect 4
+System.log("a b c".length());                                                              // expect 5
+System.log("null".length());                                                               // expect 4
+System.log("undefined".length());                                                          // expect 9
+System.log("true".length());                                                               // expect 4
+System.log("false".length());                                                              // expect 5
+System.log("abcdefghijklmnopqrstuvwxyz".length());                                         // expect 26
+System.log("ABCDEFGHIJKLMNOPQRSTUVWXYZ".length());                                         // expect 26
+System.log("Lorem ipsum dolor sit amet, consectetur adipiscing elit.".length());           // expect 56
+System.log("!@#$%^&*()_+-=[]{}|;':,.<>/?".length());                                       // expect 28
+System.log("`~".length());                                                                 // expect 2
