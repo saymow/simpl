@@ -68,12 +68,9 @@ void freeVM() {
   freeTable(&vm.global);
 }
 
-static void runtimeError(const char* format, ...) {
-  va_list args;
-  va_start(args, format);
-  vfprintf(stderr, format, args);
-  va_end(args);
-  fputs("\n", stderr);
+static ObjString* stackTrace() {
+  char buffer[1024];
+  int length = 0;
 
   for (int idx = vm.framesCount - 1; idx >= 0; idx--) {
     CallFrame* frame = &vm.frames[idx];
@@ -82,17 +79,34 @@ static void runtimeError(const char* format, ...) {
       FRAME_AS_CLOSURE(frame)->function;
     size_t instruction = frame->ip - function->chunk.code - 1;
 
-    fprintf(stderr, "[line %d] in ", function->chunk.lines[instruction]);
+    length += sprintf(&buffer[length], "[line %d] in ", function->chunk.lines[instruction]);
     if (function->name == NULL) {
-      fprintf(stderr, "script\n");
+      length += sprintf(&buffer[length], "script\n");
     } else {
       if (IS_FRAME_MODULE(frame)) {
-        fprintf(stderr, "file %s\n", function->name->chars);
+        length += sprintf(&buffer[length], "file %s\n", function->name->chars);
       } else {
-        fprintf(stderr, "%s()\n", function->name->chars);
+        length += sprintf(&buffer[length], "%s()\n", function->name->chars);
       }
     }
   }
+
+  buffer[length] = '\0';
+
+  return copyString(buffer, length);
+} 
+
+static void runtimeError(const char* format, ...) {
+  va_list args;
+  ObjString* stack = stackTrace(); 
+
+  // Print error message
+  va_start(args, format);
+  vfprintf(stderr, format, args);
+  va_end(args);
+  fputs("\n", stderr);
+  // Print track stace
+  fprintf(stderr, stack->chars);
 
   resetStack();
   // SOFTWARE_ERROR
@@ -113,9 +127,10 @@ static void recoverableRuntimeError(const char* format, ...) {
     fprintf(stderr, "Uncaught exception.\n");
     runtimeError(message->chars);
   }
-
   // Pop try-catch block
   TryCatch *tryCatch = &vm.tryCatchStack[--vm.tryCatchStackCount]; 
+  // Generate stack trace
+  ObjString* stack = stackTrace();
 
   // Pop Loops placed in intermediary frames between the "try-catch block" frame and
   // the "throw" frame. If a "throw" is found in a deep nested function, this ensure all
@@ -148,7 +163,11 @@ static void recoverableRuntimeError(const char* format, ...) {
 
   // If the catch block is compiled to receive a param, it should expect the param as a local variable in the stack
   if (tryCatch->hasCatchParameter) {
-    push(OBJ_VAL(message));
+    ObjInstance *errorInstance = newInstance(vm.errorClass);
+    tableSet(&errorInstance->properties, CONSTANT_STRING("message"), OBJ_VAL(message));
+    tableSet(&errorInstance->properties, CONSTANT_STRING("stack"), OBJ_VAL(stack));
+
+    push(OBJ_VAL(errorInstance));
   }
 
   // This cover an extreme corner case where we throw an enclosed function in a nested scope.

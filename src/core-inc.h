@@ -3,7 +3,18 @@
 #ifndef CORE_EXT
 #define CORE_EXT
 
-char* coreExtension = 
+char* coreExtension =
+    "class Error {\n"
+    "  Error(message) {\n"
+    "    this.message = message;\n"
+    "  }\n"
+    "\n"
+    "  Error(message, stack) {\n"
+    "    this.message = message;\n"
+    "    this.stack = stack;\n"
+    "  }\n"
+    "}"
+    "\n"
     "class String {\n"
     "  String(value) {\n"
     "    this = value.toString();\n"

@@ -1,3 +1,14 @@
+class Error {
+  Error(message) {
+    this.message = message;
+  }
+
+  Error(message, stack) {
+    this.message = message;
+    this.stack = stack;
+  }
+}
+
 class String {
   String(value) {
     this = value.toString();

@@ -596,6 +596,7 @@ void initializeCore(VM* vm) {
   vm->moduleExportsClass = NULL;
   vm->metaArrayClass = NULL;
   vm->arrayClass = NULL; 
+  vm->errorClass = NULL;
   vm->metaStringClass = NULL;
   vm->stringClass = NULL;
 
@@ -694,6 +695,9 @@ void initializeCore(VM* vm) {
   defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_15);
   defineNativeFunction(vm, &vm->arrayClass->methods, "join", __nativeArrayJoin, ARGS_ARITY_1);
 
+  vm->errorClass = defineNewClass("Error");
+  inherit((Obj *)vm->errorClass, vm->klass);
+
   vm->moduleExportsClass = defineNewClass("Exports");
   inherit((Obj *)vm->moduleExportsClass, vm->klass);
 
@@ -710,6 +714,7 @@ void initializeCore(VM* vm) {
 
   interpret(coreExtension, NULL);
 
+  tableSet(&vm->global, vm->errorClass->name, OBJ_VAL(vm->errorClass));
   tableSet(&vm->global, vm->stringClass->name, OBJ_VAL(vm->stringClass));
   tableSet(&vm->global, vm->numberClass->name, OBJ_VAL(vm->numberClass));
   tableSet(&vm->global, vm->arrayClass->name, OBJ_VAL(vm->arrayClass));

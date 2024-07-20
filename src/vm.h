@@ -84,6 +84,7 @@ typedef struct {
   ObjClass* functionClass;
   ObjClass* nativeFunctionClass;
   ObjClass* arrayClass;
+  ObjClass* errorClass;
   ObjClass* moduleExportsClass;
   ObjClass* systemClass;
 
