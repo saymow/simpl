@@ -1,0 +1,45 @@
+// Try catch when native function exceptions are thrown
+
+try {
+    String.isString();
+} catch(err) {
+    System.log(err);                                                                // expect Expected 1 arguments but got 0.
+}
+
+try {
+    [1, 2, 3].slice("a");
+} catch(err) {
+    System.log(err);                                                                // expect Expected start to be a number.
+}
+
+try {
+    fun fn(a, b) {}
+ 
+    fn();
+} catch(err) {
+    System.log(err);                                                                // expect Expected 2 arguments but got 0.
+}
+
+try {
+    1 + true;
+} catch(err) {
+    System.log(err);                                                                // expect Operands must be two numbers or two strings.
+}
+
+try {
+    "dasda".startsWith(0);
+} catch(err) {
+    System.log(err);                                                                // expect Expected searchString to be a string.
+}
+
+try {
+    -true;
+} catch(err) {
+    System.log(err);                                                                // expect Operand must be a number.
+}
+
+try {
+    Number.toInteger(() -> {});
+} catch(err) {
+    System.log(err);                                                                // expect Expected argument to be a string or a number.
+}
