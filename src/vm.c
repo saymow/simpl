@@ -15,7 +15,10 @@
 #include "core.h"
 
 VM vm;
+CallFrame* frame;
 
+static void closeUpValue(ObjUpValue* upvalue);
+static void closeUpValues(Value* last);
 static bool callValue(Value callee, int argCount);
 void push(Value value);
 Value pop();
@@ -92,6 +95,64 @@ static void runtimeError(const char* format, ...) {
   }
 
   resetStack();
+  // SOFTWARE_ERROR
+  exit(70);
+}
+
+static void recoverableRuntimeError(const char* format, ...) {
+  va_list args;
+  va_start(args, format);
+  char buffer[128];
+  int length = vsprintf(buffer, format, args);
+  buffer[length] = '\0'; 
+  va_end(args);
+  ObjString* message = copyString(buffer, length);
+
+  // Throw outside of any try-catch block 
+  if (vm.tryCatchStackCount == 0) {
+    fprintf(stderr, "Uncaught exception.\n");
+    runtimeError(message->chars);
+  }
+
+  // Pop try-catch block
+  TryCatch *tryCatch = &vm.tryCatchStack[--vm.tryCatchStackCount]; 
+
+  // Pop Loops placed in intermediary frames between the "try-catch block" frame and
+  // the "throw" frame. If a "throw" is found in a deep nested function, this ensure all
+  // Loops created until there are popped. 
+  while (&vm.frames[vm.framesCount - 1] != tryCatch->frame) {
+    while (
+      vm.loopStack > 0 &&
+      vm.loopStack[vm.loopStackCount - 1].frame == &vm.frames[vm.framesCount - 1]
+    ) {
+      vm.loopStackCount--;
+    }
+
+    vm.framesCount--;
+  }
+
+  // Pop Loops placed in the same frame the try-catch block is
+  while (
+    vm.loopStackCount > 0 &&
+    vm.loopStack[vm.loopStackCount - 1].frame == tryCatch->frame &&
+    vm.loopStack[vm.loopStackCount - 1].outIp > tryCatch->startIp &&
+    vm.loopStack[vm.loopStackCount - 1].outIp < tryCatch->outIp
+  ) {
+    vm.loopStackCount--;
+  }
+
+  // Get back to the closest try-catch block frame and move ip to the start of the catch block statement. 
+  vm.stackTop = tryCatch->frameStackTop;
+  frame = tryCatch->frame;
+  frame->ip = tryCatch->catchIp;
+
+  // If the catch block is compiled to receive a param, it should expect the param as a local variable in the stack
+  if (tryCatch->hasCatchParameter) {
+    push(OBJ_VAL(message));
+  }
+
+  // This cover an extreme corner case where we throw an enclosed function in a nested scope.
+  closeUpValues(tryCatch->frameStackTop - 1);
 }
 
 static bool isFalsey(Value value) {
@@ -127,7 +188,6 @@ static bool callEntry(ObjClosure* closure) {
 static bool call(ObjClosure* closure, uint8_t argCount) {
   if (vm.framesCount == FRAMES_MAX) {
     runtimeError("Stack overflow.");
-    return false;
   }
 
   CallFrame* frame = &vm.frames[vm.framesCount++];
@@ -143,7 +203,6 @@ static bool call(ObjClosure* closure, uint8_t argCount) {
 static bool callModule(ObjModule* module) {
   if (vm.framesCount == FRAMES_MAX) {
     runtimeError("Stack overflow.");
-    return false;
   }
 
   CallFrame* frame = &vm.frames[vm.framesCount++];
@@ -163,8 +222,8 @@ static bool callNativeFn(NativeFn function, int argCount, bool isMethod) {
   // We properly handle that by leveraging the bool type and avoiding branching.
   // function returns false <=> function returns error 
   if (!function(argCount, vm.stackTop - argCount - isMethod)) {
-    Value fnReturn = pop(); // Must be an ObjStrint containing error message.
-    runtimeError(AS_CSTRING(fnReturn));
+    Value fnReturn = pop(); // Must be an ObjString containing error message.
+    recoverableRuntimeError(AS_CSTRING(fnReturn));
     return false;  
   } 
 
@@ -172,19 +231,6 @@ static bool callNativeFn(NativeFn function, int argCount, bool isMethod) {
   vm.stackTop -= argCount + 1; // pop from the stack the callee? + function arguments 
   push(fnReturn);
   return true;
-}
-
-static inline bool ensureOverloadedMethodArity(ObjOverloadedMethod *overloadedMethod, int argCount) {
-  if (overloadedMethod->type == NATIVE_METHOD ? 
-    overloadedMethod->as.nativeMethods[argCount] != NULL : 
-    overloadedMethod->as.userMethods[argCount] != NULL
-  ) {
-    return true; 
-  } 
-
-  // todo: a heuristic to find a good x
-  runtimeError("Expected x arguments but got %d.", argCount);
-  return false;
 }
 
 // You can call whatever function as long as the argCount >= arity.
@@ -206,7 +252,7 @@ static inline void* resolveOverloadedMethod(void** methods, int argCount) {
 
   for (int idx = arity + 1; idx < ARGS_ARITY_MAX; idx++) {
     if (methods[idx] != NULL) {
-      runtimeError("Expected %d arguments but got %d.", idx, argCount);
+      recoverableRuntimeError("Expected %d arguments but got %d.", idx, argCount);
       return NULL;
     }
   }
@@ -230,9 +276,9 @@ static bool callConstructor(ObjClass* klass, int argCount) {
       return false;
     }
 
-    call(function, argCount);
+    return call(function, argCount);
   } else if (argCount != 0) {
-    runtimeError("Expected 0 arguments but got %d.", argCount);
+    recoverableRuntimeError("Expected 0 arguments but got %d.", argCount);
     return false;
   }
 
@@ -280,7 +326,7 @@ static bool callValue(Value callee, int argCount) {
         // 2. If the function is variadic, the function expect to receive N >= arity
         // arguments and this should handle that.
         if (AS_CLOSURE(callee)->function->arity > argCount) {
-          runtimeError("Expected %d arguments but got %d.", AS_CLOSURE(callee)->function->arity,
+          recoverableRuntimeError("Expected %d arguments but got %d.", AS_CLOSURE(callee)->function->arity,
                       argCount);
           return false;
         }      
@@ -291,8 +337,8 @@ static bool callValue(Value callee, int argCount) {
         break;
     }
   }
-
-  runtimeError("Can only call functions.");
+ 
+  recoverableRuntimeError("Can only call functions.");
   return false;
 }
 
@@ -334,7 +380,7 @@ static ObjUpValue* captureUpvalue(Value* local) {
   return createdUpvalue;
 }
 
-static void closeUpValue(ObjUpValue* upvalue) {
+static void closeUpValue(ObjUpValue* upvalue){
   upvalue->closed = *upvalue->location;
   upvalue->location = &upvalue->closed;
 }
@@ -415,7 +461,7 @@ static bool invokeMethod(Value base, ObjString* name, uint8_t argCount) {
   } 
   
   if (!objectClassProperty(base, name, &value)) {
-    runtimeError("Undefined property '%s'.", name->chars);
+    recoverableRuntimeError("Undefined property '%s'.", name->chars);
     return false;
   }
 
@@ -424,7 +470,7 @@ static bool invokeMethod(Value base, ObjString* name, uint8_t argCount) {
 
 static bool getArrayItem(ObjArray* arr, Value index, Value* value) {
   if (!IS_NUMBER(index)) {
-    runtimeError("Array index must be a number.");
+    recoverableRuntimeError("Array index must be a number.");
     return false;
   } else if (AS_NUMBER(index) < 0 || AS_NUMBER(index) >= arr->list.count) {
     // todo: should it be a runtime error?
@@ -438,10 +484,10 @@ static bool getArrayItem(ObjArray* arr, Value index, Value* value) {
 
 static bool setArrayItem(ObjArray* arr, Value index, Value value) {
   if (!IS_NUMBER(index)) {
-    runtimeError("Array index must be a number.");
+    recoverableRuntimeError("Array index must be a number.");
     return false;
   } else if (AS_NUMBER(index) < 0 || AS_NUMBER(index) >= arr->list.count) {
-    runtimeError("Array index out of bounds.");
+    recoverableRuntimeError("Array index out of bounds.");
     return false;
   }
 
@@ -450,22 +496,22 @@ static bool setArrayItem(ObjArray* arr, Value index, Value value) {
 } 
 
 static InterpretResult run() {
-  CallFrame* frame = &vm.frames[vm.framesCount - 1];
+  frame = &vm.frames[vm.framesCount - 1];
 
 #define READ_BYTE() (*frame->ip++)
 #define READ_CONSTANT() (IS_FRAME_MODULE(frame) ? FRAME_AS_MODULE(frame)->function->chunk.constants.values[READ_BYTE()] : FRAME_AS_CLOSURE(frame)->function->chunk.constants.values[READ_BYTE()]) 
 #define READ_SHORT() \
   (frame->ip += 2, (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1]))
 #define READ_STRING() (AS_STRING(READ_CONSTANT()))
-#define BINARY_OP(valueType, op)                      \
-  do {                                                \
-    if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) { \
-      runtimeError("Operands must be numbers.");      \
-      return INTERPRET_RUNTIME_ERROR;                 \
-    }                                                 \
-    double b = AS_NUMBER(pop());                      \
-    double a = AS_NUMBER(pop());                      \
-    push(valueType(a op b));                          \
+#define BINARY_OP(valueType, op)                                \
+  do {                                                          \
+    if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) {           \
+      recoverableRuntimeError("Operands must be numbers.");     \
+      continue;                                                 \
+    }                                                           \
+    double b = AS_NUMBER(pop());                                \
+    double a = AS_NUMBER(pop());                                \
+    push(valueType(a op b));                                    \
   } while (false)
 
   for (;;) {
@@ -521,8 +567,8 @@ static InterpretResult run() {
         Value value;
 
         if (!tableGet(&frame->namespace, name, &value)) {
-          runtimeError("Undefined variable '%s'", name->chars);
-          return INTERPRET_RUNTIME_ERROR;
+          recoverableRuntimeError("Undefined variable '%s'", name->chars);
+          continue;
         }
 
         push(value);
@@ -533,8 +579,8 @@ static InterpretResult run() {
 
         if (tableSet(&frame->namespace, name, peek(0))) {
           tableDelete(&frame->namespace, name);
-          runtimeError("Undefined variable '%s'", name->chars);
-          return INTERPRET_RUNTIME_ERROR;
+          recoverableRuntimeError("Undefined variable '%s'", name->chars);
+          continue;
         }
         break;
       }
@@ -583,7 +629,7 @@ static InterpretResult run() {
         Value base = peek(argCount);
 
         if (!invokeMethod(base, name, argCount)) {
-          return INTERPRET_RUNTIME_ERROR;
+          continue;
         }
 
         frame = &vm.frames[vm.framesCount - 1];
@@ -595,8 +641,8 @@ static InterpretResult run() {
         ObjString* name = READ_STRING();
 
         if (!IS_INSTANCE(base)) {
-          runtimeError("Cannot access property '%s'.", name->chars);
-          return INTERPRET_RUNTIME_ERROR;
+          recoverableRuntimeError("Cannot access property '%s'.", name->chars);
+          continue;
         }
 
         tableSet(&AS_INSTANCE(base)->properties, name, value);
@@ -618,15 +664,15 @@ static InterpretResult run() {
         Value value;
         if (IS_ARRAY(base)) {
           if (!getArrayItem(AS_ARRAY(base), identifier, &value)) {
-            return INTERPRET_RUNTIME_ERROR;
+            continue;
           }
 
           push(value);
         } else if (IS_OBJ(base)) {
           // todo
         } else {
-          runtimeError("Cannot access property.");
-          return INTERPRET_RUNTIME_ERROR;
+          recoverableRuntimeError("Cannot access property.");
+          continue;
         }
         break;
       }
@@ -637,14 +683,14 @@ static InterpretResult run() {
 
         if (IS_ARRAY(base)) {
           if (!setArrayItem(AS_ARRAY(base), identifier, value)) {
-            return INTERPRET_RUNTIME_ERROR;
+            continue;
           }
           push(value);
         } else if (IS_OBJ(base)) {
           // todo
         } else {
-          runtimeError("Cannot access property");
-          return INTERPRET_RUNTIME_ERROR;
+          recoverableRuntimeError("Cannot access property");
+          continue;
         }
         break;
       }
@@ -669,8 +715,8 @@ static InterpretResult run() {
         int nextIdx = AS_NUMBER(iterationIdx) + 1;
 
         if (!IS_ARRAY(iterator)) {
-          runtimeError("Expected for each iterator variable to be iterable.");
-          return INTERPRET_RUNTIME_ERROR;
+          recoverableRuntimeError("Expected for each iterator variable to be iterable.");
+          continue;
         }
 
         // Get out of the loop 
@@ -696,7 +742,6 @@ static InterpretResult run() {
       case OP_LOOP_GUARD: {
         if (vm.loopStackCount + 1 == LOOP_STACK_MAX) {
           runtimeError("Cant stack more than %d loops.", LOOP_STACK_MAX);
-          return INTERPRET_RUNTIME_ERROR;
         }
 
         uint16_t startOffset = READ_SHORT();
@@ -760,7 +805,6 @@ static InterpretResult run() {
       case OP_TRY_CATCH: {
         if (vm.tryCatchStackCount + 1 == TRY_CATCH_STACK_MAX) {
           runtimeError("Cant stack more than %d try-catch blocks.", TRY_CATCH_STACK_MAX);
-          return INTERPRET_RUNTIME_ERROR;
         }
 
         uint16_t catchOffset = READ_SHORT();
@@ -801,11 +845,9 @@ static InterpretResult run() {
         TryCatch *tryCatch = &vm.tryCatchStack[--vm.tryCatchStackCount]; 
         Value value = pop();
 
-        /*
-         * Pop Loops placed in intermediary frames between the "try-catch block" frame and
-         * the "throw" frame. If a "throw" is found in a deep nested function, this ensure all
-         * Loops created until there are popped. 
-         */
+        // Pop Loops placed in intermediary frames between the "try-catch block" frame and
+        // the "throw" frame. If a "throw" is found in a deep nested function, this ensure all
+        // Loops created until there are popped. 
         while (&vm.frames[vm.framesCount - 1] != tryCatch->frame) {
           while (
             vm.loopStack > 0 &&
@@ -864,8 +906,8 @@ static InterpretResult run() {
         } else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
           BINARY_OP(NUMBER_VAL, +);
         } else {
-          runtimeError("Operands must be two numbers or two strings.");
-          return INTERPRET_RUNTIME_ERROR;
+          recoverableRuntimeError("Operands must be two numbers or two strings.");
+          continue;
         }
 
         break;
@@ -894,8 +936,8 @@ static InterpretResult run() {
         break;
       case OP_NEGATE: {
         if (!IS_NUMBER(peek(0))) {
-          runtimeError("Operand must be a number.");
-          return INTERPRET_RUNTIME_ERROR;
+          recoverableRuntimeError("Operand must be a number.");
+          continue;
         }
 
         push(NUMBER_VAL(-AS_NUMBER(pop())));
@@ -908,7 +950,7 @@ static InterpretResult run() {
       case OP_CALL: {
         uint8_t argCount = READ_BYTE();
         if (!callValue(peek(argCount), argCount)) {
-          return INTERPRET_RUNTIME_ERROR;
+          continue;
         }
         frame = &vm.frames[vm.framesCount - 1];
         break;
@@ -935,8 +977,8 @@ static InterpretResult run() {
         Value superclass = peek(0);
 
         if (!IS_CLASS(superclass)) {
-          runtimeError("Superclass must be a class.");
-          return INTERPRET_RUNTIME_ERROR;
+          recoverableRuntimeError("Superclass must be a class.");
+          continue;
         }
 
         tableAddAllInherintance(&AS_CLASS(superclass)->methods, &klass->methods);
@@ -949,8 +991,8 @@ static InterpretResult run() {
         Value value;
 
         if (!classBoundMethod(base, klass, name, &value)) {
-          runtimeError("Cannot access method '%s'.", name->chars);
-          return INTERPRET_RUNTIME_ERROR;
+          recoverableRuntimeError("Cannot access method '%s'.", name->chars);
+          continue;
         }
 
         push(value);
@@ -970,7 +1012,6 @@ static InterpretResult run() {
 
         if (!tableSet(&FRAME_AS_MODULE(frame)->exports, name, pop())) {
           runtimeError("Already exporting member with name '%s'.", name->chars);
-          return INTERPRET_RUNTIME_ERROR;
         }
 
         break;
@@ -981,10 +1022,7 @@ static InterpretResult run() {
         if (!module->evaluated) {
           // Call module function
           push(OBJ_VAL(module->function));
-
-          if (!callModule(module)) {
-            return INTERPRET_RUNTIME_ERROR;
-          }
+          callModule(module);
 
           frame = &vm.frames[vm.framesCount - 1];
         } else {

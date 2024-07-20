@@ -538,7 +538,7 @@ static inline bool __nativeStaticNumberToInteger(int argCount, Value* args) {
     
     NATIVE_RETURN(NUMBER_VAL(integer));
   } else {
-    push(OBJ_VAL(copyString("Expected argument to be a string or a number.", strlen("Expected argument to be a string or a number."))));                              
+    push(OBJ_VAL(CONSTANT_STRING("Expected argument to be a string or a number.")));                              
     return false;                                                           
   }
 }
