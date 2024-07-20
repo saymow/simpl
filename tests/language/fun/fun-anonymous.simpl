@@ -1,0 +1,48 @@
+// Anonymous function
+
+fun call(callback) {
+    return callback(1, 2);
+}
+
+System.log(call(() -> "test"));                                                 // expect test
+System.log(call(() -> {                                                         // expect test
+    return "test";
+}));
+System.log(call((a) -> a + 100));                                               // expect 101
+System.log(call((a) -> {                                                        // expect 101
+    return a + 100;
+}));
+System.log(call((a, b) -> a + b));                                              // expect 3
+System.log(call((a, b) -> {                                                     // expect 3
+    return a + b;
+}));
+
+System.log(                                                                     // expect 55
+    [1, 2, 3, 4, 5]
+        .map((item) -> item * item)
+        .filter((item) -> 1)
+        .reduce((acc, item) -> acc + item)
+);
+
+System.log(                                                                     // expect 50
+    [1, 2, 3, 4, 5]
+        .slice(2)
+        .map((item) -> item * item)
+        .filter((item) -> 1)
+        .reduce((acc, item) -> acc + item)
+);
+
+System.log(                                                                     // expect x1x2x3x4x5x
+    "12345"
+        .split("")
+        .reduce((acc, item) -> acc + item + "x", "x")
+);
+
+
+System.log(                                                                     // expect nil
+    [1, 2, 3, 4, 5]
+        .slice(2)
+        .map((item) -> item * item)
+        .filter((item) -> 1)
+        .find((item) -> item == 9999999)
+);
