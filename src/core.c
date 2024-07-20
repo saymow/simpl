@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 
 #include "core.h"
 
@@ -519,6 +520,29 @@ static inline bool __nativeStaticNumberToNumber(int argCount, Value* args) {
   NATIVE_RETURN(NUMBER_VAL(number));
 }
 
+static inline bool __nativeStaticNumberToInteger(int argCount, Value* args) {
+  Value value = *(++args);
+
+  if (IS_STRING(value)) {
+    char *err_ptr;
+    double integer = strtol(AS_STRING(value)->chars, &err_ptr, 10);
+
+    // parse error
+    if (*err_ptr != '\0') {
+      // to handle exception
+    }
+
+    NATIVE_RETURN(NUMBER_VAL(integer));
+  } else if (IS_NUMBER(value)) {
+    int integer = trunc(AS_NUMBER(value));
+    
+    NATIVE_RETURN(NUMBER_VAL(integer));
+  } else {
+    push(OBJ_VAL(copyString("Expected argument to be a string or a number.", strlen("Expected argument to be a string or a number."))));                              
+    return false;                                                           
+  }
+}
+
 static void defineNativeFunction(VM* vm, Table* methods, const char* string, NativeFn function, Arity arity) {
   ObjString* name = copyString(string, strlen(string));
   beginAssemblyLine((Obj *) name); 
@@ -624,6 +648,7 @@ void initializeCore(VM* vm) {
   // Define Number static methods
   defineNativeFunction(vm, &vm->metaNumberClass->methods, "isNumber", __nativeStaticNumberIsNumber, ARGS_ARITY_1);
   defineNativeFunction(vm, &vm->metaNumberClass->methods, "toNumber", __nativeStaticNumberToNumber, ARGS_ARITY_1);
+  defineNativeFunction(vm, &vm->metaNumberClass->methods, "toInteger", __nativeStaticNumberToInteger, ARGS_ARITY_1);
 
   vm->numberClass = defineNewClass("Number");
   inherit((Obj *)vm->numberClass, vm->metaNumberClass);  
