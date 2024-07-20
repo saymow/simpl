@@ -506,6 +506,19 @@ static inline bool __nativeStaticNumberIsNumber(int argCount, Value* args) {
   NATIVE_RETURN(IS_NUMBER(*(++args)) ? TRUE_VAL : FALSE_VAL);
 }
 
+static inline bool __nativeStaticNumberToNumber(int argCount, Value* args) {
+  ObjString* string = SAFE_CONSUME_STRING(args, "argument");
+  char *err_ptr;
+  double number = strtod(string->chars, &err_ptr);
+
+  // parse error
+  if (*err_ptr != '\0') {
+    // to handle exception
+  }
+
+  NATIVE_RETURN(NUMBER_VAL(number));
+}
+
 static void defineNativeFunction(VM* vm, Table* methods, const char* string, NativeFn function, Arity arity) {
   ObjString* name = copyString(string, strlen(string));
   beginAssemblyLine((Obj *) name); 
@@ -610,6 +623,7 @@ void initializeCore(VM* vm) {
 
   // Define Number static methods
   defineNativeFunction(vm, &vm->metaNumberClass->methods, "isNumber", __nativeStaticNumberIsNumber, ARGS_ARITY_1);
+  defineNativeFunction(vm, &vm->metaNumberClass->methods, "toNumber", __nativeStaticNumberToNumber, ARGS_ARITY_1);
 
   vm->numberClass = defineNewClass("Number");
   inherit((Obj *)vm->numberClass, vm->metaNumberClass);  
