@@ -1,0 +1,5 @@
+// String.trimEnd
+
+System.log("str ".trimEnd() + "end");                                  // expect strend
+System.log("str                ".trimEnd() + "end");                   // expect strend
+System.log("str      -".trimEnd() + "end");                            // expect str      -end
