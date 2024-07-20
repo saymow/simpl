@@ -8,6 +8,10 @@ char* coreExtension =
     "  String(value) {\n"
     "    this = value.toString();\n"
     "  }\n"
+    "\n"
+    "  trim() {\n"
+    "    return this.trimStart().trimEnd();\n"
+    "  }\n"
     "}\n"
     "\n"
     "class Array {\n"
@@ -85,7 +89,5 @@ char* coreExtension =
     "    return acc;\n"
     "  }\n"
     "}";
-
-
 
 #endif

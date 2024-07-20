@@ -2,6 +2,10 @@ class String {
   String(value) {
     this = value.toString();
   }
+
+  trim() {
+    return this.trimStart().trimEnd();
+  }
 }
 
 class Array {
