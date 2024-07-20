@@ -495,12 +495,15 @@ static inline bool __nativeStringTrimStart(int argCount, Value* args) {
 }
 
 static inline bool __nativeStaticStringIsString(int argCount, Value* args) {
-  Value value = *(++args);
-  NATIVE_RETURN(IS_STRING(value) ? TRUE_VAL : FALSE_VAL);
+  NATIVE_RETURN(IS_STRING(*(++args)) ? TRUE_VAL : FALSE_VAL);
 }
 
 static inline bool __nativeStaticStringNew(int argCount, Value* args) {
   NATIVE_RETURN(OBJ_VAL(toString(*(++args))));
+}
+
+static inline bool __nativeStaticNumberIsNumber(int argCount, Value* args) {
+  NATIVE_RETURN(IS_NUMBER(*(++args)) ? TRUE_VAL : FALSE_VAL);
 }
 
 static void defineNativeFunction(VM* vm, Table* methods, const char* string, NativeFn function, Arity arity) {
@@ -550,6 +553,7 @@ void initializeCore(VM* vm) {
   vm->nativeFunctionClass = NULL;
   vm->nilClass = NULL;
   vm->boolClass = NULL;
+  vm->metaNumberClass = NULL;
   vm->numberClass = NULL;
   vm->functionClass = NULL;
   vm->moduleExportsClass = NULL;
@@ -601,8 +605,14 @@ void initializeCore(VM* vm) {
   vm->boolClass = defineNewClass("Bool");
   inherit((Obj *)vm->boolClass, vm->klass);
 
+  vm->metaNumberClass = defineNewClass("MetaNumber");
+  inherit((Obj *) vm->metaNumberClass, vm->klass);
+
+  // Define Number static methods
+  defineNativeFunction(vm, &vm->metaNumberClass->methods, "isNumber", __nativeStaticNumberIsNumber, ARGS_ARITY_1);
+
   vm->numberClass = defineNewClass("Number");
-  inherit((Obj *)vm->numberClass, vm->klass);  
+  inherit((Obj *)vm->numberClass, vm->metaNumberClass);  
 
   vm->functionClass = defineNewClass("Function");
   inherit((Obj *)vm->functionClass, vm->klass);
@@ -662,6 +672,7 @@ void initializeCore(VM* vm) {
   interpret(coreExtension, NULL);
 
   tableSet(&vm->global, vm->stringClass->name, OBJ_VAL(vm->stringClass));
+  tableSet(&vm->global, vm->numberClass->name, OBJ_VAL(vm->numberClass));
   tableSet(&vm->global, vm->arrayClass->name, OBJ_VAL(vm->arrayClass));
   tableSet(&vm->global, vm->systemClass->name, OBJ_VAL(vm->systemClass));
 }

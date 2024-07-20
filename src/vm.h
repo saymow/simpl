@@ -73,6 +73,7 @@ typedef struct {
   // These are superclasses of the Data Type Classes
   ObjClass* metaArrayClass;
   ObjClass* metaStringClass;
+  ObjClass* metaNumberClass;
   ObjClass* metaSystemClass;
 
   // Data Type Classes are superclasses of all data types
