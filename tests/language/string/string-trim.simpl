@@ -1,0 +1,6 @@
+// String.trim
+
+System.log("start" + "   x      ".trim() + "end");                             // expect startxend
+System.log("start" + "x      ".trim() + "end");                                // expect startxend
+System.log("start" + "   x".trim() + "end");                                   // expect startxend
+System.log("start" + "-   x      -".trim() + "end");                           // expect start-   x      -end
