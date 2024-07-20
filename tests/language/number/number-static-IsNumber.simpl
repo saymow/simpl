@@ -1,0 +1,15 @@
+// Number.isNumber
+
+System.log(Number.isNumber(1));                                                       // expect true
+System.log(Number.isNumber(0));                                                       // expect true
+System.log(Number.isNumber(0.0));                                                     // expect true
+System.log(Number.isNumber(3.14));                                                    // expect true
+System.log(Number.isNumber("TEST"));                                                  // expect false
+System.log(Number.isNumber("test"));                                                  // expect false
+System.log(Number.isNumber(false.toString()));                                        // expect false
+System.log(Number.isNumber(""));                                                      // expect false
+System.log(Number.isNumber(nil));                                                     // expect false
+System.log(Number.isNumber(false));                                                   // expect false
+System.log(Number.isNumber(false));                                                   // expect false
+System.log(Number.isNumber([]));                                                      // expect false
+System.log(Number.isNumber((fun () {})));                                             // expect false
