@@ -1,0 +1,16 @@
+// Number.toNumber
+
+System.log(Number.toNumber("1"));                                         // expect 1
+System.log(Number.isNumber(Number.toNumber("1")));                        // expect true
+
+System.log(Number.toNumber("0.0"));                                       // expect 0
+System.log(Number.isNumber(Number.toNumber("1")));                        // expect true
+
+System.log(Number.toNumber("-1"));                                        // expect -1
+System.log(Number.isNumber(Number.toNumber("1")));                        // expect true
+
+System.log(Number.toNumber("3.14"));                                      // expect 3.14
+System.log(Number.isNumber(Number.toNumber("1")));                        // expect true
+
+System.log(Number.toNumber("0.765"));                                     // expect 0.765
+System.log(Number.isNumber(Number.toNumber("1")));                        // expect true
