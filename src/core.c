@@ -478,6 +478,22 @@ static inline bool __nativeStringTrimEnd(int argCount, Value* args) {
   NATIVE_RETURN(OBJ_VAL(copyString(buffer, idx + 1)));
 }
 
+static inline bool __nativeStringTrimStart(int argCount, Value* args) {
+  ObjString* string = AS_STRING(*args);
+  int idx = 0;
+
+  while (
+    idx < string->length &&
+    string->chars[idx] == ' '
+  ) idx++;
+  
+  char buffer[string->length - idx + 1];
+  memcpy(buffer, &string->chars[idx], string->length - idx);
+  buffer[string->length - idx] = '\0'; 
+
+  NATIVE_RETURN(OBJ_VAL(copyString(buffer, string->length - idx)));
+}
+
 static inline bool __nativeStaticStringIsString(int argCount, Value* args) {
   Value value = *(++args);
   NATIVE_RETURN(IS_STRING(value) ? TRUE_VAL : FALSE_VAL);
@@ -570,6 +586,7 @@ void initializeCore(VM* vm) {
   defineNativeFunction(vm, &vm->stringClass->methods, "endsWith", __nativeStringEndsWith, ARGS_ARITY_1);
   defineNativeFunction(vm, &vm->stringClass->methods, "startsWith", __nativeStringStarsWith, ARGS_ARITY_1);
   defineNativeFunction(vm, &vm->stringClass->methods, "trimEnd", __nativeStringTrimEnd, ARGS_ARITY_0);
+  defineNativeFunction(vm, &vm->stringClass->methods, "trimStart", __nativeStringTrimStart, ARGS_ARITY_0);
 
   inherit((Obj *)vm->nativeFunctionClass, vm->klass);
 
