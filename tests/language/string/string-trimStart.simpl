@@ -1,0 +1,5 @@
+// String.trimStart
+
+System.log("start" + " str".trimStart());                                  // expect startstr
+System.log("start" + "                str".trimStart());                   // expect startstr
+System.log("start" + "-      str".trimStart());                            // expect start-      str
