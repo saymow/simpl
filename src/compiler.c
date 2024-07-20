@@ -319,6 +319,23 @@ static void declareVariable() {
   addLocal(*name);
 }
 
+static void declareVariableUsingToken(Token* name) {
+  if (GLOBAL_VARIABLES()) return;
+
+  for (int idx = current->localCount - 1; idx >= 0; idx--) {
+    Local* local = &current->locals[idx];
+
+    if (local->depth != -1 && local->depth < current->scopeDepth) {
+      break;
+    }
+    if (identifiersEqual(name, &local->name)) {
+      error("Already variable with this name in this scope.");
+    }
+  }
+
+  addLocal(*name);
+}
+
 static uint8_t parseVariable(const char* message) {
   consume(TOKEN_IDENTIFIER, message);
 
@@ -1037,8 +1054,124 @@ void markCompilerRoots() {
 }
 
 static void grouping(bool canAssign) {
-  expression();
-  consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
+  // Parse () -> {}  
+  if (match(TOKEN_RIGHT_PAREN)) {
+    Compiler compiler;
+    initCompiler(&compiler, current->absPath, TYPE_FUNCTION_EXPRESSION);
+
+    consume(TOKEN_MINUS, "Expect '-' for anonymous function.");
+    consume(TOKEN_GREATER, "Expect '>' for anonymous function.");
+    
+    if (match(TOKEN_LEFT_BRACE)) {
+      beginScope();
+      block();
+    } else {
+      expression();
+      emitByte(OP_RETURN);
+    }
+
+    ObjFunction* function =  endCompiler();
+    emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(function)));
+    for (int idx = 0; idx < function->upvalueCount; idx++) {
+      emitByte(compiler.upvalues[idx].index);
+      emitByte(compiler.upvalues[idx].isLocal);
+    }
+  } else if (match(TOKEN_IDENTIFIER)) {
+    Token name = parser.previous;
+
+    if (check(TOKEN_COMMA)) {
+      // Parse (a, b, ...) -> {} 
+      Compiler compiler;
+      initCompiler(&compiler, current->absPath, TYPE_FUNCTION_EXPRESSION);
+      beginScope();
+
+      // parse TOKEN_IDENTIFIER
+      declareVariable();
+      markLocalInitialized();
+      // ----
+
+      match(TOKEN_COMMA);
+
+      if (!check(TOKEN_RIGHT_PAREN)) {
+        do {  
+          current->function->arity++;
+          if (current->function->arity > 255) {
+            errorAtCurrent("Can't haave more than 255 parameters.");
+          }    
+          defineVariable(parseVariable("Expect parameter name."));
+        } while(match(TOKEN_COMMA));
+      }
+
+      consume(TOKEN_RIGHT_PAREN, "Expect ')' after arguments list.");
+      consume(TOKEN_MINUS, "Expect '-' for anonymous function.");
+      consume(TOKEN_GREATER, "Expect '>' for anonymous function.");
+      
+      if (match(TOKEN_LEFT_BRACE)) {
+        beginScope();
+        block();
+      } else {
+        expression();
+        emitByte(OP_RETURN);
+      }
+
+      ObjFunction* function =  endCompiler();
+      emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(function)));
+      for (int idx = 0; idx < function->upvalueCount; idx++) {
+        emitByte(compiler.upvalues[idx].index);
+        emitByte(compiler.upvalues[idx].isLocal);
+      }
+    } 
+    else if (match(TOKEN_RIGHT_PAREN)) {
+        if (match(TOKEN_MINUS)) {
+          // Parse (a) -> {}  
+          Compiler compiler;
+          initCompiler(&compiler, current->absPath, TYPE_FUNCTION_EXPRESSION);
+          beginScope();
+          // parse TOKEN_IDENTIFIER
+          declareVariableUsingToken(&name);
+          markLocalInitialized();
+          // ----
+
+          consume(TOKEN_GREATER, "Expect '>' for anonymous function.");
+          
+          if (match(TOKEN_LEFT_BRACE)) {
+            beginScope();
+            block();
+          } else {
+            expression();
+            emitByte(OP_RETURN);
+          }
+
+          ObjFunction* function =  endCompiler();
+          emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(function)));
+          for (int idx = 0; idx < function->upvalueCount; idx++) {
+            emitByte(compiler.upvalues[idx].index);
+            emitByte(compiler.upvalues[idx].isLocal);
+          }
+        } else {
+          // Parse (a)
+          namedVariable(name, canAssign);    
+        }
+    } else {
+      // Parse (a (op b)*)
+      namedVariable(parser.previous, canAssign);
+
+      while (PREC_ASSIGNMENT <= getRule(parser.current.type)->precedence) {
+        advance();
+        ParseFn infixRule = getRule(parser.previous.type)->infix;
+        infixRule(canAssign);
+      }
+
+      if (canAssign && match(TOKEN_EQUAL)) {
+        error("Invalid assignment target.");
+      }
+
+      consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
+    } 
+  } else {
+    expression();
+    consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
+  }
 }
 
 static void unary(bool canAssign) {
