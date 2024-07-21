@@ -1,0 +1,16 @@
+// Try catch when user Error exceptions are thrown
+
+try {
+    throw Error("message");
+} catch(err) {
+    System.log(err);                                                            // expect instance of Error
+    System.log(err.message);                                                    // expect message
+}
+
+try {
+    throw Error("some other message");
+} catch(err) {
+    System.log(err);                                                            // expect instance of Error
+    System.log(err.message);                                                    // expect some other message
+    System.log(err.stack);                                                      // expect [line 11] in script
+}
