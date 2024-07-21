@@ -68,7 +68,7 @@ void freeVM() {
   freeTable(&vm.global);
 }
 
-static ObjString* stackTrace() {
+ObjString* stackTrace() {
   char buffer[1024];
   int length = 0;
 
@@ -96,9 +96,11 @@ static ObjString* stackTrace() {
   return copyString(buffer, length);
 } 
 
-static void runtimeError(const char* format, ...) {
+static void runtimeError(ObjString* stack, const char* format, ...) {
   va_list args;
-  ObjString* stack = stackTrace(); 
+  if (stack == NULL) {
+    stack = stackTrace(); 
+  }
 
   // Print error message
   va_start(args, format);
@@ -121,16 +123,15 @@ static void recoverableRuntimeError(const char* format, ...) {
   buffer[length] = '\0'; 
   va_end(args);
   ObjString* message = copyString(buffer, length);
+  ObjString* stack = stackTrace();
 
   // Throw outside of any try-catch block 
   if (vm.tryCatchStackCount == 0) {
-    fprintf(stderr, "Uncaught exception.\n");
-    runtimeError(message->chars);
+    runtimeError(stack, "Uncaught exception.\n%s", message->chars);
   }
   // Pop try-catch block
   TryCatch *tryCatch = &vm.tryCatchStack[--vm.tryCatchStackCount]; 
   // Generate stack trace
-  ObjString* stack = stackTrace();
 
   // Pop Loops placed in intermediary frames between the "try-catch block" frame and
   // the "throw" frame. If a "throw" is found in a deep nested function, this ensure all
@@ -206,7 +207,7 @@ static bool callEntry(ObjClosure* closure) {
 
 static bool call(ObjClosure* closure, uint8_t argCount) {
   if (vm.framesCount == FRAMES_MAX) {
-    runtimeError("Stack overflow.");
+    runtimeError(NULL, "Stack overflow.");
   }
 
   CallFrame* frame = &vm.frames[vm.framesCount++];
@@ -221,7 +222,7 @@ static bool call(ObjClosure* closure, uint8_t argCount) {
 
 static bool callModule(ObjModule* module) {
   if (vm.framesCount == FRAMES_MAX) {
-    runtimeError("Stack overflow.");
+    runtimeError(NULL, "Stack overflow.");
   }
 
   CallFrame* frame = &vm.frames[vm.framesCount++];
@@ -289,13 +290,24 @@ static bool callConstructor(ObjClass* klass, int argCount) {
   // MUST restrict the class name to ALWAYS be the constructor
   // i.e, blocking it to be a property
   if (tableGet(&klass->methods, klass->name, &initializer)) {
-    ObjClosure* function = (ObjClosure *) resolveOverloadedMethod((void **) AS_OVERLOADED_METHOD(initializer)->as.userMethods, argCount);
-    
-    if (!function) {
-      return false;
-    }
+    if (AS_OVERLOADED_METHOD(initializer)->type == NATIVE_METHOD) {
+      ObjNativeFn* native = (ObjNativeFn *) resolveOverloadedMethod((void **) AS_OVERLOADED_METHOD(initializer)->as.nativeMethods, argCount);
 
-    return call(function, argCount);
+      if (native == NULL) {
+        return false;
+      }
+
+      return callNativeFn(native->function, argCount, true);
+    }
+    else {
+      ObjClosure* function = (ObjClosure *) resolveOverloadedMethod((void **) AS_OVERLOADED_METHOD(initializer)->as.userMethods, argCount);
+      
+      if (!function) {
+        return false;
+      }
+
+      return call(function, argCount);
+    }
   } else if (argCount != 0) {
     recoverableRuntimeError("Expected 0 arguments but got %d.", argCount);
     return false;
@@ -760,7 +772,7 @@ static InterpretResult run() {
       }
       case OP_LOOP_GUARD: {
         if (vm.loopStackCount + 1 == LOOP_STACK_MAX) {
-          runtimeError("Cant stack more than %d loops.", LOOP_STACK_MAX);
+          runtimeError(NULL, "Cant stack more than %d loops.", LOOP_STACK_MAX);
         }
 
         uint16_t startOffset = READ_SHORT();
@@ -823,7 +835,7 @@ static InterpretResult run() {
       }
       case OP_TRY_CATCH: {
         if (vm.tryCatchStackCount + 1 == TRY_CATCH_STACK_MAX) {
-          runtimeError("Cant stack more than %d try-catch blocks.", TRY_CATCH_STACK_MAX);
+          runtimeError(NULL, "Cant stack more than %d try-catch blocks.", TRY_CATCH_STACK_MAX);
         }
 
         uint16_t catchOffset = READ_SHORT();
@@ -854,15 +866,26 @@ static InterpretResult run() {
         break;
       }
       case OP_THROW: {
+        Value value = pop();
+
         // Throw outside of any try-catch block 
         if (vm.tryCatchStackCount == 0) {
-          runtimeError("Uncaught Exception.");
-          return INTERPRET_RUNTIME_ERROR;
+          if (IS_INSTANCE(value) && AS_INSTANCE(value)->obj.klass == vm.errorClass) {
+            ObjInstance * error = AS_INSTANCE(value);
+            Value messageValue;
+            Value stackValue;
+
+            tableGet(&error->properties, CONSTANT_STRING("message"), &messageValue);
+            tableGet(&error->properties, CONSTANT_STRING("stack"), &stackValue);
+            
+            runtimeError(AS_STRING(stackValue), "Uncaught Exception.\n%s", AS_CSTRING(messageValue));
+          } else {
+          }
+            runtimeError(NULL, "Uncaught Exception.\n%s", toString(value)->chars);
         }
       
         // Pop try-catch block
         TryCatch *tryCatch = &vm.tryCatchStack[--vm.tryCatchStackCount]; 
-        Value value = pop();
 
         // Pop Loops placed in intermediary frames between the "try-catch block" frame and
         // the "throw" frame. If a "throw" is found in a deep nested function, this ensure all
@@ -1030,7 +1053,7 @@ static InterpretResult run() {
         ObjString* name = READ_STRING();
 
         if (!tableSet(&FRAME_AS_MODULE(frame)->exports, name, pop())) {
-          runtimeError("Already exporting member with name '%s'.", name->chars);
+          runtimeError(NULL, "Already exporting member with name '%s'.", name->chars);
         }
 
         break;

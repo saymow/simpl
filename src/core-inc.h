@@ -4,16 +4,7 @@
 #define CORE_EXT
 
 char* coreExtension =
-    "class Error {\n"
-    "  Error(message) {\n"
-    "    this.message = message;\n"
-    "  }\n"
-    "\n"
-    "  Error(message, stack) {\n"
-    "    this.message = message;\n"
-    "    this.stack = stack;\n"
-    "  }\n"
-    "}"
+    "class Error {}\n"
     "\n"
     "class String {\n"
     "  String(value) {\n"

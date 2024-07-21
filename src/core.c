@@ -543,6 +543,19 @@ static inline bool __nativeStaticNumberToInteger(int argCount, Value* args) {
   }
 }
 
+static inline bool __nativeStaticErrorNew(int argCount, Value* args) {
+  ObjInstance* instance = newInstance(vm.errorClass);
+  ObjString* message = SAFE_CONSUME_STRING(args, "error message");
+  ObjString* stack = stackTrace();
+
+  beginAssemblyLine((Obj *) stack);
+  tableSet(&instance->properties, CONSTANT_STRING("message"), OBJ_VAL(message));
+  tableSet(&instance->properties, CONSTANT_STRING("stack"), OBJ_VAL(stack));
+  endAssemblyLine();  
+  
+  NATIVE_RETURN(OBJ_VAL(instance));
+}
+
 static void defineNativeFunction(VM* vm, Table* methods, const char* string, NativeFn function, Arity arity) {
   ObjString* name = copyString(string, strlen(string));
   beginAssemblyLine((Obj *) name); 
@@ -596,6 +609,7 @@ void initializeCore(VM* vm) {
   vm->moduleExportsClass = NULL;
   vm->metaArrayClass = NULL;
   vm->arrayClass = NULL; 
+  vm->metaErrorClass = NULL;
   vm->errorClass = NULL;
   vm->metaStringClass = NULL;
   vm->stringClass = NULL;
@@ -665,7 +679,6 @@ void initializeCore(VM* vm) {
   defineNativeFunction(vm, &vm->metaArrayClass->methods, "new", __nativeStaticArrayNew, ARGS_ARITY_0);
   defineNativeFunction(vm, &vm->metaArrayClass->methods, "new", __nativeStaticArrayNew, ARGS_ARITY_1);
 
-
   vm->arrayClass = defineNewClass("Array");
   inherit((Obj *)vm->arrayClass, vm->metaArrayClass);
 
@@ -695,8 +708,14 @@ void initializeCore(VM* vm) {
   defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_15);
   defineNativeFunction(vm, &vm->arrayClass->methods, "join", __nativeArrayJoin, ARGS_ARITY_1);
 
+  vm->metaErrorClass = defineNewClass("MetaError");
+  inherit((Obj *) vm->metaErrorClass, vm->klass);
+
+  defineNativeFunction(vm, &vm->metaErrorClass->methods, "new", __nativeStaticErrorNew, ARGS_ARITY_1);
+  defineNativeFunction(vm, &vm->metaErrorClass->methods, "Error", __nativeStaticErrorNew, ARGS_ARITY_1);
+
   vm->errorClass = defineNewClass("Error");
-  inherit((Obj *)vm->errorClass, vm->klass);
+  inherit((Obj *)vm->errorClass, vm->metaErrorClass);
 
   vm->moduleExportsClass = defineNewClass("Exports");
   inherit((Obj *)vm->moduleExportsClass, vm->klass);

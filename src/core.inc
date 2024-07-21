@@ -1,13 +1,4 @@
-class Error {
-  Error(message) {
-    this.message = message;
-  }
-
-  Error(message, stack) {
-    this.message = message;
-    this.stack = stack;
-  }
-}
+class Error {}
 
 class String {
   String(value) {

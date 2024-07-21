@@ -74,6 +74,7 @@ typedef struct {
   ObjClass* metaArrayClass;
   ObjClass* metaStringClass;
   ObjClass* metaNumberClass;
+  ObjClass* metaErrorClass;
   ObjClass* metaSystemClass;
 
   // Data Type Classes are superclasses of all data types
@@ -161,6 +162,7 @@ InterpretResult interpret(const char* source, char* absPath);
 void push(Value value);
 Value pop();
 Value peek(int distance);
+ObjString* stackTrace();
 void beginAssemblyLine(Obj* obj);
 void endAssemblyLine();
 
