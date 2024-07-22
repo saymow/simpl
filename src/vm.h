@@ -77,6 +77,7 @@ typedef struct {
   ObjClass* metaArrayClass;
   ObjClass* metaStringClass;
   ObjClass* metaNumberClass;
+  ObjClass* metaMathClass;
   ObjClass* metaErrorClass;
   ObjClass* metaSystemClass;
 
@@ -84,6 +85,7 @@ typedef struct {
   ObjClass* nilClass;
   ObjClass* boolClass;
   ObjClass* numberClass;
+  ObjClass* mathClass;
   ObjClass* stringClass;
   ObjClass* functionClass;
   ObjClass* nativeFunctionClass;

@@ -190,11 +190,13 @@ static void markRoots() {
   markObject((Obj*)vm.metaArrayClass);
   markObject((Obj*)vm.metaStringClass);
   markObject((Obj*)vm.metaNumberClass);
+  markObject((Obj*)vm.metaMathClass);
   markObject((Obj*)vm.metaErrorClass);
   markObject((Obj*)vm.metaSystemClass);
   markObject((Obj*)vm.nilClass);
   markObject((Obj*)vm.boolClass);
   markObject((Obj*)vm.numberClass);
+  markObject((Obj*)vm.mathClass);
   markObject((Obj*)vm.stringClass);
   markObject((Obj*)vm.functionClass);
   markObject((Obj*)vm.nativeFunctionClass);

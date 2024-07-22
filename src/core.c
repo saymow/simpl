@@ -543,6 +543,11 @@ static inline bool __nativeStaticNumberToInteger(int argCount, Value* args) {
   }
 }
 
+static inline bool __nativeStaticMathAbs(int argCount, Value* args) {
+  double num = SAFE_CONSUME_NUMBER(args, "argument");
+  NATIVE_RETURN(num < 0 ? NUMBER_VAL(-num) : NUMBER_VAL(num));
+}
+
 static inline bool __nativeStaticErrorNew(int argCount, Value* args) {
   ObjInstance* instance = newInstance(vm.errorClass);
   ObjString* message = SAFE_CONSUME_STRING(args, "error message");
@@ -599,11 +604,13 @@ void initializeCore(VM* vm) {
   vm->metaArrayClass = NULL;
   vm->metaStringClass = NULL;
   vm->metaNumberClass = NULL;
+  vm->metaMathClass = NULL;
   vm->metaErrorClass = NULL;
   vm->metaSystemClass = NULL;
   vm->nilClass = NULL;
   vm->boolClass = NULL;
   vm->numberClass = NULL;
+  vm->mathClass = NULL;
   vm->stringClass = NULL;
   vm->functionClass = NULL;
   vm->nativeFunctionClass = NULL;
@@ -664,7 +671,16 @@ void initializeCore(VM* vm) {
   defineNativeFunction(vm, &vm->metaNumberClass->methods, "toInteger", __nativeStaticNumberToInteger, ARGS_ARITY_1);
 
   vm->numberClass = defineNewClass("Number");
-  inherit((Obj *)vm->numberClass, vm->metaNumberClass);  
+  inherit((Obj *)vm->numberClass, vm->metaNumberClass);
+
+  vm->metaMathClass = defineNewClass("MetaMath");
+  inherit((Obj *)vm->metaMathClass, vm->klass);
+
+  // Define Math static methods
+  defineNativeFunction(vm, &vm->metaMathClass->methods, "abs", __nativeStaticMathAbs, ARGS_ARITY_1);
+
+  vm->mathClass = defineNewClass("Math");
+  inherit((Obj *)vm->mathClass, vm->metaMathClass);
 
   vm->functionClass = defineNewClass("Function");
   inherit((Obj *)vm->functionClass, vm->klass);
@@ -734,6 +750,7 @@ void initializeCore(VM* vm) {
   tableSet(&vm->global, vm->errorClass->name, OBJ_VAL(vm->errorClass));
   tableSet(&vm->global, vm->stringClass->name, OBJ_VAL(vm->stringClass));
   tableSet(&vm->global, vm->numberClass->name, OBJ_VAL(vm->numberClass));
+  tableSet(&vm->global, vm->mathClass->name, OBJ_VAL(vm->mathClass));
   tableSet(&vm->global, vm->arrayClass->name, OBJ_VAL(vm->arrayClass));
   tableSet(&vm->global, vm->systemClass->name, OBJ_VAL(vm->systemClass));
 }

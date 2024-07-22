@@ -114,6 +114,8 @@ ObjClass *newSystemClass(ObjString *name) {
       return vm.stringClass;
     } else if (name->chars == vm.errorClass->name->chars) {
       return vm.errorClass;
+    } else if (name->chars == vm.mathClass->name->chars) {
+      return vm.mathClass;
     } else {
       // unreachable
       fprintf(stderr, "Unable to find system class to extend from.");
