@@ -184,6 +184,11 @@ static void markRoots() {
 
   markAssemblyLine();
   markObject((Obj*)vm.klass);
+  markObject((Obj*)vm.metaArrayClass);
+  markObject((Obj*)vm.metaStringClass);
+  markObject((Obj*)vm.metaNumberClass);
+  markObject((Obj*)vm.metaErrorClass);
+  markObject((Obj*)vm.metaSystemClass);
   markObject((Obj*)vm.nilClass);
   markObject((Obj*)vm.boolClass);
   markObject((Obj*)vm.numberClass);
@@ -191,7 +196,9 @@ static void markRoots() {
   markObject((Obj*)vm.functionClass);
   markObject((Obj*)vm.nativeFunctionClass);
   markObject((Obj*)vm.arrayClass);
+  markObject((Obj*)vm.errorClass);
   markObject((Obj*)vm.moduleExportsClass);
+  markObject((Obj*)vm.systemClass);
   markTable(&vm.global);
   markCompilerRoots();
 }

@@ -600,19 +600,21 @@ void initializeCore(VM* vm) {
   // inheritance.  
 
   vm->klass = NULL;
-  vm->nativeFunctionClass = NULL;
+  vm->metaArrayClass = NULL;
+  vm->metaStringClass = NULL;
+  vm->metaNumberClass = NULL;
+  vm->metaErrorClass = NULL;
+  vm->metaSystemClass = NULL;
   vm->nilClass = NULL;
   vm->boolClass = NULL;
-  vm->metaNumberClass = NULL;
   vm->numberClass = NULL;
-  vm->functionClass = NULL;
-  vm->moduleExportsClass = NULL;
-  vm->metaArrayClass = NULL;
-  vm->arrayClass = NULL; 
-  vm->metaErrorClass = NULL;
-  vm->errorClass = NULL;
-  vm->metaStringClass = NULL;
   vm->stringClass = NULL;
+  vm->functionClass = NULL;
+  vm->nativeFunctionClass = NULL;
+  vm->arrayClass = NULL; 
+  vm->errorClass = NULL;
+  vm->moduleExportsClass = NULL;
+  vm->systemClass = NULL;
 
   vm->klass = defineNewClass("Class");
   vm->metaStringClass = defineNewClass("MetaString");
