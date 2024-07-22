@@ -19,10 +19,12 @@ void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
 
   if (newSize > oldSize) {
 #ifdef DEBUG_STRESS_GC
-    startGarbageCollector();
+    if (vm.state == INITIALIZED) {
+      startGarbageCollector();
+    }
 #endif
 
-    if (vm.bytesAllocated >= vm.GCThreshold) {
+    if (vm.bytesAllocated >= vm.GCThreshold && vm.state == INITIALIZED) {
       startGarbageCollector();
     }
   }
@@ -170,6 +172,7 @@ static void markRoots() {
   }
 
   for (int idx = 0; idx < vm.framesCount; idx++) {
+    markTable(&vm.frames[idx].namespace);
     if (vm.frames[idx].type == FRAME_TYPE_MODULE) {
       markObject((Obj*) vm.frames[idx].as.module);
     } else {

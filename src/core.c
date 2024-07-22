@@ -558,7 +558,6 @@ static inline bool __nativeStaticErrorNew(int argCount, Value* args) {
 
 static void defineNativeFunction(VM* vm, Table* methods, const char* string, NativeFn function, Arity arity) {
   ObjString* name = copyString(string, strlen(string));
-  beginAssemblyLine((Obj *) name); 
   ObjNativeFn* native = newNativeFunction(function, name, arity);
   Value value;
 
@@ -573,14 +572,11 @@ static void defineNativeFunction(VM* vm, Table* methods, const char* string, Nat
   overloadedMethod->as.nativeMethods[arity] = native;
 
   tableSet(methods, name, OBJ_VAL(overloadedMethod));
-  endAssemblyLine();
 }
 
 static ObjClass* defineNewClass(const char* name) {
   ObjString* string = copyString(name, strlen(name));
-  beginAssemblyLine((Obj *) string);   
   ObjClass* klass = newClass(string);
-  endAssemblyLine();
 
   return klass;
 }

@@ -26,7 +26,8 @@ typedef enum { INITIALIZING, EXTENDING, INITIALIZED  } VMState;
 //       user defined global variables.
 //
 //    FRAME_TYPE_CLOSURE: namespace table refers to the enclosing module
-// namespace.   
+// namespace.
+//   
 typedef struct {
   uint8_t* ip;
   Value* slots;
@@ -62,6 +63,8 @@ typedef struct {
   Value* stackTop;
 
   Table strings;
+  
+  // Base namespace for all modules, where native classes are defined   
   Table global;
 
   ObjUpValue* upvalues;

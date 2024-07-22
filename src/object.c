@@ -127,12 +127,12 @@ ObjClass *newClass(ObjString *name) {
     return newSystemClass(name);
   }
   
+  beginAssemblyLine((Obj *) name);
   ObjClass *klass = ALLOCATE_OBJ(OBJ_CLASS, ObjClass);
   klass->name = name;
   initTable(&klass->methods);
 
   klass->obj.klass = vm.klass;
-  beginAssemblyLine((Obj *) klass->obj.klass);
   tableAddAllInherintance(&vm.klass->methods, &klass->methods);
   endAssemblyLine();
 

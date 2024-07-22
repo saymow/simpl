@@ -437,9 +437,11 @@ static void defineMethod(ObjString* name) {
 
   // Creating new method overload and Assign the function to its slot
   ObjOverloadedMethod* overloadedMethod = newOverloadedMethod(name);
+  beginAssemblyLine((Obj *) name);
   overloadedMethod->as.userMethods[AS_CLOSURE(method)->function->arity] = AS_CLOSURE(method);
 
   tableSet(&klass->methods, name, OBJ_VAL(overloadedMethod));
+  endAssemblyLine();
   pop();
 }
 
@@ -590,7 +592,8 @@ static InterpretResult run() {
         break;
       }
       case OP_DEFINE_GLOBAL: {
-        tableSet(&frame->namespace, READ_STRING(), pop());
+        tableSet(&frame->namespace, READ_STRING(), peek(0));
+        pop();
         break;
       }
       case OP_GET_GLOBAL: {
