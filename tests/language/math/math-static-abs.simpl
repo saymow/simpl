@@ -1,0 +1,6 @@
+// Math.abs
+
+System.log(Math.abs(-1));                                               // expect 1
+System.log(Math.abs(-1.5));                                             // expect 1.5
+System.log(Math.abs(0));                                                // expect 0
+System.log(Math.abs(1));                                                // expect 1
