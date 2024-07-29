@@ -10,6 +10,7 @@ System.log(arr.slice(2, 5));                                     // expect [3, 4
 System.log(arr.slice(-1));                                       // expect [5]
 System.log(arr.slice(-99));                                      // expect [1, 2, 3, 4, 5]
 System.log(arr.slice(-3, -1));                                   // expect [3, 4, 5]
+System.log(arr.slice(9999));                                     // expect []
 
 // Test copy
 
@@ -20,4 +21,4 @@ sliced.push(6);
 System.log(arr);                                                 // expect [1, 2, 3, 4, 5]
 System.log(sliced);                                              // expect [1, 2, 3, 4, 5, 6]
 
-System.log(arr.slice(4));                                     // expect [5]
+System.log(arr.slice(4));                                        // expect [5]
