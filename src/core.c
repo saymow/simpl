@@ -692,6 +692,8 @@ void initializeCore(VM* vm) {
   defineNativeFunction(vm, &vm->metaArrayClass->methods, "isArray", __nativeStaticArrayIsArray, ARGS_ARITY_1);
   defineNativeFunction(vm, &vm->metaArrayClass->methods, "new", __nativeStaticArrayNew, ARGS_ARITY_0);
   defineNativeFunction(vm, &vm->metaArrayClass->methods, "new", __nativeStaticArrayNew, ARGS_ARITY_1);
+  defineNativeFunction(vm, &vm->metaArrayClass->methods, "Array", __nativeStaticArrayNew, ARGS_ARITY_0);
+  defineNativeFunction(vm, &vm->metaArrayClass->methods, "Array", __nativeStaticArrayNew, ARGS_ARITY_1);
 
   vm->arrayClass = defineNewClass("Array");
   inherit((Obj *)vm->arrayClass, vm->metaArrayClass);

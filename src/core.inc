@@ -11,14 +11,6 @@ class String {
 }
 
 class Array {
-  Array() {
-    this = Array.new();
-  }
-  
-  Array(length) {
-    this = Array.new(length);
-  }
-
   map(callback) {
     var length = this.length();
     var newArray = Array.new(length);
