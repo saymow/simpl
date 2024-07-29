@@ -19,13 +19,18 @@ System.log(String.isString(String(212)));                                       
 
 // Alternative syntax
 
-System.log(String.new(Person));                                                           // expect Person
-System.log(String.isString(String.new(Person)));                                          // expect true
-System.log(String.new(person));                                                           // expect instance of Person
-System.log(String.isString(String.new(person)));                                          // expect true
-System.log(String.new(add));                                                              // expect add
-System.log(String.isString(String.new(add)));                                             // expect true
-System.log(String.new(212));                                                              // expect 212
-System.log(String.isString(String.new(212)));                                             // expect true
-System.log(String.new([1, 2, 3]));                                                        // expect instance of Array
-System.log(String.isString(String.new(212)));                                             // expect true
+System.log(String.new(Person));                                                       // expect Person
+System.log(String.isString(String.new(Person)));                                      // expect true
+System.log(String.new(person));                                                       // expect instance of Person
+System.log(String.isString(String.new(person)));                                      // expect true
+System.log(String.new(add));                                                          // expect add
+System.log(String.isString(String.new(add)));                                         // expect true
+System.log(String.new(212));                                                          // expect 212
+System.log(String.isString(String.new(212)));                                         // expect true
+System.log(String.new([1, 2, 3]));                                                    // expect instance of Array
+System.log(String.isString(String.new(212)));                                         // expect true
+
+// Unusual use
+
+System.log(String().length());                                                        // expect 0
+System.log(String.new().length());                                                    // expect 0
