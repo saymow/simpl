@@ -1,0 +1,9 @@
+// Math.max
+
+System.log(Math.max(-1, 0));                                               // expect 0
+System.log(Math.max(-1.5, 0));                                             // expect 0
+System.log(Math.max(1, 3));                                                // expect 3
+System.log(Math.max(0, 5));                                                // expect 5
+System.log(Math.max(-10, 3));                                              // expect 3
+System.log(Math.max(10, 60));                                              // expect 60
+
