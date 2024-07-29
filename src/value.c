@@ -47,7 +47,7 @@ bool valuesEqual(Value a, Value b) {
   #endif
 }
 
-void printfValue(Value value) {
+void printValue(Value value) {
   #ifdef NAN_BOXING
     if (IS_BOOL(value)) {
       printf(AS_BOOL(value) ? "true" : "false");

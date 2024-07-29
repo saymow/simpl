@@ -295,7 +295,7 @@ static inline bool __nativeStaticArrayNew(int argCount, Value* args) {
 }
 
 static inline bool __nativeSystemLog(int argCount, Value* args) {
-  printfValue(*(++args));
+  printValue(*(++args));
   printf("\n");
   NATIVE_RETURN(NIL_VAL);  
 }

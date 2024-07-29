@@ -128,7 +128,7 @@ void markObject(Obj* obj) {
 
 #ifdef DEBUG_LOG_GC
   printf("%p mark ", (void*)obj);
-  printfValue(OBJ_VAL(obj));
+  printValue(OBJ_VAL(obj));
   printf("\n");
 #endif
 
@@ -211,7 +211,7 @@ static void markRoots() {
 static void blackenObject(Obj* obj) {
 #ifdef DEBUG_LOG_GC
   printf("%p blacken ", (void*)obj);
-  printfValue(OBJ_VAL(obj));
+  printValue(OBJ_VAL(obj));
   printf("\n");
 #endif
 

@@ -243,7 +243,7 @@ static void printValueArray(ValueArray* array) {
   printf("[");
   
   for (int idx = 0; idx < array->count; idx++) {
-    printfValue(array->values[idx]);
+    printValue(array->values[idx]);
     if (idx < array->count - 1) {
       printf(", ");
     }
