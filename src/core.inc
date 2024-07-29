@@ -1,3 +1,5 @@
+class Math {}
+
 class Error {
   toString() {
     return this.message + "\n" + this.stack;

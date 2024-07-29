@@ -4,6 +4,8 @@
 #define CORE_EXT
 
 char* coreExtension =
+	"class Math {}\n"
+	"\n"
 	"class Error {\n"
 	"  toString() {\n"
 	"    return this.message + \"\n\" + this.stack;\n"
