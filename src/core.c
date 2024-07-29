@@ -500,6 +500,10 @@ static inline bool __nativeStaticStringIsString(int argCount, Value* args) {
 }
 
 static inline bool __nativeStaticStringNew(int argCount, Value* args) {
+  if (argCount == 0) {
+    NATIVE_RETURN(OBJ_VAL(CONSTANT_STRING("")));  
+  }
+  
   NATIVE_RETURN(OBJ_VAL(toString(*(++args))));
 }
 
@@ -632,7 +636,10 @@ void initializeCore(VM* vm) {
   inherit((Obj *)vm->metaStringClass,  vm->klass);
 
   defineNativeFunction(vm, &vm->metaStringClass->methods, "isString", __nativeStaticStringIsString, ARGS_ARITY_1);
+  defineNativeFunction(vm, &vm->metaStringClass->methods, "new", __nativeStaticStringNew, ARGS_ARITY_0);
   defineNativeFunction(vm, &vm->metaStringClass->methods, "new", __nativeStaticStringNew, ARGS_ARITY_1);
+  defineNativeFunction(vm, &vm->metaStringClass->methods, "String", __nativeStaticStringNew, ARGS_ARITY_0);
+  defineNativeFunction(vm, &vm->metaStringClass->methods, "String", __nativeStaticStringNew, ARGS_ARITY_1);
 
   inherit((Obj *)vm->stringClass, vm->metaStringClass);
 
