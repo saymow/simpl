@@ -53,6 +53,17 @@
         (length) + (idx) :                                                          \
         0)))                     
 
+// Ensure the index is in [0, +Infinity]
+// 1°) If index in [0, length), it returns index.
+// 2°) If index in [-length, 0), it returns length + idx.
+// 3°) If none of these conditions are met, it returns 0.
+#define UNCAPPED_SAFE_INDEX(idx, length)                                            \
+     ((idx) >= 0 ?                                                                  \
+        (idx) :                                                                     \
+     (-(idx) < (length) ?                                                           \
+        (length) + (idx) :                                                          \
+        0))
+
 // Ensure the index is in [0, length]
 // 1°) If index >= length, it returns length - 1 (capping the index).
 // 2°) If index in [0, length], it returns index.
@@ -180,8 +191,8 @@ static inline bool __nativeArraySlice(int argCount, Value* args) {
 
   if (argCount >= 1) {
     start = SAFE_CONSUME_NUMBER(args, "start");
-    // stard is inclusive
-    start = SAFE_INDEX(start, array->list.count);
+    // start is inclusive
+    start = UNCAPPED_SAFE_INDEX(start, array->list.count);
     if (argCount == 2) {
       end = SAFE_CONSUME_NUMBER(args, "end");
       // end is exclusive, so we need to be able to access the length-ith positon.
