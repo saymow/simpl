@@ -1,4 +1,8 @@
-class Error {}
+class Error {
+  toString() {
+    return this.message + "\n" + this.stack;
+  }
+}
 
 class String {
   trim() {

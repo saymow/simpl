@@ -429,7 +429,14 @@ static void defineMethod(ObjString* name) {
   Value value;
 
   // Overloading existing method
-  if (tableGet(&klass->methods, name, &value) && IS_OVERLOADED_METHOD(value)) {
+  //
+  // We can only overload user methods, otherwise we override the method overload name.
+  // This limitation leads to a really strange corner case   
+  if (
+    tableGet(&klass->methods, name, &value) && 
+    IS_OVERLOADED_METHOD(value) && 
+    AS_OVERLOADED_METHOD(value)->type == USER_METHOD
+  ) {
     AS_OVERLOADED_METHOD(value)->as.userMethods[AS_CLOSURE(method)->function->arity] = AS_CLOSURE(method);
     pop();
     return;  
