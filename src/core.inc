@@ -76,4 +76,12 @@ class Array {
 
     return acc;     
   }
+
+  skip(count) {
+    if (count < 0) {
+      count = 0;
+    }
+
+    return this.slice(count);
+  }
 }

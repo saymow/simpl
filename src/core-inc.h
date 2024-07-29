@@ -82,6 +82,14 @@ char* coreExtension =
 	"\n"
 	"    return acc;     \n"
 	"  }\n"
+	"\n"
+	"  skip(count) {\n"
+	"    if (count < 0) {\n"
+	"      count = 0;\n"
+	"    }\n"
+	"\n"
+	"    return this.slice(count);\n"
+	"  }\n"
 	"}\n";
 
 #endif
