@@ -78,10 +78,6 @@ class Array {
   }
 
   skip(count) {
-    if (count < 0) {
-      count = 0;
-    }
-
-    return this.slice(count);
+    return this.slice(Math.max(count, 0));
   }
 }

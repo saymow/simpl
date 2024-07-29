@@ -84,11 +84,7 @@ char* coreExtension =
 	"  }\n"
 	"\n"
 	"  skip(count) {\n"
-	"    if (count < 0) {\n"
-	"      count = 0;\n"
-	"    }\n"
-	"\n"
-	"    return this.slice(count);\n"
+	"    return this.slice(Math.max(count, 0));\n"
 	"  }\n"
 	"}\n";
 
