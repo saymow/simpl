@@ -13,38 +13,6 @@ fib(N);
 
 System.log(System.clock() - start);
 
-// -- Tests recorded with a relatively small dataset N = 30
-// -- In order to have a better runtime benchmark and correctly evalute perfomance improvements,
-// -- the runtime need to last, at least, ~60s.   
-// 
-// -------------------------- BENCHMARK ---------------------------
-// version                                                  unknown
-// rounds                                                         3
-// min                                                       0.754s
-// max                                                       0.782s
-// median                                                    0.776s
-// avg                                                       0.771s
-// stdDeviation                                              0.012s
-// -------------------------- BENCHMARK ---------------------------
-// version                                                  unknown
-// rounds                                                         3
-// min                                                       0.747s
-// max                                                       0.778s
-// median                                                    0.749s
-// avg                                                       0.758s
-// stdDeviation                                              0.014s
-// -------------------------- BENCHMARK ---------------------------
-// version                                     unknown - NaN boxing
-// rounds                                                         3
-// min                                                       0.582s
-// max                                                       0.586s
-// median                                                    0.582s
-// avg                                                       0.583s
-// stdDeviation                                              0.002s
-// ----------------------------------------------------------------
-// 
-// -- N updated to 40
-// 
 // -------------------------- BENCHMARK ---------------------------
 // version                                              alpha-0.0.1
 // rounds                                                         3

@@ -37,38 +37,6 @@ System.log(sum);
 System.log(System.clock() - start);
 
 
-// -- Tests recorded with a relatively small dataset N = 50000000
-// -- In order to have a better runtime benchmark and correctly evalute perfomance improvements,
-// -- the runtime need to last, at least, ~60s.   
-// 
-// -------------------------- BENCHMARK ---------------------------
-// version                                                  unknown
-// rounds                                                         3
-// min                                                      20.928s
-// max                                                      21.216s
-// median                                                   21.107s
-// avg                                                      21.084s
-// stdDeviation                                              0.119s
-// -------------------------- BENCHMARK ---------------------------
-// version                                                  unknown
-// rounds                                                         3
-// min                                                      18.829s
-// max                                                      19.107s
-// median                                                   18.967s
-// avg                                                      18.968s
-// stdDeviation                                              0.113s
-// -------------------------- BENCHMARK ---------------------------
-// version                                     unknown - NaN boxing 
-// rounds                                                         3
-// min                                                      16.536s
-// max                                                      16.764s
-// median                                                   16.688s
-// avg                                                      16.663s
-// stdDeviation                                              0.095s
-// ----------------------------------------------------------------
-// 
-// -- N updated to 150000000
-// 
 // -------------------------- BENCHMARK ---------------------------
 // version                                              alpha-0.0.1
 // rounds                                                         3
