@@ -560,7 +560,13 @@ static inline bool __nativeStaticNumberToInteger(int argCount, Value* args) {
 
 static inline bool __nativeStaticMathAbs(int argCount, Value* args) {
   double num = SAFE_CONSUME_NUMBER(args, "argument");
-  NATIVE_RETURN(num < 0 ? NUMBER_VAL(-num) : NUMBER_VAL(num));
+  NATIVE_RETURN(NUMBER_VAL(num < 0 ? -num : num));
+}
+
+static inline bool __nativeStaticMathMin(int argCount, Value* args) {
+  double num = SAFE_CONSUME_NUMBER(args, "first argument");
+  double num2 = SAFE_CONSUME_NUMBER(args, "second argument");
+  NATIVE_RETURN(NUMBER_VAL(num < num2 ? num : num2));
 }
 
 static inline bool __nativeStaticErrorNew(int argCount, Value* args) {
@@ -696,6 +702,7 @@ void initializeCore(VM* vm) {
 
   // Define Math static methods
   defineNativeFunction(vm, &vm->metaMathClass->methods, "abs", __nativeStaticMathAbs, ARGS_ARITY_1);
+  defineNativeFunction(vm, &vm->metaMathClass->methods, "min", __nativeStaticMathMin, ARGS_ARITY_2);
 
   vm->mathClass = defineNewClass("Math");
   inherit((Obj *)vm->mathClass, vm->metaMathClass);
