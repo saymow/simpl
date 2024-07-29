@@ -569,6 +569,12 @@ static inline bool __nativeStaticMathMin(int argCount, Value* args) {
   NATIVE_RETURN(NUMBER_VAL(num < num2 ? num : num2));
 }
 
+static inline bool __nativeStaticMathMax(int argCount, Value* args) {
+  double num = SAFE_CONSUME_NUMBER(args, "first argument");
+  double num2 = SAFE_CONSUME_NUMBER(args, "second argument");
+  NATIVE_RETURN(NUMBER_VAL(num > num2 ? num : num2));
+}
+
 static inline bool __nativeStaticErrorNew(int argCount, Value* args) {
   ObjInstance* instance = newInstance(vm.errorClass);
   ObjString* message = SAFE_CONSUME_STRING(args, "error message");
@@ -703,6 +709,7 @@ void initializeCore(VM* vm) {
   // Define Math static methods
   defineNativeFunction(vm, &vm->metaMathClass->methods, "abs", __nativeStaticMathAbs, ARGS_ARITY_1);
   defineNativeFunction(vm, &vm->metaMathClass->methods, "min", __nativeStaticMathMin, ARGS_ARITY_2);
+  defineNativeFunction(vm, &vm->metaMathClass->methods, "max", __nativeStaticMathMax, ARGS_ARITY_2);
 
   vm->mathClass = defineNewClass("Math");
   inherit((Obj *)vm->mathClass, vm->metaMathClass);
