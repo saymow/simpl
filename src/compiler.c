@@ -996,11 +996,7 @@ static void statement() {
     importStatement();
   } else if (match(TOKEN_EXPORT)) {
     exportStatement();
-  } else if (match(TOKEN_LEFT_BRACE)) {
-    beginScope();
-    block();
-    endScope();
-  } else if (match(TOKEN_IF)) {
+  }  else if (match(TOKEN_IF)) {
     ifStatement();
   } else if (match(TOKEN_WHILE)) {
     whileStatement();
@@ -1008,6 +1004,10 @@ static void statement() {
     forStatement();
   } else if (match(TOKEN_RETURN)) {
     returnStatement();
+  } else if (match(TOKEN_LEFT_BRACE)) {
+    beginScope();
+    block();
+    endScope();
   } else {
     expressionStatement();
   }
@@ -1530,12 +1530,36 @@ static void _super(bool canAssign) {
   emitBytes(OP_SUPER, name);
 }
 
+void object(bool canAssign) {
+  int count = 0;
+  
+  if (check(TOKEN_IDENTIFIER)) {
+    do {
+      consume(TOKEN_IDENTIFIER, "Expect property identifier after ','.");
+      uint8_t name = identifierConstant(&parser.previous);
+      consume(TOKEN_COLON, "Expect ':' after object property identifier.");
+      
+      emitBytes(OP_CONSTANT, name);
+      expression();
+      count++;
+
+      if (count > 255) {
+        error("Can't have more than 255 properties in an object literal.");
+      }
+    } while (match(TOKEN_COMMA));
+  }
+
+  emitBytes(OP_OBJECT, (uint8_t) count);
+
+  consume(TOKEN_RIGHT_BRACE, "Expect '}' at the end of the object.");
+}
+
 ParseRule rules[] = {
     [TOKEN_LEFT_PAREN] = {grouping, call, PREC_CALL},
     [TOKEN_RIGHT_PAREN] = {NULL, NULL, PREC_NONE},
     [TOKEN_LEFT_BRACKET] = {array, arrayGetOrSet, PREC_PRIMARY},
     [TOKEN_RIGHT_BRACKET] = {NULL, NULL, PREC_NONE},
-    [TOKEN_LEFT_BRACE] = {NULL, NULL, PREC_NONE},
+    [TOKEN_LEFT_BRACE] = {object, NULL, PREC_NONE},
     [TOKEN_RIGHT_BRACE] = {NULL, NULL, PREC_NONE},
     [TOKEN_COMMA] = {NULL, NULL, PREC_NONE},
     [TOKEN_DOT] = {NULL, propertyGetOrSet, PREC_CALL},

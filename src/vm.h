@@ -17,7 +17,7 @@ typedef enum { INITIALIZING, EXTENDING, INITIALIZED  } VMState;
 
 
 // CallFrames are either function calls or modules, both have their own 
-// intruction pointer (ip) and share of the stack (slots). the namespace
+// instruction pointer (ip) and share of the stack (slots). the namespace
 // table changes a little based on the frame type. 
 //
 //    FRAME_TYPE_MODULE: namespace table refers to the module namespace. 
@@ -62,11 +62,17 @@ typedef struct {
   Value stack[STACK_MAX];
   Value* stackTop;
 
+  // String interning table.
+  // For performance sake, strings are interned and reused in case it appears
+  // somewhere else in the code.
   Table strings;
   
   // Base namespace for all modules, where native classes are defined   
   Table global;
 
+  // Closure is handled through upvalues.
+  // This list stores open upvalues, i.e, access to variables in an outer scope
+  // other than the global. 
   ObjUpValue* upvalues;
   
   // Root class, everything inherits from it
@@ -74,28 +80,48 @@ typedef struct {
   
   // Meta Classes are used to define static methods and are exposed to the global namespace
   // These are superclasses of the Data Type Classes
+  // - Where Array static methods are defined 
   ObjClass* metaArrayClass;
+  // - Where String static methods are defined
   ObjClass* metaStringClass;
+  // - Where Number static methods are defined
   ObjClass* metaNumberClass;
+  // - Where Math static methods are defined
   ObjClass* metaMathClass;
+  // - Superclass for the Error class, where the Error constructor is
   ObjClass* metaErrorClass;
+  // - Where System methods are defined
   ObjClass* metaSystemClass;
 
   // Data Type Classes are superclasses of all data types
+  // - Where nil literal inherits from
   ObjClass* nilClass;
+  // - Where bools literals inherits from
   ObjClass* boolClass;
+  // - Where number literals inherits from
   ObjClass* numberClass;
+  // - Placeholder Math library subclass (used to access superclass) 
   ObjClass* mathClass;
+  // - Where string literals inherits from
   ObjClass* stringClass;
+  // - Where user methods inherits from
   ObjClass* functionClass;
+  // - Where native methods inherits from
   ObjClass* nativeFunctionClass;
+  // - Where arrays inherits from 
   ObjClass* arrayClass;
+  // - Standard Error class
   ObjClass* errorClass;
+  // - Where exports objects inherits from 
   ObjClass* moduleExportsClass;
+  // - Placeholder System subclass (used to access superclass)
   ObjClass* systemClass;
 
+  // Active Loop registers
   Loop loopStack[LOOP_STACK_MAX];
   int loopStackCount;
+
+  // Active try-catch block registers
   TryCatch tryCatchStack[TRY_CATCH_STACK_MAX];
   int tryCatchStackCount; 
 

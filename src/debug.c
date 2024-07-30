@@ -203,6 +203,8 @@ int disassembleInstruction(Chunk* chunk, int offset) {
       return simpleInstruction("OP_THROW", offset);
     case OP_IMPORT:
       return byteInstruction("OP_IMPORT", chunk, offset);
+    case OP_OBJECT:
+      return byteInstruction("OP_OBJECT", chunk, offset);
     case OP_RETURN:
       return simpleInstruction("OP_RETURN", offset);
     default:

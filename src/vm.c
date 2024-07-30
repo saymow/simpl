@@ -649,6 +649,7 @@ static InterpretResult run() {
         ObjString* name = READ_STRING();
         Value value = NIL_VAL;
 
+        // When performing assign operation, the base is kept in the stack for facilitating the update
         if (READ_BYTE() == true) {
           base = peek(0);
         } else {
@@ -1053,6 +1054,25 @@ static InterpretResult run() {
       case OP_METHOD: {
         defineMethod(READ_STRING());
         break;
+      }
+      case OP_OBJECT: {
+        // push placeholder value where object instance is gonna be stored
+        push(NIL_VAL);
+        callConstructor(vm.klass, 0);  
+        Value base = pop();
+        int propertiesCount = READ_BYTE();
+
+        while (propertiesCount > 0) {
+          Value value = pop();
+          ObjString* key = AS_STRING(pop());
+          
+          tableSet(&AS_INSTANCE(base)->properties, key, value);
+          propertiesCount--;
+        }
+
+        push(base);
+
+        break;        
       }
       case OP_CLOSE_UPVALUE: {
         closeUpValues(vm.stackTop - 1);
