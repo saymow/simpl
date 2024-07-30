@@ -1,13 +1,13 @@
 // Array declaration, get, and assignment
 
-var arr = [1, fun () { System.log("funExpr");}, nil, "str"];
+var arr = [1, () -> System.log("funExpr"), nil, "str"];
 
-System.log(arr);                                                                          // expect [1, <fn fun>, nil, str]
+System.log(arr);                                                                          // expect [1, <lambda fn>, nil, str]
 System.log(arr[0]);                                                                       // expect 1
 System.log(arr[2]);                                                                       // expect nil
 System.log(arr[-1]);                                                                      // expect nil
 System.log(arr[99]);                                                                      // expect nil
-arr[1]();                                                                           // expect funExpr
+arr[1]();                                                                                 // expect funExpr
 
 // += operator
 arr[3] += "ing";

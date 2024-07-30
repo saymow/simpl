@@ -26,10 +26,10 @@ System.log(false);                                                              
 System.log("str");                                                                                        // expect str
 System.log(5.555);                                                                                        // expect 5.555
 System.log(arr);                                                                                          // expect [1, 2, 3]
-System.log(closure);                                                                                      // expect <fn closure>
+System.log(closure);                                                                                      // expect <closure fn>
 System.log(Person);                                                                                       // expect class Person
 System.log(person);                                                                                       // expect instance of Person
-System.log((fun() {}));                                                                                   // expect <fn fun>
+System.log((fun() {}));                                                                                   // expect <lambda fn>
 System.log(closure()());                                                                                  // expect some strange string
 
 System.log("-");                                                                                          // expect -
@@ -44,7 +44,7 @@ System.log(arr.toString());                                                     
 System.log(closure.toString());                                                                           // expect closure
 System.log(Person.toString());                                                                            // expect Person
 System.log(person.toString());                                                                            // expect instance of Person
-System.log((fun() {}).toString());                                                                        // expect fun
+System.log((fun() {}).toString());                                                                        // expect lambda function
 System.log(closure()().toString());                                                                       // expect some strange string
 System.log(5.toString.toString());                                                                        // expect toString
 System.log(System.clock.toString());                                                                             // expect clock
