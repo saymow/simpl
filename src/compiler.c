@@ -119,13 +119,24 @@ static void initCompiler(Compiler* compiler, char* absPath, FunctionType type) {
     compiler->topLevelType = current->topLevelType;
   }
 
-  if (type != TYPE_SCRIPT) {
-    if (type != TYPE_MODULE) {
+  switch(type) {
+    case TYPE_CONSTRUCTOR:
+    case TYPE_FUNCTION:
+    case TYPE_METHOD: {
       compiler->function->name =
         copyString(parser.previous.start, parser.previous.length);
-    } else {
-      compiler->function->name = takeString(absPath, strlen(absPath));
+      break;
     }
+    case TYPE_MODULE: {
+      compiler->function->name = takeString(absPath, strlen(absPath));
+      break;
+    }
+    case TYPE_LAMBDA_FUNCTION: {
+      compiler->function->name = CONSTANT_STRING("lambda function");
+      break;
+    }
+    case TYPE_SCRIPT:
+      break;
   }
 
   current = compiler;
@@ -1057,7 +1068,7 @@ static void grouping(bool canAssign) {
   // Parse () -> {}  
   if (match(TOKEN_RIGHT_PAREN)) {
     Compiler compiler;
-    initCompiler(&compiler, current->absPath, TYPE_FUNCTION_EXPRESSION);
+    initCompiler(&compiler, current->absPath, TYPE_LAMBDA_FUNCTION);
 
     consume(TOKEN_MINUS, "Expect '-' for anonymous function.");
     consume(TOKEN_GREATER, "Expect '>' for anonymous function.");
@@ -1082,7 +1093,7 @@ static void grouping(bool canAssign) {
     if (check(TOKEN_COMMA)) {
       // Parse (a, b, ...) -> {} 
       Compiler compiler;
-      initCompiler(&compiler, current->absPath, TYPE_FUNCTION_EXPRESSION);
+      initCompiler(&compiler, current->absPath, TYPE_LAMBDA_FUNCTION);
       beginScope();
 
       // parse TOKEN_IDENTIFIER
@@ -1125,7 +1136,7 @@ static void grouping(bool canAssign) {
         if (match(TOKEN_MINUS)) {
           // Parse (a) -> {}  
           Compiler compiler;
-          initCompiler(&compiler, current->absPath, TYPE_FUNCTION_EXPRESSION);
+          initCompiler(&compiler, current->absPath, TYPE_LAMBDA_FUNCTION);
           beginScope();
           // parse TOKEN_IDENTIFIER
           declareVariableUsingToken(&name);
@@ -1406,7 +1417,7 @@ static void call(bool canAssign) {
 }
 
 static void functionExpression(bool canAssign) {
-  function(TYPE_FUNCTION_EXPRESSION);
+  function(TYPE_LAMBDA_FUNCTION);
 }
 
 static void propertyGetOrSet(bool canAssign) {

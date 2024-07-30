@@ -85,6 +85,8 @@ ObjString* stackTrace() {
     } else {
       if (IS_FRAME_MODULE(frame)) {
         length += sprintf(&buffer[length], "file %s\n", function->name->chars);
+      } else if (function->name == CONSTANT_STRING("lambda function")) {
+        length += sprintf(&buffer[length], "lambda function\n");  
       } else {
         length += sprintf(&buffer[length], "%s()\n", function->name->chars);
       }
@@ -127,7 +129,7 @@ static void recoverableRuntimeError(const char* format, ...) {
 
   // Throw outside of any try-catch block 
   if (vm.tryCatchStackCount == 0) {
-    runtimeError(stack, "Uncaught exception.\n%s", message->chars);
+    runtimeError(stack, "Uncaught Exception.\n%s", message->chars);
   }
   // Pop try-catch block
   TryCatch *tryCatch = &vm.tryCatchStack[--vm.tryCatchStackCount]; 

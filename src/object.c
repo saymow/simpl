@@ -234,8 +234,10 @@ ObjString *copyString(const char *chars, int length) {
 static void printFunction(ObjFunction *function) {
   if (function->name == NULL) {
     printf("<script>");
+  } else if (function->name == CONSTANT_STRING("lambda function")) {
+    printf("<lambda fn>");
   } else {
-    printf("<fn %s>", function->name->chars);
+    printf("<%s fn>", function->name->chars);
   }
 }
 
@@ -254,19 +256,17 @@ static void printValueArray(ValueArray* array) {
 
 void printObject(Value value) {
   switch (AS_OBJ(value)->type) {
-    case OBJ_BOUND_OVERLOADED_METHOD: {
-      printf("%s", AS_BOUND_OVERLOADED_METHOD(value)->overloadedMethod->name->chars);
+    case OBJ_BOUND_OVERLOADED_METHOD: 
+      printf("<%s fn>", AS_BOUND_OVERLOADED_METHOD(value)->overloadedMethod->name->chars);
       break;
-    }
-    case OBJ_OVERLOADED_METHOD: {
-      printf("%s", AS_OVERLOADED_METHOD(value)->name->chars);
+    case OBJ_OVERLOADED_METHOD:
+      printf("<%s fn>", AS_OVERLOADED_METHOD(value)->name->chars);
       break;
-    }
     case OBJ_ARRAY:
       printValueArray(&AS_ARRAY(value)->list);
       break;
     case OBJ_MODULE:
-      printf("<module %s>", AS_MODULE(value)->function->name->chars);
+      printf("<%s module>", AS_MODULE(value)->function->name->chars);
       break;
     case OBJ_INSTANCE:
       printf("instance of %s", AS_INSTANCE(value)->obj.klass->name->chars);
