@@ -1,0 +1,30 @@
+// Object with nested properties
+
+var obj = {
+    name: "John",
+    lastName: "Doe",
+    closely: [
+      3663,
+      () -> "something",
+      {
+        take: "entire",
+        track: {
+          appearance: "mail"
+        },
+        handler: () -> {
+            return "handler";
+        }
+      }
+    ]
+};
+
+
+System.log(obj);                                                            // expect instance of Class
+System.log(obj.name);                                                       // expect John
+System.log(obj.lastName);                                                   // expect Doe
+System.log(obj.closely);                                                    // expect [3663, <fn )>, instance of Class]
+System.log(obj.closely[0]);                                                 // expect 3663
+System.log(obj.closely[1]());                                               // expect something
+System.log(obj.closely[2].take);                                            // expect entire
+System.log(obj.closely[2].track.appearance);                                // expect mail
+System.log(obj.closely[2].handler());                                       // expect handler

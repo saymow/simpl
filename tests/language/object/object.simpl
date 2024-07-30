@@ -1,0 +1,10 @@
+// Plain empty object
+
+var obj = {};
+
+obj.name = "John";
+obj.lastName = "Doe";
+
+System.log(obj);                                                            // expect instance of Class
+System.log(obj.name);                                                       // expect John
+System.log(obj.lastName);                                                   // expect Doe
