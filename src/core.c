@@ -200,9 +200,11 @@ static inline bool __nativeArraySlice(int argCount, Value* args) {
     } 
   }
 
+  beginAssemblyLine((Obj*) slicedArray);
   for (;start < end; start++) {
     writeValueArray(&slicedArray->list, array->list.values[start]);        
   }
+  endAssemblyLine();
 
   NATIVE_RETURN(OBJ_VAL(slicedArray));
 }
@@ -382,6 +384,9 @@ static inline bool __nativeStringSplit(int argCount, Value* args) {
   ObjString* separator = SAFE_CONSUME_STRING(args, "separator");
   ObjArray* response = newArray();
 
+  // push beforehand to the stack to protect from the GC 
+  push(OBJ_VAL(response));
+
   int k = 0;  
   for (int i = 0; i < string->length; i++) {
     int j = 0;
@@ -396,7 +401,10 @@ static inline bool __nativeStringSplit(int argCount, Value* args) {
 
     // separator found
     if (j == separator->length) {
-      writeValueArray(&response->list, OBJ_VAL(copyString(&string->chars[k], i - k + (separator->length == 0))));
+      ObjString* segment = copyString(&string->chars[k], i - k + (separator->length == 0));
+      beginAssemblyLine((Obj*) segment);
+      writeValueArray(&response->list, OBJ_VAL(segment));
+      endAssemblyLine();
       k = i + (separator->length == 0 ? 1 : j);
       i = i + (separator->length == 0 ? 0 : j - 1);
     }
@@ -405,8 +413,8 @@ static inline bool __nativeStringSplit(int argCount, Value* args) {
   if (separator->length > 0) {
     writeValueArray(&response->list, OBJ_VAL(copyString(&string->chars[k], string->length - k)));
   }
-  
-  NATIVE_RETURN(OBJ_VAL(response));
+
+  return true;
 }
 
 static inline bool __nativeStringSubstr(int argCount, Value* args) {
@@ -613,7 +621,6 @@ static void defineNativeFunction(VM* vm, Table* methods, const char* string, Nat
   // Creating new method overload and Assign the function to its slot
   ObjOverloadedMethod* overloadedMethod = newNativeOverloadedMethod(name);
   overloadedMethod->as.nativeMethods[arity] = native;
-
   tableSet(methods, name, OBJ_VAL(overloadedMethod));
 }
 

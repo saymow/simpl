@@ -32,8 +32,8 @@ void initVM() {
   initTable(&vm.strings);
   initTable(&vm.global);
   vm.upvalues = NULL;
-  vm.framesCount = 0;
 
+  vm.framesCount = 0;
   vm.tryCatchStackCount = 0;
   vm.loopStackCount = 0;
 
@@ -46,6 +46,8 @@ void initVM() {
   vm.GCThreshold = 1024 * 1024;
 
   initializeCore(&vm);
+
+  vm.lambdaFunctionName = CONSTANT_STRING("lambda function");
 
   vm.state = INITIALIZED;
 }
@@ -85,7 +87,7 @@ ObjString* stackTrace() {
     } else {
       if (IS_FRAME_MODULE(frame)) {
         length += sprintf(&buffer[length], "file %s\n", function->name->chars);
-      } else if (function->name == CONSTANT_STRING("lambda function")) {
+      } else if (function->name == vm.lambdaFunctionName) {
         length += sprintf(&buffer[length], "lambda function\n");  
       } else {
         length += sprintf(&buffer[length], "%s()\n", function->name->chars);
@@ -182,8 +184,8 @@ static bool isFalsey(Value value) {
 }
 
 static void concatenate() {
-  ObjString* b = AS_STRING(pop());
-  ObjString* a = AS_STRING(pop());
+  ObjString* b = AS_STRING(peek(0));
+  ObjString* a = AS_STRING(peek(1));
   int length = a->length + b->length;
 
   char* buffer = ALLOCATE(char, length + 1);
@@ -191,7 +193,11 @@ static void concatenate() {
   memcpy(buffer + a->length, b->chars, b->length);
   buffer[length] = '\0';
 
-  push(OBJ_VAL(takeString(buffer, length)));
+  Value value = OBJ_VAL(takeString(buffer, length));  
+
+  pop();
+  pop();
+  push(value);
 }
 
 static bool callEntry(ObjClosure* closure) {
@@ -430,6 +436,8 @@ static void defineMethod(ObjString* name) {
   ObjClass* klass = AS_CLASS(peek(1));
   Value value;
 
+  AS_CLOSURE(method)->function->name = name;
+
   // Overloading existing method
   //
   // We can only overload user methods, otherwise we override the method overload name.
@@ -587,10 +595,12 @@ static InterpretResult run() {
       case OP_ARRAY: {
         uint8_t length = READ_BYTE();
         ObjArray* array = newArray();
-  
+
+        beginAssemblyLine((Obj*) array);
         for (int idx = 0; idx < length; idx++) {
           writeValueArray(&array->list, peek(length - 1 - idx));
         }
+        endAssemblyLine();
 
         while (length > 0) {
           pop();
@@ -1064,13 +1074,14 @@ static InterpretResult run() {
         Value base = pop();
         int propertiesCount = READ_BYTE();
 
+        beginAssemblyLine(AS_OBJ(base));
         while (propertiesCount > 0) {
-          Value value = pop();
-          ObjString* key = AS_STRING(pop());
-          
-          tableSet(&AS_INSTANCE(base)->properties, key, value);
+          tableSet(&AS_INSTANCE(base)->properties, AS_STRING(peek(1)), peek(0));
+          pop();
+          pop();
           propertiesCount--;
         }
+        endAssemblyLine();
 
         push(base);
 

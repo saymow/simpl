@@ -186,6 +186,9 @@ static void markRoots() {
   }
 
   markAssemblyLine();
+  markCompilerRoots();
+  markTable(&vm.global);
+  markObject((Obj*)vm.lambdaFunctionName);
   markObject((Obj*)vm.klass);
   markObject((Obj*)vm.metaArrayClass);
   markObject((Obj*)vm.metaStringClass);
@@ -204,8 +207,6 @@ static void markRoots() {
   markObject((Obj*)vm.errorClass);
   markObject((Obj*)vm.moduleExportsClass);
   markObject((Obj*)vm.systemClass);
-  markTable(&vm.global);
-  markCompilerRoots();
 }
 
 static void blackenObject(Obj* obj) {
@@ -225,8 +226,14 @@ static void blackenObject(Obj* obj) {
     case OBJ_OVERLOADED_METHOD: {
       ObjOverloadedMethod* overloadedMethod = (ObjOverloadedMethod*)obj;
       markObject((Obj *) overloadedMethod->name);
-      for (int idx = 0; idx < ARGS_ARITY_MAX; idx++) {
-        markObject((Obj *) overloadedMethod->as.nativeMethods[idx]);  
+      if (overloadedMethod->type == USER_METHOD) {
+        for (int idx = 0; idx < ARGS_ARITY_MAX; idx++) {
+          markObject((Obj *) overloadedMethod->as.userMethods[idx]);  
+        }
+      } else {
+        for (int idx = 0; idx < ARGS_ARITY_MAX; idx++) {
+          markObject((Obj *) overloadedMethod->as.nativeMethods[idx]);  
+        }
       }
       break;
     }

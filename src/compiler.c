@@ -119,6 +119,8 @@ static void initCompiler(Compiler* compiler, char* absPath, FunctionType type) {
     compiler->topLevelType = current->topLevelType;
   }
 
+  current = compiler;
+
   switch(type) {
     case TYPE_CONSTRUCTOR:
     case TYPE_FUNCTION:
@@ -128,19 +130,16 @@ static void initCompiler(Compiler* compiler, char* absPath, FunctionType type) {
       break;
     }
     case TYPE_MODULE: {
-      compiler->function->name = takeString(absPath, strlen(absPath));
+      compiler->function->name = copyString(absPath, strlen(absPath));
       break;
     }
     case TYPE_LAMBDA_FUNCTION: {
-      compiler->function->name = CONSTANT_STRING("lambda function");
+      compiler->function->name = vm.lambdaFunctionName;
       break;
     }
     case TYPE_SCRIPT:
       break;
   }
-
-  current = compiler;
-
 
   Local* local = &current->locals[current->localCount++];
   local->depth = 0;
@@ -848,17 +847,20 @@ ObjModule* compileModule(ModuleNode* node, char *absPath, const char* source) {
     declaration();
   }
 
-  ObjModule* module = newModule(endCompiler());
+  ObjFunction* function = endCompiler();
+  beginAssemblyLine((Obj*) function);
+  ObjModule* module = newModule(function);
+  endAssemblyLine();
+  
   ObjModule* returnValue = parser.hadError ? NULL : module;
 
   if (parser.hadError) {
-    fprintf(stderr,"at file: %s\n", absPath);
+    fprintf(stderr, "at file: %s\n", absPath);
   }
 
   parser = previousParser;
   popLexer();
   
-
   return returnValue;
 }
 
@@ -902,6 +904,7 @@ static void importStatement() {
   uint8_t moduleConstant = makeConstant(OBJ_VAL(module));
 
   free(source);
+  free(absPath);
   
   emitBytes(OP_IMPORT, moduleConstant);
   if (constant != -1) {
@@ -1555,7 +1558,7 @@ void object(bool canAssign) {
       count++;
 
       if (count > 255) {
-        error("Can't have more than 255 properties in an object literal.");
+        error("Can't initialize more than 255 properties in an object literal.");
       }
     } while (match(TOKEN_COMMA));
   }

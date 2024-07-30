@@ -117,6 +117,9 @@ typedef struct {
   // - Placeholder System subclass (used to access superclass)
   ObjClass* systemClass;
 
+  // Default name for lambda functions
+  ObjString* lambdaFunctionName;
+
   // Active Loop registers
   Loop loopStack[LOOP_STACK_MAX];
   int loopStackCount;

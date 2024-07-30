@@ -58,7 +58,7 @@ ObjOverloadedMethod* newOverloadedMethod(ObjString* name) {
   overloadedMethod->name = name;
   
   for (int idx = 0; idx < ARGS_ARITY_MAX; idx++) {
-    overloadedMethod->as.nativeMethods[idx] = NULL;  
+    overloadedMethod->as.userMethods[idx] = NULL;  
   }
 
   return overloadedMethod;
@@ -234,7 +234,7 @@ ObjString *copyString(const char *chars, int length) {
 static void printFunction(ObjFunction *function) {
   if (function->name == NULL) {
     printf("<script>");
-  } else if (function->name == CONSTANT_STRING("lambda function")) {
+  } else if (function->name == vm.lambdaFunctionName) {
     printf("<lambda fn>");
   } else {
     printf("<%s fn>", function->name->chars);
