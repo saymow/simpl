@@ -2,6 +2,7 @@
 
 #include "memory.h"
 #include "string.h"
+#include "vm.h"
 
 #define TABLE_MAX_LOAD .75
 
@@ -131,13 +132,17 @@ void tableAddAllInherintance (Table* from, Table* to) {
         ObjOverloadedMethod* overloadedMethod;  
 
         if (AS_OVERLOADED_METHOD(entry->value)->type == NATIVE_METHOD) {
-          overloadedMethod = newNativeOverloadedMethod(AS_OVERLOADED_METHOD(entry->value)->name);
+          overloadedMethod = (ObjOverloadedMethod*) GCWhiteList(
+            (Obj*) newNativeOverloadedMethod(AS_OVERLOADED_METHOD(entry->value)->name)
+          );
         
           for (int idx = 0; idx < ARGS_ARITY_MAX; idx++) {
             overloadedMethod->as.nativeMethods[idx] = AS_OVERLOADED_METHOD(entry->value)->as.nativeMethods[idx];
           }
         } else {
-          overloadedMethod = newOverloadedMethod(AS_OVERLOADED_METHOD(entry->value)->name);
+          overloadedMethod = (ObjOverloadedMethod*) GCWhiteList(
+            (Obj*) newOverloadedMethod(AS_OVERLOADED_METHOD(entry->value)->name)
+          );
         
           for (int idx = 0; idx < ARGS_ARITY_MAX; idx++) {
             overloadedMethod->as.userMethods[idx] = AS_OVERLOADED_METHOD(entry->value)->as.userMethods[idx];
@@ -145,6 +150,7 @@ void tableAddAllInherintance (Table* from, Table* to) {
         }
 
         tableSet(to, entry->key, OBJ_VAL(overloadedMethod));  
+        GCPopWhiteList();
         continue;
       }
       

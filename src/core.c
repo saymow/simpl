@@ -253,13 +253,16 @@ static inline bool __nativeArrayInsert(int argCount, Value* args) {
 static inline bool __nativeArrayJoin(int argCount, Value* args) {
   ObjArray* array = AS_ARRAY(*args);
   ObjString* separator = SAFE_CONSUME_STRING(args, "separator");
-  ObjArray* tmpArray = newArray();
+  ObjArray* tmpArray = (ObjArray*) GCWhiteList((Obj*) newArray());
+  // initialize with separators length
   int length = (array->list.count - 1) * separator->length;
 
+  // increment items length
   for (int idx = 0; idx < array->list.count; idx++) {
-    ObjString* str = toString(array->list.values[idx]);
+    ObjString* str = (ObjString*) GCWhiteList((Obj*) toString(array->list.values[idx]));
     length += str->length;
     writeValueArray(&tmpArray->list, OBJ_VAL(str));
+    GCPopWhiteList();
   }
 
   char *buffer = ALLOCATE(char, length + 1);
@@ -280,6 +283,8 @@ static inline bool __nativeArrayJoin(int argCount, Value* args) {
   memcpy(buffer + currentLength, str->chars, str->length);
 
   buffer[length] = '\0';
+  // Pop tmpArray from GC white list
+  GCPopWhiteList();
 
   NATIVE_RETURN(OBJ_VAL(takeString(buffer, length)));
 }
@@ -597,13 +602,21 @@ static inline bool __nativeStaticMathClamp(int argCount, Value* args) {
 }
 
 static inline bool __nativeStaticErrorNew(int argCount, Value* args) {
-  ObjInstance* instance = newInstance(vm.errorClass);
+  ObjInstance* instance = (ObjInstance*) GCWhiteList((Obj*) newInstance(vm.errorClass));
   ObjString* message = (ObjString*) GCWhiteList((Obj*) SAFE_CONSUME_STRING(args, "error message"));
   ObjString* stack = (ObjString*) GCWhiteList((Obj*) stackTrace());
 
-  tableSet(&instance->properties, CONSTANT_STRING("message"), OBJ_VAL(message));
-  tableSet(&instance->properties, CONSTANT_STRING("stack"), OBJ_VAL(stack));
+  tableSet(&instance->properties, (ObjString*) GCWhiteList((Obj*) CONSTANT_STRING("message")), OBJ_VAL(message));
+  tableSet(&instance->properties, (ObjString*) GCWhiteList((Obj*) CONSTANT_STRING("stack")), OBJ_VAL(stack));
+  // Pop "stack" ObjString 
   GCPopWhiteList();
+  // Pop "message" ObjString
+  GCPopWhiteList();
+  // Pop stack ObjString
+  GCPopWhiteList();
+  // Pop message ObjString  
+  GCPopWhiteList();
+  // Pop instance ObjInstance  
   GCPopWhiteList();  
   
   NATIVE_RETURN(OBJ_VAL(instance));

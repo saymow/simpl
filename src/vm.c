@@ -123,8 +123,8 @@ static void recoverableRuntimeError(const char* format, ...) {
   int length = vsprintf(buffer, format, args);
   buffer[length] = '\0'; 
   va_end(args);
-  ObjString* message = copyString(buffer, length);
-  ObjString* stack = stackTrace();
+  ObjString* message = (ObjString*) GCWhiteList((Obj*) copyString(buffer, length));
+  ObjString* stack = (ObjString*) GCWhiteList((Obj*) stackTrace());
 
   // Throw outside of any try-catch block 
   if (vm.tryCatchStackCount == 0) {
@@ -168,8 +168,11 @@ static void recoverableRuntimeError(const char* format, ...) {
     ObjInstance *errorInstance = (ObjInstance*) GCWhiteList((Obj*) newInstance(vm.errorClass));
     tableSet(&errorInstance->properties, (ObjString*) GCWhiteList((Obj*) CONSTANT_STRING("message")), OBJ_VAL(message));
     tableSet(&errorInstance->properties, (ObjString*) GCWhiteList((Obj*) CONSTANT_STRING("stack")), OBJ_VAL(stack));
+    // Pop "stack" ObjString 
     GCPopWhiteList();
+    // Pop "message" ObjString
     GCPopWhiteList();
+    // Pop errorInstance ObjInstance
     GCPopWhiteList();
 
     push(OBJ_VAL(errorInstance));
@@ -177,6 +180,10 @@ static void recoverableRuntimeError(const char* format, ...) {
 
   // This cover an extreme corner case where we throw an enclosured function in a nested scope.
   closeUpValues(tryCatch->frameStackTop - 1);
+  // Pop stack ObjString
+  GCPopWhiteList();
+  // Pop message ObjString
+  GCPopWhiteList();
 }
 
 static bool isFalsey(Value value) {
@@ -881,33 +888,32 @@ static InterpretResult run() {
         // Pop try-catch block
         TryCatch *tryCatch = &vm.tryCatchStack[--vm.tryCatchStackCount];
 
-        /*
-        * Move to the end of the try-catch block and skip catch statement
-        * We are always gonna reach this intruction inside the same frame the try-catch block was created,
-        * if we dont reach any throw statement. Hence, no need to update the current frame.
-        */ 
+        // Move to the end of the try-catch block and skip catch statement
+        // We are always gonna reach this intruction inside the same frame the try-catch block was created,
+        // if we dont reach any throw statement. Hence, no need to update the current frame.
         frame->ip = tryCatch->outIp;
         break;
       }
       case OP_THROW: {
-        Value value = pop();
-
         // Throw outside of any try-catch block 
         if (vm.tryCatchStackCount == 0) {
+          Value value = pop();
+
           if (IS_INSTANCE(value) && AS_INSTANCE(value)->obj.klass == vm.errorClass) {
-            ObjInstance * error = AS_INSTANCE(value);
+            ObjInstance * error = (ObjInstance*) GCWhiteList((Obj*) AS_INSTANCE(value));
             Value messageValue;
             Value stackValue;
 
-            tableGet(&error->properties, CONSTANT_STRING("message"), &messageValue);
-            tableGet(&error->properties, CONSTANT_STRING("stack"), &stackValue);
+            tableGet(&error->properties, (ObjString*) GCWhiteList((Obj*) CONSTANT_STRING("message")), &messageValue);
+            tableGet(&error->properties, (ObjString*) GCWhiteList((Obj*) CONSTANT_STRING("stack")), &stackValue);
             
             runtimeError(AS_STRING(stackValue), "Uncaught Exception.\n%s", AS_CSTRING(messageValue));
           } else {
-          }
             runtimeError(NULL, "Uncaught Exception.\n%s", toString(value)->chars);
+          }
         }
       
+        Value value = pop();
         // Pop try-catch block
         TryCatch *tryCatch = &vm.tryCatchStack[--vm.tryCatchStackCount]; 
 
@@ -1134,8 +1140,9 @@ static InterpretResult run() {
           FRAME_AS_MODULE(frame)->evaluated = true;
 
           // Copy it exports properties to frame call result
-          ObjInstance* exports = newInstance(vm.moduleExportsClass);
+          ObjInstance* exports = (ObjInstance*) GCWhiteList((Obj*) newInstance(vm.moduleExportsClass));
           tableAddAll(&FRAME_AS_MODULE(frame)->exports, &exports->properties);
+          GCPopWhiteList();
           result = OBJ_VAL(exports);
         } 
 
