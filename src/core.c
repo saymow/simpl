@@ -186,6 +186,10 @@ static inline bool __nativeArrayShift(int argCount, Value* args) {
 static inline bool __nativeArraySlice(int argCount, Value* args) {
   ObjArray* array = AS_ARRAY(*args);
   ObjArray* slicedArray = newArray();
+  
+  // push beforehand to the stack to protect from the GC 
+  push(OBJ_VAL(slicedArray));
+
   int start = 0;
   int end = array->list.count;
 
@@ -200,13 +204,11 @@ static inline bool __nativeArraySlice(int argCount, Value* args) {
     } 
   }
 
-  beginAssemblyLine((Obj*) slicedArray);
   for (;start < end; start++) {
     writeValueArray(&slicedArray->list, array->list.values[start]);        
   }
-  endAssemblyLine();
 
-  NATIVE_RETURN(OBJ_VAL(slicedArray));
+  return true;
 }
 
 static inline bool __nativeArrayIndexOf(int argCount, Value* args) {
@@ -291,20 +293,21 @@ static inline bool __nativeStaticArrayNew(int argCount, Value* args) {
   ObjArray* array = newArray();
   int length = argCount == 1 ? SAFE_CONSUME_NUMBER(args, "length") : 0;
 
+  // push beforehand to the stack to protect from the GC
+  push(OBJ_VAL(array));
+
   while (array->list.capacity < length) {
     array->list.capacity = GROW_CAPACITY(array->list.capacity);
   }
 
-  beginAssemblyLine((Obj *) array);
   array->list.values = GROW_ARRAY(Value, array->list.values, 0, array->list.capacity);
-  endAssemblyLine();
 
   for (int idx = 0; idx < length; idx++) {
     array->list.values[idx] = NIL_VAL;
   }
   array->list.count = length;
   
-  NATIVE_RETURN(OBJ_VAL(array));
+  return true;
 }
 
 static inline bool __nativeSystemLog(int argCount, Value* args) {
@@ -401,10 +404,9 @@ static inline bool __nativeStringSplit(int argCount, Value* args) {
 
     // separator found
     if (j == separator->length) {
-      ObjString* segment = copyString(&string->chars[k], i - k + (separator->length == 0));
-      beginAssemblyLine((Obj*) segment);
+      ObjString* segment = (ObjString*) GCWhiteList((Obj*) copyString(&string->chars[k], i - k + (separator->length == 0)));
       writeValueArray(&response->list, OBJ_VAL(segment));
-      endAssemblyLine();
+      GCPopWhiteList();
       k = i + (separator->length == 0 ? 1 : j);
       i = i + (separator->length == 0 ? 0 : j - 1);
     }
@@ -596,13 +598,13 @@ static inline bool __nativeStaticMathClamp(int argCount, Value* args) {
 
 static inline bool __nativeStaticErrorNew(int argCount, Value* args) {
   ObjInstance* instance = newInstance(vm.errorClass);
-  ObjString* message = SAFE_CONSUME_STRING(args, "error message");
-  ObjString* stack = stackTrace();
+  ObjString* message = (ObjString*) GCWhiteList((Obj*) SAFE_CONSUME_STRING(args, "error message"));
+  ObjString* stack = (ObjString*) GCWhiteList((Obj*) stackTrace());
 
-  beginAssemblyLine((Obj *) stack);
   tableSet(&instance->properties, CONSTANT_STRING("message"), OBJ_VAL(message));
   tableSet(&instance->properties, CONSTANT_STRING("stack"), OBJ_VAL(stack));
-  endAssemblyLine();  
+  GCPopWhiteList();
+  GCPopWhiteList();  
   
   NATIVE_RETURN(OBJ_VAL(instance));
 }

@@ -10,6 +10,7 @@
 #define STACK_MAX (FRAMES_MAX * UINT8_COUNT)
 #define TRY_CATCH_STACK_MAX 8
 #define LOOP_STACK_MAX 8
+#define GC_WHITE_LIST_MAX 16
 
 typedef enum { FRAME_TYPE_CLOSURE, FRAME_TYPE_MODULE } CallFrameType;
 
@@ -138,14 +139,14 @@ typedef struct {
 
   // All tracked objects that Gargage Collector has control over
   Obj* objects;
+
   // Most Objects only exists in the presence of others Objects. For instance a Function
   // MUST be associated with a String in order to have a name to be referenced.
   // This field is intended to track the objects assembly line, i.e, objects that are not
   // part of the program yet (The GC would not be able to mark them otherwise), but should not be collected
   // if the garbage collection is triggered.
-  // If this is not NULL, all objects up until the one it is pointing to are considered 
-  // part of the assembly line and, therefore, should be marked. 
-  Obj* objectsAssemblyLineEnd;
+  Obj* GCWhiteList[GC_WHITE_LIST_MAX];
+  int GCWhiteListCount;
 
   // Quantity of bytes allocated by the program, it can be manual allocation or not.
   // TODO: files read are not being counted on this.  
@@ -197,7 +198,7 @@ void push(Value value);
 Value pop();
 Value peek(int distance);
 ObjString* stackTrace();
-void beginAssemblyLine(Obj* obj);
-void endAssemblyLine();
+Obj* GCWhiteList(Obj* obj);
+void GCPopWhiteList();
 
 #endif

@@ -129,14 +129,15 @@ ObjClass *newClass(ObjString *name) {
     return newSystemClass(name);
   }
   
-  beginAssemblyLine((Obj *) name);
-  ObjClass *klass = ALLOCATE_OBJ(OBJ_CLASS, ObjClass);
+  GCWhiteList((Obj *) name);
+  ObjClass *klass = (ObjClass*) GCWhiteList((Obj*) ALLOCATE_OBJ(OBJ_CLASS, ObjClass));
   klass->name = name;
   initTable(&klass->methods);
 
   klass->obj.klass = vm.klass;
   tableAddAllInherintance(&vm.klass->methods, &klass->methods);
-  endAssemblyLine();
+  GCPopWhiteList();
+  GCPopWhiteList();
 
   return klass;
 }
@@ -198,9 +199,9 @@ ObjString *allocateString(char *chars, int length) {
   string->hash = hashString(chars, length);
   string->obj.klass = vm.stringClass;
 
-  beginAssemblyLine((Obj*) string);
+  GCWhiteList((Obj*) string);
   tableSet(&vm.strings, string, BOOL_VAL(true));
-  endAssemblyLine();
+  GCPopWhiteList();
 
   return string;
 }

@@ -847,10 +847,9 @@ ObjModule* compileModule(ModuleNode* node, char *absPath, const char* source) {
     declaration();
   }
 
-  ObjFunction* function = endCompiler();
-  beginAssemblyLine((Obj*) function);
+  ObjFunction* function = (ObjFunction*) GCWhiteList((Obj*) endCompiler());
   ObjModule* module = newModule(function);
-  endAssemblyLine();
+  GCPopWhiteList();
   
   ObjModule* returnValue = parser.hadError ? NULL : module;
 
@@ -1046,10 +1045,9 @@ ObjFunction* compile(const char* source, char* absPath) {
     declaration();
   }
 
-  ObjFunction* function = endCompiler();
-  beginAssemblyLine((Obj *) function);
+  ObjFunction* function = (ObjFunction*) GCWhiteList((Obj *) endCompiler());
   freeModules(&modules);
-  endAssemblyLine();
+  GCPopWhiteList();
 
   if (parser.hadError) {
     fprintf(stderr,"at file: %s\n", basePath);

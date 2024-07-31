@@ -38,12 +38,12 @@ void initVM() {
   vm.loopStackCount = 0;
 
   vm.objects = NULL;
-  vm.objectsAssemblyLineEnd = NULL;
   vm.grayCount = 0;
   vm.grayCapacity = 0;
   vm.grayStack = NULL;
   vm.bytesAllocated = 0;
   vm.GCThreshold = 1024 * 1024;
+  vm.GCWhiteListCount = 0;
 
   initializeCore(&vm);
 
@@ -52,16 +52,13 @@ void initVM() {
   vm.state = INITIALIZED;
 }
 
-// All objects created after beginAssemblyLine is called (and the obj argument) 
-// are considered part of the assembly line. Hence, cannot be garbage collected.
-// When endAssemblyLine is called, the objects privileges are taken away. 
-void beginAssemblyLine(Obj* obj) {
-  if (vm.objectsAssemblyLineEnd != NULL) return;
-  vm.objectsAssemblyLineEnd = obj;
+Obj* GCWhiteList(Obj* obj) {
+  vm.GCWhiteList[vm.GCWhiteListCount++] = obj;
+  return obj;
 }
 
-void endAssemblyLine() {
-  vm.objectsAssemblyLineEnd = NULL;
+void GCPopWhiteList() {
+  vm.GCWhiteListCount--;
 }
 
 void freeVM() {
@@ -168,14 +165,17 @@ static void recoverableRuntimeError(const char* format, ...) {
 
   // If the catch block is compiled to receive a param, it should expect the param as a local variable in the stack
   if (tryCatch->hasCatchParameter) {
-    ObjInstance *errorInstance = newInstance(vm.errorClass);
-    tableSet(&errorInstance->properties, CONSTANT_STRING("message"), OBJ_VAL(message));
-    tableSet(&errorInstance->properties, CONSTANT_STRING("stack"), OBJ_VAL(stack));
+    ObjInstance *errorInstance = (ObjInstance*) GCWhiteList((Obj*) newInstance(vm.errorClass));
+    tableSet(&errorInstance->properties, (ObjString*) GCWhiteList((Obj*) CONSTANT_STRING("message")), OBJ_VAL(message));
+    tableSet(&errorInstance->properties, (ObjString*) GCWhiteList((Obj*) CONSTANT_STRING("stack")), OBJ_VAL(stack));
+    GCPopWhiteList();
+    GCPopWhiteList();
+    GCPopWhiteList();
 
     push(OBJ_VAL(errorInstance));
   }
 
-  // This cover an extreme corner case where we throw an enclosed function in a nested scope.
+  // This cover an extreme corner case where we throw an enclosured function in a nested scope.
   closeUpValues(tryCatch->frameStackTop - 1);
 }
 
@@ -453,12 +453,13 @@ static void defineMethod(ObjString* name) {
   }
 
   // Creating new method overload and Assign the function to its slot
-  ObjOverloadedMethod* overloadedMethod = newOverloadedMethod(name);
-  beginAssemblyLine((Obj *) name);
+  ObjOverloadedMethod* overloadedMethod = (ObjOverloadedMethod*) GCWhiteList((Obj*) newOverloadedMethod(name));
+  GCWhiteList((Obj *) name);
   overloadedMethod->as.userMethods[AS_CLOSURE(method)->function->arity] = AS_CLOSURE(method);
 
   tableSet(&klass->methods, name, OBJ_VAL(overloadedMethod));
-  endAssemblyLine();
+  GCPopWhiteList();
+  GCPopWhiteList();
   pop();
 }
 
@@ -596,11 +597,11 @@ static InterpretResult run() {
         uint8_t length = READ_BYTE();
         ObjArray* array = newArray();
 
-        beginAssemblyLine((Obj*) array);
+        GCWhiteList((Obj*) array);
         for (int idx = 0; idx < length; idx++) {
           writeValueArray(&array->list, peek(length - 1 - idx));
         }
-        endAssemblyLine();
+        GCPopWhiteList();
 
         while (length > 0) {
           pop();
@@ -1070,21 +1071,24 @@ static InterpretResult run() {
       case OP_OBJECT: {
         // push placeholder value where object instance is gonna be stored
         push(NIL_VAL);
-        callConstructor(vm.klass, 0);  
-        Value base = pop();
+        callConstructor(vm.klass, 0);
+        // pop instance from stack in order to have access to the properties    
+        Value object = pop();
         int propertiesCount = READ_BYTE();
 
-        beginAssemblyLine(AS_OBJ(base));
+        GCWhiteList(AS_OBJ(object));
         while (propertiesCount > 0) {
-          tableSet(&AS_INSTANCE(base)->properties, AS_STRING(peek(1)), peek(0));
+          // in case GC is called during tableSet, we need to have the property key-value
+          // stacked, to prevent it from being collected.
+          tableSet(&AS_INSTANCE(object)->properties, AS_STRING(peek(1)), peek(0));
           pop();
           pop();
           propertiesCount--;
         }
-        endAssemblyLine();
+        GCPopWhiteList();
 
-        push(base);
-
+        // after all properties are consumed, push instance to the stack again 
+        push(object);
         break;        
       }
       case OP_CLOSE_UPVALUE: {
@@ -1169,15 +1173,14 @@ static InterpretResult run() {
 }
 
 InterpretResult interpret(const char* source, char* absPath) {
-  ObjFunction* function = compile(source, absPath);
+  ObjFunction* function = (ObjFunction*) GCWhiteList((Obj*)compile(source, absPath));
 
   if (function == NULL) {
     return INTERPRET_COMPILE_ERROR;
   }
 
-  vm.objectsAssemblyLineEnd = (Obj *) function;
   ObjClosure* closure = newClosure(function);
-  vm.objectsAssemblyLineEnd = NULL;
+  GCPopWhiteList(function);
 
   push(OBJ_VAL(closure));
   callEntry(closure);

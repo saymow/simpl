@@ -155,14 +155,9 @@ void markArray(ValueArray* valueArray) {
   }
 }
 
-static void markAssemblyLine() {
-  if (vm.objectsAssemblyLineEnd == NULL) return;
-
-  Obj* current = vm.objects;
-
-  while (current != vm.objectsAssemblyLineEnd->next) {
-    markObject(current);
-    current = current->next;
+static void markGCWhiteList() {
+  for (int idx = 0; idx < vm.GCWhiteListCount; idx++) {
+    markObject((Obj*) vm.GCWhiteList[idx]);
   }
 }
 
@@ -185,7 +180,7 @@ static void markRoots() {
     markObject((Obj*)upvalue);
   }
 
-  markAssemblyLine();
+  markGCWhiteList();
   markCompilerRoots();
   markTable(&vm.global);
   markObject((Obj*)vm.lambdaFunctionName);
