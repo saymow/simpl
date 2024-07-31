@@ -18,6 +18,9 @@ compile-debug-logs:
 compile-debug-gc:
 	@gcc -o main.run *.c -DDEBUG_GC -Wall -I . -lshlwapi
 
+compile-stress-gc:
+	@gcc -o main.run *.c -DDEBUG_STRESS_GC -Wall -I . -lshlwapi
+
 compile-debug-and-debugger:
 	@gcc -o main-debugger.run *.c -DDEBUG -Wall -I . -lshlwapi -g
 
@@ -42,5 +45,8 @@ exec-debug-logs:
 exec-debug-gc:
 	@make compile-debug-gc --no-print-directory && make run --no-print-directory
 
+exec-stress-gc:
+	@make compile-stress-gc --no-print-directory && make run --no-print-directory
+
 build:
-	@make compile && cp ./main.run ../build/simpl.exe
+	@make compile && cp ./main.run ../build/simpl.exe && make compile-stress-gc && cp ./main.run ../build/simpl-stress-gc.exe
