@@ -1,12 +1,15 @@
-import { ExpectationTestSuite } from "./expectations-test-reader";
+import { StandardTestSuite } from "./standard-test-reader";
 import { Settings, TestRunnerController } from "./interfaces";
-import TestRunner from "./test-runner";
+import StandardTestRunner from "./standard-test-runner";
 
 class StandardTestRunnerController extends TestRunnerController {
   private is_running = false;
-  private failedTestSuites: ExpectationTestSuite[] = [];
+  private failedTestSuites: StandardTestSuite[] = [];
 
-  constructor(settings: Settings) {
+  constructor(
+    settings: Settings,
+    public readonly skipAssertions: boolean = false
+  ) {
     super(settings);
   }
 
@@ -14,7 +17,11 @@ class StandardTestRunnerController extends TestRunnerController {
     if (this.is_running) return;
 
     this.is_running = true;
-    const testsRunner = new TestRunner(this.vmPath, this.testsDir);
+    const testsRunner = new StandardTestRunner(
+      this.vmPath,
+      this.testsDir,
+      this.skipAssertions
+    );
     this.failedTestSuites =
       (await testsRunner.execute()) ?? this.failedTestSuites;
 
@@ -27,7 +34,11 @@ class StandardTestRunnerController extends TestRunnerController {
     if (this.failedTestSuites.length === 0) return;
 
     this.is_running = true;
-    const testsRunner = new TestRunner(this.vmPath, this.testsDir);
+    const testsRunner = new StandardTestRunner(
+      this.vmPath,
+      this.testsDir,
+      this.skipAssertions
+    );
     this.failedTestSuites =
       (await testsRunner.executeTestSuites(this.failedTestSuites)) ??
       this.failedTestSuites;

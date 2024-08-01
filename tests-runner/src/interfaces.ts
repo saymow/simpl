@@ -13,6 +13,7 @@ export abstract class TestRunnerController {
 export enum Mode {
   Standard,
   Benchmark,
+  Run
 }
 
 export interface Settings {

@@ -5,10 +5,10 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsnd src/index.ts --vm=\"C:/Users/gustavo/Desktop/projects/simplc/build/simpl.exe\" --tests=\"C:/Users/gustavo/Desktop/projects/simplc/tests/language\"",
-    "dev:benchmark": "tsnd src/index.ts --vm=\"C:/Users/gustavo/Desktop/projects/simplc/build/simpl.exe\" --tests=\"C:/Users/gustavo/Desktop/projects/simplc/tests/benchmark\" --benchmark-mode",
+    "dev:benchmark": "tsnd src/index.ts --vm=\"C:/Users/gustavo/Desktop/projects/simplc/build/simpl.exe\" --tests=\"C:/Users/gustavo/Desktop/projects/simplc/tests/benchmark\" --mode=benchmark",
     "start": "node dist/index.js --vm=\"C:/Users/gustavo/Desktop/projects/simplc/build/simpl.exe\" --tests=\"C:/Users/gustavo/Desktop/projects/simplc/tests/language\"",
-    "start:stress-gc": "node dist/index.js --vm=\"C:/Users/gustavo/Desktop/projects/simplc/build/simpl-stress-gc.exe\" --tests=\"C:/Users/gustavo/Desktop/projects/simplc/tests/language\"",
-    "start:benchmark": "node dist/index.js --vm=\"C:/Users/gustavo/Desktop/projects/simplc/build/simpl.exe\" --tests=\"C:/Users/gustavo/Desktop/projects/simplc/tests/benchmark\" --benchmark-mode"
+    "start:stress-gc": "node dist/index.js --vm=\"C:/Users/gustavo/Desktop/projects/simplc/build/simpl-stress-gc.exe\" --tests=\"C:/Users/gustavo/Desktop/projects/simplc/tests/language\" --mode=run",
+    "start:benchmark": "node dist/index.js --vm=\"C:/Users/gustavo/Desktop/projects/simplc/build/simpl.exe\" --tests=\"C:/Users/gustavo/Desktop/projects/simplc/tests/benchmark\" --mode=benchmark"
   },
   "keywords": [],
   "author": "",

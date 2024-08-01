@@ -1,7 +1,7 @@
 import colors from "colors";
 import FilesReader from "./files-reader";
-import ExpectationTestReader, { ExpectationTestSuite } from "./expectations-test-reader";
-import TestSuiteRunner from "./test-suite-runner";
+import StandardTestReader, { StandardTestSuite } from "./standard-test-reader";
+import TestSuiteRunner from "./standard-test-suite-runner";
 
 interface FinalResult {
   suites: {
@@ -14,10 +14,11 @@ interface FinalResult {
   };
 }
 
-class TestRunner {
+class StandardTestRunner {
   constructor(
     private readonly vmPath: string,
-    private readonly testsDir: string
+    private readonly testsDir: string,
+    private readonly skipAssertions: boolean
   ) {}
 
   runStopwatch() {
@@ -38,7 +39,8 @@ class TestRunner {
         `${results.suites.successes + results.suites.fails} total`
     );
 
-    console.log(
+    if (this.skipAssertions) {
+      console.log(
       colors.white.bold("Assertions ".padEnd(14, " ") + ": ") +
         (results.assertions.fails
           ? colors.red.bold(`${results.assertions.fails} failed`) + ", "
@@ -48,22 +50,24 @@ class TestRunner {
           : "") +
         `${results.assertions.successes + results.assertions.fails} total`
     );
+    }
 
     console.timeEnd(colors.white.bold("Time".padEnd(14, " ")));
   }
 
-  async run(testSuites: ExpectationTestSuite[]): Promise<ExpectationTestSuite[]> {
-    const failedTests: ExpectationTestSuite[] = [];
+  async run(testSuites: StandardTestSuite[]): Promise<StandardTestSuite[]> {
+    const failedTests: StandardTestSuite[] = [];
     const results: FinalResult = {
       suites: { successes: 0, fails: 0 },
       assertions: { successes: 0, fails: 0 },
     };
 
     for (const testSuite of testSuites) {
-      const suiteResults = await new TestSuiteRunner(
-        this.vmPath,
-        testSuite
-      ).execute();
+      const testSuiteRunner = new TestSuiteRunner(this.vmPath, testSuite);
+      const suiteResults = await (this.skipAssertions
+        ? testSuiteRunner.softExecute()
+        : testSuiteRunner.execute()
+      );
 
       results.assertions.successes += suiteResults.successes;
       results.assertions.fails += suiteResults.fails;
@@ -80,7 +84,7 @@ class TestRunner {
     return failedTests;
   }
 
-  async executeTestSuites(testSuites: ExpectationTestSuite[]) {
+  async executeTestSuites(testSuites: StandardTestSuite[]) {
     try {
       this.runStopwatch();
       return this.run(testSuites);
@@ -94,10 +98,10 @@ class TestRunner {
       this.runStopwatch();
       const filesReader = new FilesReader(this.testsDir);
       const testFiles = await filesReader.execute();
-      const testSuites: ExpectationTestSuite[] = [];
+      const testSuites: StandardTestSuite[] = [];
 
       for (const testFile of testFiles) {
-        const testSuitesReader = new ExpectationTestReader(testFile);
+        const testSuitesReader = new StandardTestReader(testFile);
         const testSuite = testSuitesReader.execute();
 
         // File is flagged to be skiped
@@ -113,4 +117,4 @@ class TestRunner {
   }
 }
 
-export default TestRunner;
+export default StandardTestRunner;

@@ -23,17 +23,17 @@ export type ErrorAssertion = Assertion<{
   message?: string;
 }>;
 
-export interface Expectations {
+export interface Assertions {
   expects: ExpectAssertion[];
   error?: ErrorAssertion;
 }
 
-export interface ExpectationTestSuite extends TestSuite {
-  expectation: Expectations;
+export interface StandardTestSuite extends TestSuite {
+  assertions: Assertions;
 }
 
-class ExpectationTestReader extends TestReader {
-  private readonly expectations: Expectations = { expects: [] };
+class StandardTestReader extends TestReader {
+  private readonly assertions: Assertions = { expects: [] };
 
   private resolveErrorTest(
     line: number,
@@ -44,7 +44,7 @@ class ExpectationTestReader extends TestReader {
     if (!Object.values(VmErrors).includes(error as any)) {
       throw this.error(line, "invalid error type.");
     }
-    if (this.expectations.error) {
+    if (this.assertions.error) {
       throw this.error(line, "can only test for error once.");
     }
 
@@ -54,7 +54,7 @@ class ExpectationTestReader extends TestReader {
     };
   }
 
-  execute(): ExpectationTestSuite | null {
+  execute(): StandardTestSuite | null {
     if (this.shouldSkip) return null;
 
     for (let idx = 0; idx < this.lines.length; idx++) {
@@ -66,18 +66,18 @@ class ExpectationTestReader extends TestReader {
         const voidTest = EXPECT_VOID_REGEX.test(expectTest[0]);
 
         if (voidTest) {
-          this.expectations.expects.push({ data: null, line });
+          this.assertions.expects.push({ data: null, line });
           continue;
         }
 
-        this.expectations.expects.push({ data: expectTest[0], line });
+        this.assertions.expects.push({ data: expectTest[0], line });
         continue;
       }
 
       const errorTest = ERROR_REGEX.exec(text);
 
       if (errorTest) {
-        this.expectations.error = this.resolveErrorTest(line, errorTest[0]);
+        this.assertions.error = this.resolveErrorTest(line, errorTest[0]);
         continue;
       }
     }
@@ -85,9 +85,9 @@ class ExpectationTestReader extends TestReader {
     return {
       title: this.title,
       testFile: this.testFile,
-      expectation: this.expectations,
+      assertions: this.assertions,
     };
   }
 }
 
-export default ExpectationTestReader;
+export default StandardTestReader;

@@ -15,10 +15,6 @@ enum TestCommand {
 }
 
 class BenchmarkTestRunnerController extends TestRunnerController {
-  constructor(settings: Settings) {
-    super(settings);
-  }
-
   async readLine(): Promise<string> {
     return new Promise<string>((resolve) => {
       process.stdin.setRawMode(false);
@@ -149,6 +145,7 @@ class BenchmarkTestRunnerController extends TestRunnerController {
       } while (true);
     } catch (err) {
       console.error(err);
+      throw err;
     }
   }
 

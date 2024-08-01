@@ -1,6 +1,6 @@
 import { exec } from "child_process";
 import { TestSuite } from "./test-reader";
-import { VmErrors } from "./expectations-test-reader";
+import { VmErrors } from "./standard-test-reader";
 import colors from "colors";
 import { LINE_TERMINATOR_REGEX } from "./utils";
 
