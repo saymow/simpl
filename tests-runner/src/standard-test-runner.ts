@@ -39,17 +39,17 @@ class StandardTestRunner {
         `${results.suites.successes + results.suites.fails} total`
     );
 
-    if (this.skipAssertions) {
+    if (!this.skipAssertions) {
       console.log(
-      colors.white.bold("Assertions ".padEnd(14, " ") + ": ") +
-        (results.assertions.fails
-          ? colors.red.bold(`${results.assertions.fails} failed`) + ", "
-          : "") +
-        (results.assertions.successes
-          ? colors.green.bold(`${results.assertions.successes} passed`) + ", "
-          : "") +
-        `${results.assertions.successes + results.assertions.fails} total`
-    );
+        colors.white.bold("Assertions ".padEnd(14, " ") + ": ") +
+          (results.assertions.fails
+            ? colors.red.bold(`${results.assertions.fails} failed`) + ", "
+            : "") +
+          (results.assertions.successes
+            ? colors.green.bold(`${results.assertions.successes} passed`) + ", "
+            : "") +
+          `${results.assertions.successes + results.assertions.fails} total`
+      );
     }
 
     console.timeEnd(colors.white.bold("Time".padEnd(14, " ")));
@@ -66,8 +66,7 @@ class StandardTestRunner {
       const testSuiteRunner = new TestSuiteRunner(this.vmPath, testSuite);
       const suiteResults = await (this.skipAssertions
         ? testSuiteRunner.softExecute()
-        : testSuiteRunner.execute()
-      );
+        : testSuiteRunner.execute());
 
       results.assertions.successes += suiteResults.successes;
       results.assertions.fails += suiteResults.fails;

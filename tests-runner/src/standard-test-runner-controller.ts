@@ -5,12 +5,11 @@ import StandardTestRunner from "./standard-test-runner";
 class StandardTestRunnerController extends TestRunnerController {
   private is_running = false;
   private failedTestSuites: StandardTestSuite[] = [];
+  private skipAssertions: boolean;
 
-  constructor(
-    settings: Settings,
-    public readonly skipAssertions: boolean = false
-  ) {
+  constructor(settings: Settings, skipAssertions: boolean) {
     super(settings);
+    this.skipAssertions = skipAssertions;
   }
 
   private async run() {

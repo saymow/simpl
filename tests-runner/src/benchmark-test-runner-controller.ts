@@ -1,11 +1,9 @@
-import BenchmarkTestSaver from "./benchmark-test-saver";
-import BenchmarkTestSuiteRunner, {
-  BenchmarkResults,
-} from "./benchmark-test-suite-runner";
-import FilesReader, { TestFile } from "./files-reader";
-import { Settings, TestRunnerController } from "./interfaces";
-import TestReader, { TestSuite } from "./test-reader";
 import colors from "colors";
+import BenchmarkTestSaver from "./benchmark-test-saver";
+import BenchmarkTestSuiteRunner from "./benchmark-test-suite-runner";
+import FilesReader from "./files-reader";
+import { TestRunnerController } from "./interfaces";
+import TestReader, { TestSuite } from "./test-reader";
 import { sleep } from "./utils";
 
 enum TestCommand {
@@ -154,7 +152,9 @@ class BenchmarkTestRunnerController extends TestRunnerController {
 
     testSuites.forEach((testSuite, idx) => {
       console.log(
-        `Press '${idx}' to run ${colors.bold.white(testSuite.title ?? testSuite.testFile.id)}`
+        `Press '${idx}' to run ${colors.bold.white(
+          testSuite.title ?? testSuite.testFile.id
+        )}`
       );
     });
     console.log(`Press '${testSuites.length}' to exit.`);

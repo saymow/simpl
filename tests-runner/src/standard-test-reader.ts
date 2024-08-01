@@ -1,4 +1,3 @@
-import { TestFile } from "./files-reader";
 import TestReader, { TestSuite } from "./test-reader";
 
 const EXPECT_REGEX = /(?<=\/\/\sexpect\s).+/;

@@ -19,7 +19,7 @@ const displayHelp = () => {
       '(Optional) - modes: "standard" (default), "benchmark" and "run".'
   );
   process.exit(1);
-}
+};
 
 const parseSettings = (): Settings => {
   const args = argsParser(process.argv);
@@ -55,11 +55,11 @@ const parseSettings = (): Settings => {
 const makeTestRunnerController = (settings: Settings): TestRunnerController => {
   if (settings.mode === Mode.Benchmark) {
     return new BenchmarkTestRunnerController(settings);
-  } else if (settings.mode = Mode.Run) {
+  } else if (settings.mode === Mode.Run) {
     return new StandardTestRunnerController(settings, true);
   }
 
-  return new StandardTestRunnerController(settings);
+  return new StandardTestRunnerController(settings, false);
 };
 
 const main = async () => {
