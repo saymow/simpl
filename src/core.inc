@@ -53,6 +53,18 @@ class Array {
     return nil;
   }
 
+  findIndex(callback) {
+    var length = this.length();                
+
+    for (var idx = 0; idx < length; idx += 1)  {
+      if (callback(this[idx], idx, this)) {
+        return idx;
+      }
+    }
+
+    return -1;
+  }
+
   reduce(callback) {
     var length = this.length();
     
