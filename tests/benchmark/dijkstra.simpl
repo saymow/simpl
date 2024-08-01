@@ -1,0 +1,116 @@
+// Dijkstra iterative implementation
+
+var N = 100000;
+
+var elements = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
+var matrix = [
+    [0, 1, 0, 1, 0, 0, 0, 1, 0, 0],     // A         
+    [1, 0, 1, 0, 0, 0, 1, 0, 0, 0],     // B
+    [1, 1, 0, 1, 0, 0, 0, 0, 0, 0],     // C
+    [1, 1, 1, 0, 1, 0, 0, 0, 0, 0],     // D
+    [1, 1, 1, 1, 0, 0, 0, 0, 0, 0],     // E
+    [1, 1, 1, 1, 0, 0, 1, 1, 0, 0],     // F
+    [1, 1, 1, 1, 1, 1, 0, 1, 0, 0],     // G
+    [1, 1, 1, 1, 1, 1, 1, 0, 0, 1],     // H
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 1],     // I
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 0]      // J
+];
+
+fun swap(queue, i, j) {
+    var tmp = queue[i];
+    queue[i] = queue[j];
+    queue[j] = tmp;
+}
+
+fun insertPriorityQueue(queue, item) {
+    var idx = queue.findIndex((it) -> it.weight < item.weight);
+    
+    if (idx == -1) {
+        idx = queue.length();
+    }
+
+    queue.insert(idx, item);
+}
+
+fun updatePriorityQueue(queue, item) {
+    var itemIdx = queue.findIndex((it) -> it.idx == item.idx);
+    var queueLen = queue.length();
+
+    queue[itemIdx].weight = Math.min(queue[itemIdx].weight, item.weight);
+
+    while (itemIdx < (queueLen - 1) and queue[itemIdx].idx < queue[itemIdx + 1].idx) {
+        swap(queue, itemIdx, itemIdx + 1);
+        itemIdx += 1;
+    }
+}
+
+fun insertOrUpdatePriorityQueue(queue, item) {
+    var contains = !!queue.find((it) -> it.idx == item.idx);
+
+    if (contains) {
+        return updatePriorityQueue(queue, item);
+    } else {
+        insertPriorityQueue(queue, item);
+        return true;
+    }
+}
+
+fun path(order, elements, originIdx, targetIdx) {
+    var idx = targetIdx;
+    var path = [];
+
+    while (order[idx] != -1) {
+        path.unshift(elements[idx]);
+        idx = order[idx];
+    }
+
+    path.unshift(elements[originIdx]);
+
+    return path;
+}
+
+fun dijkstra(matrix, elements, origin, target) {
+    var originIdx = elements.indexOf(origin);
+    var targetIdx = elements.indexOf(target);
+    var visited = Array(elements.length());
+    var order = Array(elements.length()).map(() -> -1);
+    var queue = [{ idx: originIdx, weight: 0 }];
+
+    while (queue.length() > 0) {
+        var item = queue.pop();
+
+        if (item.idx == targetIdx) return path(order, elements, originIdx, targetIdx);
+
+        for (var idx = 0; idx < elements.length(); idx += 1) {
+            if (matrix[item.idx][idx] == 1 and visited[idx] == nil) {
+                if (insertOrUpdatePriorityQueue(queue, { idx: idx, weight: item.weight + 1})) {
+                    order[idx] = item.idx;
+                }
+            }
+        }
+
+        visited[item.idx] = true;
+    }
+
+    return false;
+}
+
+
+var start = System.clock();
+
+for (var idx = 0; idx < N; idx += 1) {
+    for (element of elements) {
+        dijkstra(matrix, elements, "A", element);
+    }
+}
+
+System.log(System.clock() - start);
+
+// -------------------------- BENCHMARK ---------------------------
+// version                 alpha-0.0.3 - add compilation perf flags
+// rounds                                                         3
+// min                                                      65.749s
+// max                                                      68.373s
+// median                                                   66.366s
+// avg                                                      66.829s
+// stdDeviation                                              1.120s
