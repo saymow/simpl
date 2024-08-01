@@ -29,3 +29,11 @@ System.log(System.clock() - start);
 // median                                                   77.539s
 // avg                                                      81.172s
 // stdDeviation                                              5.322s
+// -------------------------- BENCHMARK ---------------------------
+// version                 alpha-0.0.3 - add compilation perf flags
+// rounds                                                         3
+// min                                                      19.027s
+// max                                                      24.029s
+// median                                                   19.319s
+// avg                                                      20.792s
+// stdDeviation                                              2.292s
