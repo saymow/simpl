@@ -1,0 +1,25 @@
+// Array.find
+
+class Person {}
+
+var person = Person();
+
+System.log([1, 2, 3, 4, 5].findIndex(fun (num) {                                                               // expect 2
+    return num == 3;
+}));
+
+System.log([1, 2, 3, 4, 5].findIndex(fun (num) {                                                               // expect 3
+    return num > 3;
+}));
+
+System.log([1, 2, 3, person, 5].findIndex(fun (item) {                                                         // expect 3
+    return item == person;
+}));
+
+System.log(["a", "b", "c"].findIndex(fun (item, idx, arr) {                                                    // expect -1
+    return item == "d";
+}));
+
+System.log(["a", "b", "c"].findIndex(fun (item, idx, arr) {                                                    // expect 2
+    return idx == 2;
+}));
