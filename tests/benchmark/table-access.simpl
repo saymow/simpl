@@ -1,4 +1,4 @@
-// Intensively test table lookup access  
+// Intensively test table lookup access.  
 
 var N = 150000000;
 
@@ -45,3 +45,11 @@ System.log(System.clock() - start);
 // median                                                   52.079s
 // avg                                                      52.003s
 // stdDeviation                                              0.164s
+// -------------------------- BENCHMARK ---------------------------
+// version                                              alpha-0.0.2
+// rounds                                                         3
+// min                                                      55.703s
+// max                                                      57.193s
+// median                                                   56.766s
+// avg                                                      56.554s
+// stdDeviation                                              0.626s
