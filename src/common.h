@@ -5,8 +5,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define IS_WINDOWS defined(_WIN32) || defined(_WIN64)
-
 #define NAN_BOXING
 
 #ifdef DEBUG

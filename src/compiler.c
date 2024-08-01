@@ -759,7 +759,8 @@ static void forStatement() {
 
   if (match(TOKEN_SEMICOLON)) {
   } else if (check(TOKEN_IDENTIFIER)) {
-    return forEachStatement();
+    forEachStatement();
+    return;
   } else if (match(TOKEN_VAR)) {
     varDeclaration();
   } else {
@@ -871,11 +872,11 @@ ObjModule* resolveModule(char* absPath, const char* source) {
     return node->module;
   } else {
     // create a module in COMPILING_STATE
-    createModuleNode(&modules, parser.module, &node, source);
+    createModuleNode(parser.module, &node, source);
     // compile source code
     ObjModule* module = compileModule(node, absPath, source);
     // resolve module to COMPILED_STATE
-    resolveDependency(&modules, node, module);
+    resolveDependency(node, module);
 
     return module;
   }
@@ -1394,7 +1395,7 @@ static void _or(bool canAssign) {
 }
 
 static uint8_t argumentsList() {
-  int8_t argCount = 0;
+  int argCount = 0;
 
   if (!check(TOKEN_RIGHT_PAREN)) {
     do {

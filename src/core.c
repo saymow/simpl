@@ -622,7 +622,7 @@ static inline bool __nativeStaticErrorNew(int argCount, Value* args) {
   NATIVE_RETURN(OBJ_VAL(instance));
 }
 
-static void defineNativeFunction(VM* vm, Table* methods, const char* string, NativeFn function, Arity arity) {
+static void defineNativeFunction(Table* methods, const char* string, NativeFn function, Arity arity) {
   ObjString* name = copyString(string, strlen(string));
   ObjNativeFn* native = newNativeFunction(function, name, arity);
   Value value;
@@ -684,33 +684,33 @@ void initializeCore(VM* vm) {
   vm->stringClass = defineNewClass("String");
   vm->nativeFunctionClass = defineNewClass("NativeFunction");
 
-  defineNativeFunction(vm, &vm->klass->methods, "toString", __nativeClassToString, ARGS_ARITY_0);
+  defineNativeFunction(&vm->klass->methods, "toString", __nativeClassToString, ARGS_ARITY_0);
   
   // Class inherits from itself
   vm->klass->obj.klass = vm->klass;
 
   inherit((Obj *)vm->metaStringClass,  vm->klass);
 
-  defineNativeFunction(vm, &vm->metaStringClass->methods, "isString", __nativeStaticStringIsString, ARGS_ARITY_1);
-  defineNativeFunction(vm, &vm->metaStringClass->methods, "new", __nativeStaticStringNew, ARGS_ARITY_0);
-  defineNativeFunction(vm, &vm->metaStringClass->methods, "new", __nativeStaticStringNew, ARGS_ARITY_1);
-  defineNativeFunction(vm, &vm->metaStringClass->methods, "String", __nativeStaticStringNew, ARGS_ARITY_0);
-  defineNativeFunction(vm, &vm->metaStringClass->methods, "String", __nativeStaticStringNew, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaStringClass->methods, "isString", __nativeStaticStringIsString, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaStringClass->methods, "new", __nativeStaticStringNew, ARGS_ARITY_0);
+  defineNativeFunction(&vm->metaStringClass->methods, "new", __nativeStaticStringNew, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaStringClass->methods, "String", __nativeStaticStringNew, ARGS_ARITY_0);
+  defineNativeFunction(&vm->metaStringClass->methods, "String", __nativeStaticStringNew, ARGS_ARITY_1);
 
   inherit((Obj *)vm->stringClass, vm->metaStringClass);
 
-  defineNativeFunction(vm, &vm->stringClass->methods, "toUpperCase", __nativeStringToUpperCase, ARGS_ARITY_0);
-  defineNativeFunction(vm, &vm->stringClass->methods, "toLowerCase", __nativeStringToLowerCase, ARGS_ARITY_0);
-  defineNativeFunction(vm, &vm->stringClass->methods, "includes", __nativeStringIncludes, ARGS_ARITY_0);
-  defineNativeFunction(vm, &vm->stringClass->methods, "includes", __nativeStringIncludes, ARGS_ARITY_1);
-  defineNativeFunction(vm, &vm->stringClass->methods, "split", __nativeStringSplit, ARGS_ARITY_1);
-  defineNativeFunction(vm, &vm->stringClass->methods, "substr", __nativeStringSubstr, ARGS_ARITY_1);
-  defineNativeFunction(vm, &vm->stringClass->methods, "substr", __nativeStringSubstr, ARGS_ARITY_2);
-  defineNativeFunction(vm, &vm->stringClass->methods, "length", __nativeStringLength, ARGS_ARITY_0);
-  defineNativeFunction(vm, &vm->stringClass->methods, "endsWith", __nativeStringEndsWith, ARGS_ARITY_1);
-  defineNativeFunction(vm, &vm->stringClass->methods, "startsWith", __nativeStringStarsWith, ARGS_ARITY_1);
-  defineNativeFunction(vm, &vm->stringClass->methods, "trimEnd", __nativeStringTrimEnd, ARGS_ARITY_0);
-  defineNativeFunction(vm, &vm->stringClass->methods, "trimStart", __nativeStringTrimStart, ARGS_ARITY_0);
+  defineNativeFunction(&vm->stringClass->methods, "toUpperCase", __nativeStringToUpperCase, ARGS_ARITY_0);
+  defineNativeFunction(&vm->stringClass->methods, "toLowerCase", __nativeStringToLowerCase, ARGS_ARITY_0);
+  defineNativeFunction(&vm->stringClass->methods, "includes", __nativeStringIncludes, ARGS_ARITY_0);
+  defineNativeFunction(&vm->stringClass->methods, "includes", __nativeStringIncludes, ARGS_ARITY_1);
+  defineNativeFunction(&vm->stringClass->methods, "split", __nativeStringSplit, ARGS_ARITY_1);
+  defineNativeFunction(&vm->stringClass->methods, "substr", __nativeStringSubstr, ARGS_ARITY_1);
+  defineNativeFunction(&vm->stringClass->methods, "substr", __nativeStringSubstr, ARGS_ARITY_2);
+  defineNativeFunction(&vm->stringClass->methods, "length", __nativeStringLength, ARGS_ARITY_0);
+  defineNativeFunction(&vm->stringClass->methods, "endsWith", __nativeStringEndsWith, ARGS_ARITY_1);
+  defineNativeFunction(&vm->stringClass->methods, "startsWith", __nativeStringStarsWith, ARGS_ARITY_1);
+  defineNativeFunction(&vm->stringClass->methods, "trimEnd", __nativeStringTrimEnd, ARGS_ARITY_0);
+  defineNativeFunction(&vm->stringClass->methods, "trimStart", __nativeStringTrimStart, ARGS_ARITY_0);
 
   inherit((Obj *)vm->nativeFunctionClass, vm->klass);
 
@@ -729,9 +729,9 @@ void initializeCore(VM* vm) {
   inherit((Obj *) vm->metaNumberClass, vm->klass);
 
   // Define Number static methods
-  defineNativeFunction(vm, &vm->metaNumberClass->methods, "isNumber", __nativeStaticNumberIsNumber, ARGS_ARITY_1);
-  defineNativeFunction(vm, &vm->metaNumberClass->methods, "toNumber", __nativeStaticNumberToNumber, ARGS_ARITY_1);
-  defineNativeFunction(vm, &vm->metaNumberClass->methods, "toInteger", __nativeStaticNumberToInteger, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaNumberClass->methods, "isNumber", __nativeStaticNumberIsNumber, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaNumberClass->methods, "toNumber", __nativeStaticNumberToNumber, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaNumberClass->methods, "toInteger", __nativeStaticNumberToInteger, ARGS_ARITY_1);
 
   vm->numberClass = defineNewClass("Number");
   inherit((Obj *)vm->numberClass, vm->metaNumberClass);
@@ -740,10 +740,10 @@ void initializeCore(VM* vm) {
   inherit((Obj *)vm->metaMathClass, vm->klass);
 
   // Define Math static methods
-  defineNativeFunction(vm, &vm->metaMathClass->methods, "abs", __nativeStaticMathAbs, ARGS_ARITY_1);
-  defineNativeFunction(vm, &vm->metaMathClass->methods, "min", __nativeStaticMathMin, ARGS_ARITY_2);
-  defineNativeFunction(vm, &vm->metaMathClass->methods, "max", __nativeStaticMathMax, ARGS_ARITY_2);
-  defineNativeFunction(vm, &vm->metaMathClass->methods, "clamp", __nativeStaticMathClamp, ARGS_ARITY_3);
+  defineNativeFunction(&vm->metaMathClass->methods, "abs", __nativeStaticMathAbs, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaMathClass->methods, "min", __nativeStaticMathMin, ARGS_ARITY_2);
+  defineNativeFunction(&vm->metaMathClass->methods, "max", __nativeStaticMathMax, ARGS_ARITY_2);
+  defineNativeFunction(&vm->metaMathClass->methods, "clamp", __nativeStaticMathClamp, ARGS_ARITY_3);
 
   vm->mathClass = defineNewClass("Math");
   inherit((Obj *)vm->mathClass, vm->metaMathClass);
@@ -755,46 +755,46 @@ void initializeCore(VM* vm) {
   inherit((Obj *)vm->metaArrayClass, vm->klass);
 
   // Array static methods 
-  defineNativeFunction(vm, &vm->metaArrayClass->methods, "isArray", __nativeStaticArrayIsArray, ARGS_ARITY_1);
-  defineNativeFunction(vm, &vm->metaArrayClass->methods, "new", __nativeStaticArrayNew, ARGS_ARITY_0);
-  defineNativeFunction(vm, &vm->metaArrayClass->methods, "new", __nativeStaticArrayNew, ARGS_ARITY_1);
-  defineNativeFunction(vm, &vm->metaArrayClass->methods, "Array", __nativeStaticArrayNew, ARGS_ARITY_0);
-  defineNativeFunction(vm, &vm->metaArrayClass->methods, "Array", __nativeStaticArrayNew, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaArrayClass->methods, "isArray", __nativeStaticArrayIsArray, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaArrayClass->methods, "new", __nativeStaticArrayNew, ARGS_ARITY_0);
+  defineNativeFunction(&vm->metaArrayClass->methods, "new", __nativeStaticArrayNew, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaArrayClass->methods, "Array", __nativeStaticArrayNew, ARGS_ARITY_0);
+  defineNativeFunction(&vm->metaArrayClass->methods, "Array", __nativeStaticArrayNew, ARGS_ARITY_1);
 
   vm->arrayClass = defineNewClass("Array");
   inherit((Obj *)vm->arrayClass, vm->metaArrayClass);
 
   // Array methods
-  defineNativeFunction(vm, &vm->arrayClass->methods, "length", __nativeArrayLength, ARGS_ARITY_0);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "push", __nativeArrayPush, ARGS_ARITY_1);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "pop", __nativeArrayPop, ARGS_ARITY_0);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "unshift", __nativeArrayUnshift, ARGS_ARITY_1);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "shift", __nativeArrayShift, ARGS_ARITY_0);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "slice", __nativeArraySlice, ARGS_ARITY_0);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "slice", __nativeArraySlice, ARGS_ARITY_1);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "slice", __nativeArraySlice, ARGS_ARITY_2);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "indexOf", __nativeArrayIndexOf, ARGS_ARITY_1);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_2);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_3);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_4);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_5);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_6);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_7);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_8);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_9);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_10);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_11);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_12);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_13);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_14);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_15);
-  defineNativeFunction(vm, &vm->arrayClass->methods, "join", __nativeArrayJoin, ARGS_ARITY_1);
+  defineNativeFunction(&vm->arrayClass->methods, "length", __nativeArrayLength, ARGS_ARITY_0);
+  defineNativeFunction(&vm->arrayClass->methods, "push", __nativeArrayPush, ARGS_ARITY_1);
+  defineNativeFunction(&vm->arrayClass->methods, "pop", __nativeArrayPop, ARGS_ARITY_0);
+  defineNativeFunction(&vm->arrayClass->methods, "unshift", __nativeArrayUnshift, ARGS_ARITY_1);
+  defineNativeFunction(&vm->arrayClass->methods, "shift", __nativeArrayShift, ARGS_ARITY_0);
+  defineNativeFunction(&vm->arrayClass->methods, "slice", __nativeArraySlice, ARGS_ARITY_0);
+  defineNativeFunction(&vm->arrayClass->methods, "slice", __nativeArraySlice, ARGS_ARITY_1);
+  defineNativeFunction(&vm->arrayClass->methods, "slice", __nativeArraySlice, ARGS_ARITY_2);
+  defineNativeFunction(&vm->arrayClass->methods, "indexOf", __nativeArrayIndexOf, ARGS_ARITY_1);
+  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_2);
+  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_3);
+  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_4);
+  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_5);
+  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_6);
+  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_7);
+  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_8);
+  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_9);
+  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_10);
+  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_11);
+  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_12);
+  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_13);
+  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_14);
+  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_15);
+  defineNativeFunction(&vm->arrayClass->methods, "join", __nativeArrayJoin, ARGS_ARITY_1);
 
   vm->metaErrorClass = defineNewClass("MetaError");
   inherit((Obj *) vm->metaErrorClass, vm->klass);
 
-  defineNativeFunction(vm, &vm->metaErrorClass->methods, "new", __nativeStaticErrorNew, ARGS_ARITY_1);
-  defineNativeFunction(vm, &vm->metaErrorClass->methods, "Error", __nativeStaticErrorNew, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaErrorClass->methods, "new", __nativeStaticErrorNew, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaErrorClass->methods, "Error", __nativeStaticErrorNew, ARGS_ARITY_1);
 
   vm->errorClass = defineNewClass("Error");
   inherit((Obj *)vm->errorClass, vm->metaErrorClass);
@@ -805,8 +805,8 @@ void initializeCore(VM* vm) {
   vm->metaSystemClass = defineNewClass("MetaSystem");
   inherit((Obj *)vm->metaSystemClass, vm->klass);
 
-  defineNativeFunction(vm, &vm->metaSystemClass->methods, "clock", __nativeSystemClock, ARGS_ARITY_0);
-  defineNativeFunction(vm, &vm->metaSystemClass->methods, "log", __nativeSystemLog, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaSystemClass->methods, "clock", __nativeSystemClock, ARGS_ARITY_0);
+  defineNativeFunction(&vm->metaSystemClass->methods, "log", __nativeSystemLog, ARGS_ARITY_1);
 
   vm->systemClass = defineNewClass("System");
   inherit((Obj *)vm->systemClass, vm->metaSystemClass);

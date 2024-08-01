@@ -19,7 +19,7 @@ CallFrame* frame;
 
 static void closeUpValue(ObjUpValue* upvalue);
 static void closeUpValues(Value* last);
-static bool callValue(Value callee, int argCount);
+static bool callValue(Value callee, uint8_t argCount);
 void push(Value value);
 Value pop();
 
@@ -139,7 +139,7 @@ static void recoverableRuntimeError(const char* format, ...) {
   // Loops created until there are popped. 
   while (&vm.frames[vm.framesCount - 1] != tryCatch->frame) {
     while (
-      vm.loopStack > 0 &&
+      vm.loopStackCount > 0 &&
       vm.loopStack[vm.loopStackCount - 1].frame == &vm.frames[vm.framesCount - 1]
     ) {
       vm.loopStackCount--;
@@ -331,7 +331,7 @@ static bool callConstructor(ObjClass* klass, int argCount) {
   return true;
 }
 
-static bool callValue(Value callee, int argCount) {
+static bool callValue(Value callee, uint8_t argCount) {
   if (IS_OBJ(callee)) {
     switch (OBJ_TYPE(callee)) {
       case OBJ_CLASS:
@@ -922,7 +922,7 @@ static InterpretResult run() {
         // Loops created until there are popped. 
         while (&vm.frames[vm.framesCount - 1] != tryCatch->frame) {
           while (
-            vm.loopStack > 0 &&
+            vm.loopStackCount > 0 &&
             vm.loopStack[vm.loopStackCount - 1].frame == &vm.frames[vm.framesCount - 1]
           ) {
             vm.loopStackCount--;

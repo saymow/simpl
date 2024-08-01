@@ -151,7 +151,7 @@ bool addDependency(Modules* modules, ModuleNode* origin, ModuleNode** node, cons
     return true;
 }
 
-void createModuleNode(Modules* modules, ModuleNode* origin, ModuleNode** moduleNode, const char* source) {
+void createModuleNode(ModuleNode* origin, ModuleNode** moduleNode, const char* source) {
     module_id_t targetId = hashString(source, strlen(source));
     ModuleNode* node = allocateNode(targetId);
 
@@ -166,7 +166,7 @@ void createModuleNode(Modules* modules, ModuleNode* origin, ModuleNode** moduleN
     *moduleNode = node;
 }
 
-void resolveDependency(Modules* modules, ModuleNode* node, ObjModule* module) {
+void resolveDependency(ModuleNode* node, ObjModule* module) {
     node->module = module;
     node->state = COMPILED_STATE;
 }

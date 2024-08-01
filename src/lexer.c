@@ -13,7 +13,7 @@ void initLexer(const char* source) {
   lexer->start = source;
   lexer->current = source;
   lexer->line = 1;
-};
+}
 
 void stackLexer(Lexer* nextLexer, const char* source) {
   nextLexer->start = source;
@@ -146,7 +146,7 @@ static TokenType identifierType() {
         }
         break;
       }
-    default:
+      break;
     case 'i':
       if (lexer->current - lexer->start > 1) {
         switch (lexer->start[1]) {
@@ -157,6 +157,7 @@ static TokenType identifierType() {
         }
         break;
       }
+      break;
     case 'n':
       return checkKeyword(1, 2, "il", TOKEN_NIL);
     case 'o':
@@ -169,6 +170,7 @@ static TokenType identifierType() {
         }
         break;
       }
+      break;
     case 'p':
       return checkKeyword(1, 4, "rint", TOKEN_PRINT);
     case 'r':
@@ -192,6 +194,7 @@ static TokenType identifierType() {
               }
               break;
             }
+          break;
           case 'h':
             if (lexer->current - lexer->start > 2) {
               switch(lexer->start[2]) {
@@ -205,6 +208,7 @@ static TokenType identifierType() {
         }
         break;
       }
+      break;
     case 'c':
       if (lexer->current - lexer->start > 1) {
         switch (lexer->start[1]) {
@@ -217,6 +221,7 @@ static TokenType identifierType() {
         }
         break;
       }
+      break;
     case 'f':
       if (lexer->current - lexer->start > 1) {
         switch (lexer->start[1]) {
@@ -310,4 +315,4 @@ Token scanToken() {
   }
 
   return errorToken("Unexpected character.");
-};
+}

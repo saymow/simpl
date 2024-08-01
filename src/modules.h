@@ -23,8 +23,8 @@ typedef struct {
 
 void initModules(Modules* modules, const char* source);
 bool addDependency(Modules* modules, ModuleNode* origin, ModuleNode** node, const char* source); 
-void createModuleNode(Modules* modules, ModuleNode* origin, ModuleNode** node, const char* source);
-void resolveDependency(Modules* modules, ModuleNode* node, ObjModule* module);
+void createModuleNode(ModuleNode* origin, ModuleNode** node, const char* source);
+void resolveDependency(ModuleNode* node, ObjModule* module);
 void freeModules(Modules *modules);
 
 #endif

@@ -5,7 +5,7 @@
 #include <string.h>
 #include "common.h"
 
-#if IS_WINDOWS
+#if defined(_WIN32) || defined(_WIN64)
   #include <windows.h>
   #include <shlwapi.h>
 #else
@@ -46,7 +46,7 @@ char *readFile(const char *path) {
 }
 
 char *getFileAbsPath(const char* relativePath) {
-  #if IS_WINDOWS
+  #if defined(_WIN32) || defined(_WIN64)
     char* absPath = (char*) malloc(sizeof(char) * MAX_PATH);
 
     if (absPath == NULL) {
@@ -103,7 +103,7 @@ bool isPathRelative(const char* path) {
 }
 
 char *resolvePath(const char* entryFilePath, const char* filePath, const char* importPath) {
-   #if IS_WINDOWS
+   #if defined(_WIN32) || defined(_WIN64)
     char* absPath = (char*) malloc(sizeof(char) * MAX_PATH);
     char* basePath = removePathLastFragment(isPathRelative(importPath) ? filePath : entryFilePath);
 
