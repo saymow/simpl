@@ -1,0 +1,80 @@
+// Switch statement break
+
+switch (3) {
+    case 2:
+        System.log(2);
+    case 3: {
+        System.log(3);
+        break;
+    }
+    case 5: 
+        System.log(5);
+}
+
+// expect 3
+
+switch (3) {
+    case 2:
+        System.log(2);
+    case 3:
+    case 5:
+    case 4: {
+        System.log(3);
+        break;
+    }
+}
+
+// expect 3
+
+switch ("d") {
+    case "a":
+        System.log("a");
+    case "D": 
+        System.log("D");
+    case "d": 
+        System.log("d");
+    case -1: {
+        System.log("erived");
+        break;
+    }
+    case "b":
+        System.log("b");
+    case "c":
+        System.log("c");
+}
+
+// expect d
+// expect erived
+
+
+switch ("d") {
+    case "a":
+        System.log("a");
+    case "b":
+        System.log("b");
+    case "c":
+        System.log("c");
+    case "D": 
+        System.log("D");
+    case 1:
+    case 2:
+    case 3: 
+    case "d":
+        System.log("d");
+    
+    case "e":
+        System.log("e");
+    case "f":
+        System.log("f");
+    case "g": {
+        System.log("g");
+        break;
+    }
+    case "h":
+        System.log("i");
+}
+
+// expect d
+// expect e
+// expect f
+// expect g

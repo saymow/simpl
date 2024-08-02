@@ -1,0 +1,97 @@
+// Switch nested
+
+fun printAnimalIfExists(animal) {
+    var animalArr = animal.split("");
+
+    switch (animalArr[0]) {
+        case "a": {
+            if (animal.length() > 1) {
+                switch (animalArr[1]) {
+                    case "p": {
+                        if (animal == "ape") {
+                            System.log("ape");
+                            return;
+                        }
+                        break;
+                    }
+                    case "n": {
+                        if (animal.length() > 2) {
+                            switch (animalArr[2]) {
+                                case "t": {
+                                    if (animal.length() == 3) {
+                                        System.log("ant");
+                                        return true;
+                                    }
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                        break;
+                    }
+                }
+            }
+            break;
+        }
+        case "e": {
+            if (animal.length() > 1) {
+                switch (animalArr[1]) {
+                    case "a": {
+                        if (animal == "eagle") {
+                            System.log("eagle");
+                            return;
+                        }
+                        break;
+                    }
+                    case "l": {
+                        if (animal.length() > 2) {
+                            switch (animalArr[2]) {
+                                case "e": {
+                                    if (animal == "elephant") {
+                                        System.log("elephant");
+                                        return;
+                                    }
+                                    break;
+                                }
+                                case "k": {
+                                    if (animal.length() == 3) {
+                                        System.log("elk");
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+            break;
+        }
+    }
+
+    System.log("Not found");
+}
+
+printAnimalIfExists("");                                                                    // expect Not found
+printAnimalIfExists("def_not_an_animal");                                                   // expect Not found
+printAnimalIfExists("ant");                                                                 // expect ant
+printAnimalIfExists("ant0");                                                                // expect Not found
+printAnimalIfExists("an");                                                                  // expect Not found
+printAnimalIfExists("ant1");                                                                // expect Not found
+printAnimalIfExists("ape");                                                                 // expect ape
+printAnimalIfExists("ap");                                                                  // expect Not found
+printAnimalIfExists("apee");                                                                // expect Not found
+printAnimalIfExists("ap0");                                                                 // expect Not found
+printAnimalIfExists("elephant");                                                            // expect elephant
+printAnimalIfExists("elephan");                                                             // expect Not found
+printAnimalIfExists("elephanT");                                                            // expect Not found
+printAnimalIfExists("elephantt");                                                           // expect Not found
+printAnimalIfExists("elephannn");                                                           // expect Not found
+printAnimalIfExists("elk");                                                                 // expect elk
+printAnimalIfExists("elk0");                                                                // expect Not found
+printAnimalIfExists("el");                                                                  // expect Not found
+printAnimalIfExists("elk-");                                                                // expect Not found
+printAnimalIfExists("eagle");                                                               // expect eagle
+printAnimalIfExists("eagl");                                                                // expect Not found
+printAnimalIfExists("eagled");                                                              // expect Not found
+printAnimalIfExists("eagl456");                                                             // expect Not found

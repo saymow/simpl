@@ -1,5 +1,5 @@
-// Break outside loop
+// Break breakable block
 
 break;
 
-// error DATA_ERR [line 3] Error at 'break': Cannot break outside a loop.
+// error DATA_ERR [line 3] Error at 'break': Unexpected 'break' statement.
