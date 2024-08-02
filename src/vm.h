@@ -8,9 +8,12 @@
 
 #define FRAMES_MAX 64
 #define STACK_MAX (FRAMES_MAX * UINT8_COUNT)
+#define GC_WHITE_LIST_MAX 16
+
 #define TRY_CATCH_STACK_MAX 8
 #define LOOP_STACK_MAX 8
-#define GC_WHITE_LIST_MAX 16
+#define SWITCH_STACK_MAX 8
+#define BLOCK_MAX LOOP_STACK_MAX + SWITCH_STACK_MAX 
 
 typedef enum { FRAME_TYPE_CLOSURE, FRAME_TYPE_MODULE } CallFrameType;
 
@@ -55,6 +58,14 @@ typedef struct Loop {
   uint8_t* startIp;
   uint8_t* outIp;
 } Loop;
+
+typedef struct Switch {
+  CallFrame* frame;
+  Value* expression;
+  uint8_t* startIp;
+  uint8_t* outIp;
+  bool fallThrough; 
+} Switch;
 
 typedef struct {
   CallFrame frames[FRAMES_MAX];
@@ -128,6 +139,10 @@ typedef struct {
   // Active try-catch block registers
   TryCatch tryCatchStack[TRY_CATCH_STACK_MAX];
   int tryCatchStackCount; 
+
+  // Active switch block registers
+  Switch switchStack[SWITCH_STACK_MAX];
+  int switchStackCount;
 
   // Garbage Collector fields
   // Memory allocating are handling in three ways:

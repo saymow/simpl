@@ -52,8 +52,13 @@ typedef enum {
   OP_TRY_CATCH,
   OP_TRY_CATCH_TRY_END,
   OP_THROW,
+  OP_OBJECT,
+  OP_SWITCH,
+  OP_SWITCH_BREAK,
+  OP_SWITCH_DEFAULT,
+  OP_SWITCH_END,
+  OP_SWITCH_CASE,
   OP_RETURN,
-  OP_OBJECT
 } OpCode;
 
 typedef struct {

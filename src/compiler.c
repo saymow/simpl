@@ -64,6 +64,10 @@ typedef struct {
   bool isLocal;
 } UpValue;
 
+typedef enum { SWITCH_BLOCK, LOOP_BLOCK } BlockType;
+
+typedef struct { BlockType type; } Block;
+
 typedef struct Compiler {
   char* absPath;
   ObjFunction* function;
@@ -78,7 +82,8 @@ typedef struct Compiler {
   struct Compiler* semanticallyEnclosing;
   FunctionType topLevelType;
 
-  int loopCount;
+  Block blockStack[LOOP_STACK_MAX + SWITCH_STACK_MAX];
+  int blockStackCount;
 } Compiler;
 
 static void emitByte(uint8_t byte);
@@ -92,6 +97,7 @@ static void parsePrecedence(Precedence precedence);
 static void namedVariable(Token token, bool canAssign);
 static void string(bool canAssign);
 static void variable(bool canAssign);
+static void _or(bool canAssign);
 
 Modules modules;
 Parser parser;
@@ -111,7 +117,7 @@ static void initCompiler(Compiler* compiler, char* absPath, FunctionType type) {
   compiler->type = type;
   compiler->localCount = 0;
   compiler->scopeDepth = 0;
-  compiler->loopCount = 0;
+  compiler->blockStackCount = 0;
 
   if (type == TYPE_SCRIPT || type == TYPE_MODULE) {
     compiler->topLevelType = type;
@@ -621,11 +627,19 @@ static void emitLoop(int beforeLoop) {
 }
 
 static void beginLoop() {
-  current->loopCount++;
+  current->blockStack[current->blockStackCount++].type = LOOP_BLOCK;
 }
 
 static void endLoop() {
-  current->loopCount--;
+  current->blockStackCount--;
+}
+
+static void beginSwitch() {
+  current->blockStack[current->blockStackCount++].type = SWITCH_BLOCK;
+}
+
+static void endSwitch() {
+  current->blockStackCount--;
 }
 
 static int emitLoopGuard() {
@@ -978,17 +992,30 @@ static void throwStatement() {
 }
 
 static void breakStatement() {
-  if (current->loopCount == 0) {
-    error("Cannot break outside a loop.");
+  if (current->blockStackCount == 0) {
+    error("Unexpected 'break' statement.");
     return;
   }
 
-  emitByte(OP_LOOP_BREAK);
+  if (current->blockStack[current->blockStackCount - 1].type == LOOP_BLOCK) {
+    emitByte(OP_LOOP_BREAK);
+  } else {
+    emitByte(OP_SWITCH_BREAK);
+  }
   consume(TOKEN_SEMICOLON, "Expect ';' after break statement.");
 }
 
 static void continueStatement() {
-  if (current->loopCount == 0) {
+  bool hasEnclosingLoop = false;
+
+  for (int idx = current->blockStackCount - 1; idx >= 0; idx--) {
+    if (current->blockStack[idx].type == LOOP_BLOCK) {
+      hasEnclosingLoop = true;
+      break;
+    }
+  }
+
+  if (!hasEnclosingLoop) {
     error("Cannot continue outside a loop.");
     return;
   }
@@ -996,6 +1023,55 @@ static void continueStatement() {
   emitByte(OP_LOOP_CONTINUE);
   consume(TOKEN_SEMICOLON, "Expect ';' after continue statement.");
 } 
+
+static void switchStatement() {
+  consume(TOKEN_LEFT_PAREN, "Expect '(' before switch expression.");
+
+  beginSwitch();
+  beginScope();
+  expression();
+  addSystemLocalVariable();
+  int switchJump = emitJump(OP_SWITCH);
+  bool hasSeenDefault = false;
+
+  consume(TOKEN_RIGHT_PAREN, "Expect ')' after switch expression.");
+  consume(TOKEN_LEFT_BRACE, "Expect '{' before switch body.");
+
+  while(match(TOKEN_CASE) || match(TOKEN_DEFAULT)) {
+    OpCode instruction = parser.previous.type == TOKEN_CASE ? OP_SWITCH_CASE : OP_SWITCH_DEFAULT; 
+    
+    if (hasSeenDefault && instruction == OP_SWITCH_DEFAULT) {
+      errorAt(&parser.previous, "Expect 'default' to appear just once in switch body.");
+    }
+    hasSeenDefault = true;
+
+    expression();
+
+    consume(TOKEN_COLON, "Expect ':' after case expression.");
+
+    while (match(TOKEN_CASE)) {
+      expression();
+      consume(TOKEN_COLON, "Expect ':' after case expression.");
+    }
+
+    if (instruction == OP_SWITCH_CASE) {
+      int caseJump = emitJump(OP_SWITCH_CASE);
+      statement();
+      patchJump(caseJump, 2);
+    } else {
+      int jump = emitJump(OP_JUMP);
+      statement();
+      patchJump(jump, 2);
+    }
+  }
+
+  patchJump(switchJump, 2);
+  endScope();
+  endSwitch();
+  emitByte(OP_SWITCH_END);
+
+  consume(TOKEN_RIGHT_BRACE, "Expect '}' after switch body.");
+}
 
 static void statement() {
   if (match(TOKEN_CONTINUE)) {
@@ -1022,6 +1098,8 @@ static void statement() {
     beginScope();
     block();
     endScope();
+  } else if (match(TOKEN_SWITCH)) {
+    switchStatement();
   } else {
     expressionStatement();
   }

@@ -128,6 +128,30 @@ static TokenType identifierType() {
       return checkKeyword(1, 2, "nd", TOKEN_AND);
     case 'b':
       return checkKeyword(1, 4, "reak", TOKEN_BREAK);
+    case 'c':
+      if (lexer->current - lexer->start > 1) {
+        switch (lexer->start[1]) {
+          case 'a':
+            if (lexer->current - lexer->start > 2) {
+              switch (lexer->start[2]) {
+                case 't':
+                  return checkKeyword(3, 2, "ch", TOKEN_CATCH);
+                case 's':
+                  return checkKeyword(3, 1, "e", TOKEN_CASE); 
+              }
+              break;
+            } 
+            break;
+          case 'l':
+            return checkKeyword(2, 3, "ass", TOKEN_CLASS);
+          case 'o':
+            return checkKeyword(2, 6, "ntinue", TOKEN_CONTINUE);
+        }
+        break;
+      }
+      break;
+    case 'd': 
+      return checkKeyword(1, 6, "efault", TOKEN_DEFAULT);
     case 'e':
       if (lexer->current - lexer->start > 1) {
         switch (lexer->start[1]) {
@@ -180,7 +204,16 @@ static TokenType identifierType() {
     case 'w':
       return checkKeyword(1, 4, "hile", TOKEN_WHILE);
     case 's':
-      return checkKeyword(1, 4, "uper", TOKEN_SUPER);
+      if (lexer->current - lexer->start > 1) {
+        switch (lexer->start[1]) {
+          case 'u':
+            return checkKeyword(2, 3, "per", TOKEN_SUPER);
+          case 'w':
+            return checkKeyword(2, 4, "itch", TOKEN_SWITCH);
+        }
+        break;
+      }
+      break;
     case 't':
       if (lexer->current - lexer->start > 1) {
         switch (lexer->start[1]) {
@@ -205,19 +238,6 @@ static TokenType identifierType() {
               }
               break;
             }
-        }
-        break;
-      }
-      break;
-    case 'c':
-      if (lexer->current - lexer->start > 1) {
-        switch (lexer->start[1]) {
-          case 'a':
-            return checkKeyword(2, 3, "tch", TOKEN_CATCH); 
-          case 'l':
-            return checkKeyword(2, 3, "ass", TOKEN_CLASS);
-          case 'o':
-            return checkKeyword(2, 6, "ntinue", TOKEN_CONTINUE);
         }
         break;
       }

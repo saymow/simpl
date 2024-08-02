@@ -955,6 +955,71 @@ static InterpretResult run() {
         closeUpValues(tryCatch->frameStackTop - 1);
         break;
       }
+      case OP_SWITCH: {
+        if (vm.switchStackCount + 1 == SWITCH_STACK_MAX) {
+          runtimeError(NULL, "Cant stack more than %d switch-case blocks.", SWITCH_STACK_MAX);
+        }
+
+        Switch *switchBlock = &vm.switchStack[vm.switchStackCount++];
+        uint16_t outOffset = READ_SHORT();
+
+        switchBlock->expression = &vm.stackTop[-1];
+        switchBlock->startIp = frame->ip;
+        switchBlock->outIp = frame->ip + outOffset;
+        switchBlock->fallThrough = false;
+        switchBlock->frame = frame;
+        break;
+      }
+      case OP_SWITCH_BREAK: {
+        Switch* switchBlock = &vm.switchStack[vm.switchStackCount - 1];
+
+        // Pop any existing try-catch block inside switch block 
+        while (
+          vm.tryCatchStackCount > 0 &&
+          vm.tryCatchStack[vm.tryCatchStackCount - 1].frame == frame &&
+          vm.tryCatchStack[vm.tryCatchStackCount - 1].outIp > switchBlock->startIp &&
+          vm.tryCatchStack[vm.tryCatchStackCount - 1].outIp < switchBlock->outIp 
+        ) {
+          vm.tryCatchStackCount--;
+        }
+
+        frame->ip = switchBlock->outIp;
+        vm.stackTop = switchBlock->expression + 1;
+
+        closeUpValues(switchBlock->expression - 1);
+        break;
+      }
+      case OP_SWITCH_CASE: {
+        Switch* switchBlock = &vm.switchStack[vm.switchStackCount - 1];
+        uint16_t offset = READ_SHORT();
+        bool hasMatch = false;
+
+        if (switchBlock->fallThrough) {
+          while (switchBlock->expression != &vm.stackTop[-1]) {
+            pop();
+          }
+
+          break;
+        }
+
+
+        while (switchBlock->expression != &vm.stackTop[-1]) {
+          if (valuesEqual(*switchBlock->expression, pop())) {
+            hasMatch = true;
+          }
+        } 
+
+        if (hasMatch) {
+          switchBlock->fallThrough = true;
+        } else {
+          frame->ip += offset;
+        }
+        break;
+      }
+      case OP_SWITCH_END: {
+        vm.switchStackCount--;
+        break;
+      }
       case OP_TRUE:
         push(BOOL_VAL(true));
         break;
@@ -1149,6 +1214,11 @@ static InterpretResult run() {
         // Ensure loop blocks are popped if returned inside them
         while (vm.loopStackCount > 0 && vm.loopStack[vm.loopStackCount - 1].frame == frame) {
           vm.loopStackCount--;
+        }
+
+        // Ensure switch blocks are popped if returned inside them
+        while (vm.switchStackCount > 0 && vm.switchStack[vm.switchStackCount - 1].frame == frame) {
+          vm.switchStackCount--;
         }
 
         // Ensure try-catch blocks are popped if returned inside them 
