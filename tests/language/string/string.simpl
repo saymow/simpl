@@ -1,0 +1,14 @@
+// String
+
+var name = "John_Doe";
+
+System.log(name[-1]);                                              // expect nil
+System.log(name[0]);                                               // expect J
+System.log(name[1]);                                               // expect o
+System.log(name[2]);                                               // expect h
+System.log(name[3]);                                               // expect n
+System.log(name[4]);                                               // expect _
+System.log(name[5]);                                               // expect D
+System.log(name[6]);                                               // expect o
+System.log(name[7]);                                               // expect e
+System.log(name[8]);                                               // expect nil
