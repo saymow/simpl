@@ -532,7 +532,6 @@ static inline void getArrayItem(ObjArray* arr, Value index, Value* value) {
     return;
   } else if (AS_NUMBER(index) < 0 || AS_NUMBER(index) >= arr->list.count) {
     // todo: should it be a runtime error?
-    *value = NIL_VAL;
     return;
   }
 
@@ -546,7 +545,6 @@ static inline void getStringChar(ObjString* string, Value index, Value* value) {
     return;
   } else if (AS_NUMBER(index) < 0 || AS_NUMBER(index) >= string->length) {
     // todo: should it be a runtime error?
-    *value = NIL_VAL;
     return;
   }
 
@@ -583,6 +581,17 @@ static inline void setInstanceProperty(ObjInstance* instance, Value index, Value
   } 
 
   tableSet(&instance->properties, AS_STRING(index), value);
+}
+
+static inline void getObjectProperty(Obj* obj, Value index, Value* value) {
+  if (!IS_STRING(index)) {
+    recoverableRuntimeError("Object property key must be a string.");
+    return;
+  } 
+
+  if (!tableGet(&obj->klass->methods, AS_STRING(index), value)) {
+    *value = NIL_VAL; 
+  }
 }
 
 static InterpretResult run() {
@@ -740,7 +749,7 @@ static InterpretResult run() {
       case OP_GET_ITEM: {
         Value base;
         Value identifier;
-        Value value;
+        Value value = NIL_VAL;
 
         // When performing assign operation, the base and identifier is kept in the stack for facilitating the update
         if (READ_BYTE() == true) {
@@ -755,10 +764,10 @@ static InterpretResult run() {
           getArrayItem(AS_ARRAY(base), identifier, &value);
         } else if (IS_STRING(base)) {
           getStringChar(AS_STRING(base), identifier, &value);
-        } else if (IS_INSTANCE(base)) {
-          getInstanceProperty(AS_INSTANCE(base), identifier, &value);
-        } else {
-          recoverableRuntimeError("Cannot access property.");
+        } else if (IS_STRING(identifier))  {
+          if (!(IS_INSTANCE(base) && tableGet(&AS_INSTANCE(base)->properties, AS_STRING(identifier), &value))) {
+            objectClassProperty(base, AS_STRING(identifier), &value);
+          }
         }
 
         push(value);
@@ -771,12 +780,8 @@ static InterpretResult run() {
 
         if (IS_ARRAY(base)) {
           setArrayItem(AS_ARRAY(base), identifier, value);
-        } else if (IS_STRING(base)) {
-          
         } else if (IS_INSTANCE(base)) {
           setInstanceProperty(AS_INSTANCE(base), identifier, value);
-        } else {
-          recoverableRuntimeError("Cannot access property");
         }
         
         push(value);
