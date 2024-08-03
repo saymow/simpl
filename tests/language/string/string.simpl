@@ -12,3 +12,10 @@ System.log(name[5]);                                               // expect D
 System.log(name[6]);                                               // expect o
 System.log(name[7]);                                               // expect e
 System.log(name[8]);                                               // expect nil
+
+
+System.log(name[0] = "B");                                         // expect B
+
+
+System.log(name);                                                  // expect John_Doe
+
