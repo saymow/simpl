@@ -544,12 +544,11 @@ static inline bool __nativeStaticNumberIsNumber(int argCount, Value* args) {
 
 static inline bool __nativeStaticNumberToNumber(int argCount, Value* args) {
   ObjString* string = SAFE_CONSUME_STRING(args, "argument");
-  char *err_ptr;
-  double number = strtod(string->chars, &err_ptr);
+  char *end_ptr;
+  double number = strtod(string->chars, &end_ptr);
 
-  // parse error
-  if (*err_ptr != '\0') {
-    // to handle exception
+  // to do: better handle this parse error
+  if (*end_ptr != '\0') {
     NATIVE_RETURN(NIL_VAL);
   }
 
@@ -560,12 +559,13 @@ static inline bool __nativeStaticNumberToInteger(int argCount, Value* args) {
   Value value = *(++args);
 
   if (IS_STRING(value)) {
-    char *err_ptr;
-    double integer = strtol(AS_STRING(value)->chars, &err_ptr, 10);
+    char *end_ptr;
+    double integer = strtol(AS_STRING(value)->chars, &end_ptr, 10);
+    char* text = AS_STRING(value)->chars;
 
-    // parse error
-    if (*err_ptr != '\0') {
-      // to handle exception
+    // to do: better handle this parse error
+    if (end_ptr == text) {
+      NATIVE_RETURN(NIL_VAL);
     }
 
     NATIVE_RETURN(NUMBER_VAL(integer));
