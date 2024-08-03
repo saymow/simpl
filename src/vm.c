@@ -526,46 +526,64 @@ static bool invokeMethod(Value base, ObjString* name, uint8_t argCount) {
   return callValue(value, argCount);
 }
 
-static inline bool getArrayItem(ObjArray* arr, Value index, Value* value) {
+static inline void getArrayItem(ObjArray* arr, Value index, Value* value) {
   if (!IS_NUMBER(index)) {
     recoverableRuntimeError("Array index must be a number.");
-    return false;
+    return;
   } else if (AS_NUMBER(index) < 0 || AS_NUMBER(index) >= arr->list.count) {
     // todo: should it be a runtime error?
     *value = NIL_VAL;
-    return true;
+    return;
   }
 
   *value = arr->list.values[(int) AS_NUMBER(index)];
-  return true; 
+  return; 
 }
 
-static inline bool getStringChar(ObjString* string, Value index, Value* value) {
+static inline void getStringChar(ObjString* string, Value index, Value* value) {
   if (!IS_NUMBER(index)) {
     recoverableRuntimeError("String index must be a number.");
-    return false;
+    return;
   } else if (AS_NUMBER(index) < 0 || AS_NUMBER(index) >= string->length) {
     // todo: should it be a runtime error?
     *value = NIL_VAL;
-    return true;
+    return;
   }
 
   *value = OBJ_VAL(copyString(&string->chars[(int) AS_NUMBER(index)], 1));
-  return true; 
 }
 
-static bool setArrayItem(ObjArray* arr, Value index, Value value) {
+static inline void setArrayItem(ObjArray* arr, Value index, Value value) {
   if (!IS_NUMBER(index)) {
     recoverableRuntimeError("Array index must be a number.");
-    return false;
+    return;
   } else if (AS_NUMBER(index) < 0 || AS_NUMBER(index) >= arr->list.count) {
     recoverableRuntimeError("Array index out of bounds.");
-    return false;
+    return;
   }
 
   arr->list.values[(int) AS_NUMBER(index)] = value;
-  return true; 
 } 
+
+static inline void getInstanceProperty(ObjInstance* instance, Value index, Value* value) {
+  if (!IS_STRING(index)) {
+    recoverableRuntimeError("Object property key must be a string.");
+    return;
+  } 
+
+  if (!tableGet(&instance->properties, AS_STRING(index), value)) {
+    *value = NIL_VAL; 
+  }
+}
+
+static inline void setInstanceProperty(ObjInstance* instance, Value index, Value value) {
+  if (!IS_STRING(index)) {
+    recoverableRuntimeError("Object property key must be a string.");
+    return;
+  } 
+
+  tableSet(&instance->properties, AS_STRING(index), value);
+}
 
 static InterpretResult run() {
   frame = &vm.frames[vm.framesCount - 1];
@@ -737,6 +755,8 @@ static InterpretResult run() {
           getArrayItem(AS_ARRAY(base), identifier, &value);
         } else if (IS_STRING(base)) {
           getStringChar(AS_STRING(base), identifier, &value);
+        } else if (IS_INSTANCE(base)) {
+          getInstanceProperty(AS_INSTANCE(base), identifier, &value);
         } else {
           recoverableRuntimeError("Cannot access property.");
         }
@@ -753,6 +773,8 @@ static InterpretResult run() {
           setArrayItem(AS_ARRAY(base), identifier, value);
         } else if (IS_STRING(base)) {
           
+        } else if (IS_INSTANCE(base)) {
+          setInstanceProperty(AS_INSTANCE(base), identifier, value);
         } else {
           recoverableRuntimeError("Cannot access property");
         }
