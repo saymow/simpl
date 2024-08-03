@@ -1,0 +1,61 @@
+// Switch statement default
+
+switch ("a") {
+    case 2:
+        System.log(2);
+    case 3: 
+        System.log(3);
+    case 5: 
+        System.log(5);
+    default:
+        System.log("a");
+}
+
+// expect a
+
+switch ("a") {
+    case 2:
+        System.log(2);
+    default:
+        System.log("a");
+    case 3: 
+        System.log(3);
+    case 5: 
+        System.log(5);
+}
+
+// expect a
+// expect 3
+// expect 5
+
+
+switch ("a") {
+    case 2:
+        System.log(2);
+    default: {
+        System.log("a");
+        break;
+    }
+    case 3: 
+        System.log(3);
+    case 5: 
+        System.log(5);
+}
+
+// expect a
+
+switch ("a") {
+    case 2:
+        System.log(2);
+    default: 
+        System.log("a");
+    case 3: {
+        System.log(3);
+        break;
+    } 
+    case 5: 
+        System.log(5);
+}
+
+// expect a
+// expect 3
