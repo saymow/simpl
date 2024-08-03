@@ -252,6 +252,11 @@ static inline bool __nativeArrayInsert(int argCount, Value* args) {
 
 static inline bool __nativeArrayJoin(int argCount, Value* args) {
   ObjArray* array = AS_ARRAY(*args);
+
+  if (array->list.count == 0) {
+    NATIVE_RETURN(OBJ_VAL(CONSTANT_STRING("")));
+  }
+
   ObjString* separator = SAFE_CONSUME_STRING(args, "separator");
   ObjArray* tmpArray = (ObjArray*) GCWhiteList((Obj*) newArray());
   // initialize with separators length
