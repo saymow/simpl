@@ -5,7 +5,17 @@ var obj = {
     lastName: "Doe"
 };
 
-
 System.log(obj);                                                            // expect instance of Class
 System.log(obj.name);                                                       // expect John
 System.log(obj.lastName);                                                   // expect Doe
+System.log(obj.something);                                                  // expect nil
+
+System.log(obj["name"]);                                                    // expect John
+System.log(obj["lastName"]);                                                // expect Doe
+System.log(obj["something"]);                                               // expect nil
+
+obj["something"] = "else";
+obj["name"] = "Jane";
+
+System.log(obj["name"]);                                                    // expect Jane
+System.log(obj["something"]);                                               // expect else
