@@ -14,3 +14,6 @@ System.log(Number.isNumber(Number.toNumber("1")));                        // exp
 
 System.log(Number.toNumber("0.765"));                                     // expect 0.765
 System.log(Number.isNumber(Number.toNumber("1")));                        // expect true
+
+System.log(Number.toNumber("TEST"));                                      // expect nil
+System.log(Number.isNumber(Number.toNumber("TEST")));                     // expect false
