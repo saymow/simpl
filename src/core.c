@@ -550,6 +550,7 @@ static inline bool __nativeStaticNumberToNumber(int argCount, Value* args) {
   // parse error
   if (*err_ptr != '\0') {
     // to handle exception
+    NATIVE_RETURN(NIL_VAL);
   }
 
   NATIVE_RETURN(NUMBER_VAL(number));
