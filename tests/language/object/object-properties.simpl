@@ -19,3 +19,9 @@ obj["name"] = "Jane";
 
 System.log(obj["name"]);                                                    // expect Jane
 System.log(obj["something"]);                                               // expect else
+
+
+System.log(System["log"]);                                                  // expect <log fn>
+System.log(System[123]);                                                    // expect nil
+System.log(System[() -> {}]);                                               // expect nil
+System.log(obj["toString"]);                                                // expect <toString fn>

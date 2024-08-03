@@ -12,3 +12,4 @@ person.name = "John";
 person.lastname = "Doe";
 
 person.sayName();                                                     // expect my name is John Doe
+person["sayName"]();                                                  // expect my name is John Doe
