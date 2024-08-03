@@ -4,19 +4,22 @@ System.log(Number.toInteger("1"));                                         // ex
 System.log(Number.isNumber(Number.toInteger("1")));                        // expect true
 
 System.log(Number.toInteger("0.0"));                                       // expect 0
-System.log(Number.isNumber(Number.toInteger("1")));                        // expect true
+System.log(Number.isNumber(Number.toInteger("0.0")));                      // expect true
 
 System.log(Number.toInteger("-1"));                                        // expect -1
-System.log(Number.isNumber(Number.toInteger("1")));                        // expect true
+System.log(Number.isNumber(Number.toInteger("-1")));                       // expect true
 
 System.log(Number.toInteger("3.14"));                                      // expect 3
-System.log(Number.isNumber(Number.toInteger("1")));                        // expect true
+System.log(Number.isNumber(Number.toInteger("3.14")));                     // expect true
 
 System.log(Number.toInteger("0.765"));                                     // expect 0
-System.log(Number.isNumber(Number.toInteger("1")));                        // expect true
+System.log(Number.isNumber(Number.toInteger("0.765")));                    // expect true
 
 System.log(Number.toInteger(2.65));                                        // expect 2
 System.log(Number.isNumber(Number.toInteger(2.65)));                       // expect true
 
 System.log(Number.toInteger(-7.77));                                       // expect -7
 System.log(Number.isNumber(Number.toInteger(-7.77)));                      // expect true
+
+System.log(Number.toInteger("TEST"));                                      // expect nil
+System.log(Number.isNumber(Number.toInteger("TEST")));                     // expect false
