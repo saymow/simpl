@@ -526,7 +526,7 @@ static bool invokeMethod(Value base, ObjString* name, uint8_t argCount) {
   return callValue(value, argCount);
 }
 
-static bool getArrayItem(ObjArray* arr, Value index, Value* value) {
+static inline bool getArrayItem(ObjArray* arr, Value index, Value* value) {
   if (!IS_NUMBER(index)) {
     recoverableRuntimeError("Array index must be a number.");
     return false;
@@ -537,6 +537,20 @@ static bool getArrayItem(ObjArray* arr, Value index, Value* value) {
   }
 
   *value = arr->list.values[(int) AS_NUMBER(index)];
+  return true; 
+}
+
+static inline bool getStringChar(ObjString* string, Value index, Value* value) {
+  if (!IS_NUMBER(index)) {
+    recoverableRuntimeError("String index must be a number.");
+    return false;
+  } else if (AS_NUMBER(index) < 0 || AS_NUMBER(index) >= string->length) {
+    // todo: should it be a runtime error?
+    *value = NIL_VAL;
+    return true;
+  }
+
+  *value = OBJ_VAL(copyString(&string->chars[(int) AS_NUMBER(index)], 1));
   return true; 
 }
 
@@ -665,16 +679,10 @@ static InterpretResult run() {
         break;
       }
       case OP_GET_PROPERTY: {
-        Value base;
         ObjString* name = READ_STRING();
-        Value value = NIL_VAL;
-
         // When performing assign operation, the base is kept in the stack for facilitating the update
-        if (READ_BYTE() == true) {
-          base = peek(0);
-        } else {
-          base = pop();
-        }
+        Value base = READ_BYTE() == true ? peek(0) : pop();
+        Value value = NIL_VAL;
 
         if (IS_INSTANCE(base) && tableGet(&AS_INSTANCE(base)->properties, name, &value)) {
           push(value);
@@ -712,9 +720,11 @@ static InterpretResult run() {
         break;
       }
       case OP_GET_ITEM: {
-        Value identifier;
         Value base;
+        Value identifier;
+        Value value;
 
+        // When performing assign operation, the base and identifier is kept in the stack for facilitating the update
         if (READ_BYTE() == true) {
           identifier = peek(0);
           base = peek(1);
@@ -723,19 +733,15 @@ static InterpretResult run() {
           base = pop();
         }
 
-        Value value;
         if (IS_ARRAY(base)) {
-          if (!getArrayItem(AS_ARRAY(base), identifier, &value)) {
-            continue;
-          }
-
-          push(value);
-        } else if (IS_OBJ(base)) {
-          // todo
+          getArrayItem(AS_ARRAY(base), identifier, &value);
+        } else if (IS_STRING(base)) {
+          getStringChar(AS_STRING(base), identifier, &value);
         } else {
           recoverableRuntimeError("Cannot access property.");
-          continue;
         }
+
+        push(value);
         break;
       }
       case OP_SET_ITEM: {
