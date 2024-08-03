@@ -64,6 +64,7 @@ typedef struct Switch {
   Value* expression;
   uint8_t* startIp;
   uint8_t* outIp;
+  // bool to indicate if a "case" or "default" criteria is met
   bool fallThrough; 
 } Switch;
 

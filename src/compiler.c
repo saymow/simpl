@@ -1032,7 +1032,7 @@ static void switchStatement() {
   expression();
   addSystemLocalVariable();
   int switchJump = emitJump(OP_SWITCH);
-  bool hasSeenDefault = false;
+  int defaultStart = -1;
 
   consume(TOKEN_RIGHT_PAREN, "Expect ')' after switch expression.");
   consume(TOKEN_LEFT_BRACE, "Expect '{' before switch body.");
@@ -1040,35 +1040,50 @@ static void switchStatement() {
   while(match(TOKEN_CASE) || match(TOKEN_DEFAULT)) {
     OpCode instruction = parser.previous.type == TOKEN_CASE ? OP_SWITCH_CASE : OP_SWITCH_DEFAULT; 
     
-    if (hasSeenDefault && instruction == OP_SWITCH_DEFAULT) {
-      errorAt(&parser.previous, "Expect 'default' to appear just once in switch body.");
-    }
-    hasSeenDefault = true;
-
-    expression();
-
-    consume(TOKEN_COLON, "Expect ':' after case expression.");
-
-    while (match(TOKEN_CASE)) {
-      expression();
-      consume(TOKEN_COLON, "Expect ':' after case expression.");
-    }
-
     if (instruction == OP_SWITCH_CASE) {
+      expression();
+
+      consume(TOKEN_COLON, "Expect ':' after case expression.");
+
+      while (match(TOKEN_CASE)) {
+        expression();
+        consume(TOKEN_COLON, "Expect ':' after case expression.");
+      }
       int caseJump = emitJump(OP_SWITCH_CASE);
       statement();
       patchJump(caseJump, 2);
     } else {
+      if (defaultStart != -1) {
+        errorAt(&parser.previous, "Expect 'default' to appear just once in switch body.");
+      }
+
+      consume(TOKEN_COLON, "Expect ':' after case expression.");
+
+      // Emit jump to skip default statement during the switch case execution 
       int jump = emitJump(OP_JUMP);
+      // Save start of default statement so that we can LOOP back if no case is met
+      defaultStart = currentChunk()->count;
       statement();
+      // Patch jump to skip default statement during the switch case execution
       patchJump(jump, 2);
     }
+
   }
 
   patchJump(switchJump, 2);
+  int defaultOffset = defaultStart != -1 ? 
+    currentChunk()->count - defaultStart + 3: 
+    0;
+
+  if (defaultOffset > UINT16_MAX) {
+    error("To much code to jump over.");
+  }
+
+  emitByte(OP_SWITCH_END);
+  // Emit offset to LOOP back to default statement
+  emitBytes((defaultOffset >> 8) & 0xff, defaultOffset & 0xff);
   endScope();
   endSwitch();
-  emitByte(OP_SWITCH_END);
 
   consume(TOKEN_RIGHT_BRACE, "Expect '}' after switch body.");
 }

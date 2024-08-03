@@ -956,6 +956,8 @@ static InterpretResult run() {
         break;
       }
       case OP_SWITCH: {
+        // Stacks a switch block on the stack
+
         if (vm.switchStackCount + 1 == SWITCH_STACK_MAX) {
           runtimeError(NULL, "Cant stack more than %d switch-case blocks.", SWITCH_STACK_MAX);
         }
@@ -971,6 +973,8 @@ static InterpretResult run() {
         break;
       }
       case OP_SWITCH_BREAK: {
+        // Break current switch execution a pop any enclosing try catch statement.
+
         Switch* switchBlock = &vm.switchStack[vm.switchStackCount - 1];
 
         // Pop any existing try-catch block inside switch block 
@@ -990,6 +994,20 @@ static InterpretResult run() {
         break;
       }
       case OP_SWITCH_CASE: {
+        // The OP_SWITCH_CASE can handle multiple expressions for executing code like
+        // this with one instructions:
+        // 
+        // ...
+        //    case 1:
+        //    case 2:
+        //    case 3:
+        // ...
+        //
+        // if switchBlock.fallThrough is true, just pop all case expressions from the stack and continue.
+        // Otherwise, compare (while popping from stack) each one of them against the switchBlock.expression. 
+        // If one case expression is equal to the switchBlock.expression, assign switchBlock.fallThrough
+        // to true and continue. If not, just skip to the next case group.
+
         Switch* switchBlock = &vm.switchStack[vm.switchStackCount - 1];
         uint16_t offset = READ_SHORT();
         bool hasMatch = false;
@@ -1017,7 +1035,24 @@ static InterpretResult run() {
         break;
       }
       case OP_SWITCH_END: {
-        vm.switchStackCount--;
+        // During the switch execution, if no case criteria is met, fallTrough is gonna be false.
+        // If that's the case, we check to see if there is a default statement, if so, we jump to
+        // the default statement and assign fallThrough to true. Otherwise, we just pop the switchBlock
+        // from the stack. This handles well:
+        //
+        //      1. Normal execution when a case criteria is met (whether we break or not).
+        //      2. No case criteria is met and we need to jump back to the default statement.
+        //      3. No case criteria is met and we dont have default statement.
+
+        Switch *switchBlock = &vm.switchStack[vm.switchStackCount - 1];
+        uint16_t defaultOffset = READ_SHORT(); 
+
+        if (!switchBlock->fallThrough && defaultOffset > 0) {
+          switchBlock->fallThrough = true;
+          frame->ip -= defaultOffset;
+        } else {
+          vm.switchStackCount--;
+        }
         break;
       }
       case OP_TRUE:

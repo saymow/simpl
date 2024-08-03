@@ -188,7 +188,7 @@ int disassembleInstruction(Chunk* chunk, int offset) {
     case OP_SWITCH_BREAK:
       return simpleInstruction("OP_SWITCH_BREAK", offset);
     case OP_SWITCH_END:
-      return simpleInstruction("OP_SWITCH_END", offset);
+      return jumpInstruction("OP_SWITCH_END", -1, chunk, offset);
     case OP_JUMP:
       return jumpInstruction("OP_JUMP", 1, chunk, offset);
     case OP_JUMP_IF_FALSE:
