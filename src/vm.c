@@ -750,16 +750,14 @@ static InterpretResult run() {
         Value base = pop();
 
         if (IS_ARRAY(base)) {
-          if (!setArrayItem(AS_ARRAY(base), identifier, value)) {
-            continue;
-          }
-          push(value);
-        } else if (IS_OBJ(base)) {
-          // todo
+          setArrayItem(AS_ARRAY(base), identifier, value);
+        } else if (IS_STRING(base)) {
+          
         } else {
           recoverableRuntimeError("Cannot access property");
-          continue;
         }
+        
+        push(value);
         break;
       }
       case OP_JUMP: {

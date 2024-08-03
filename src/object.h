@@ -48,9 +48,7 @@ typedef struct ObjClass ObjClass;
 struct Obj {
   ObjType type;
   bool isMarked;
-  
   ObjClass* klass;
-  
   struct Obj *next;
 };
 
