@@ -1386,7 +1386,15 @@ static ObjString* escapeString() {
   int scapedLength = 0;
 
   for (int idx = 0; idx < length; idx++) {
-    if (str[idx] != '\\') scapedLength++;
+    if (str[idx] == '\\') {
+      if (idx + 1 < length && str[idx + 1] == '\\') {
+        scapedLength++;
+        idx++;
+      }
+      
+      continue;
+    }
+    scapedLength++;
   }
 
   char buffer[scapedLength];
@@ -1704,12 +1712,21 @@ static void _super(bool canAssign) {
   emitBytes(OP_SUPER, name);
 }
 
+bool isValidIdentifier(Token* token) {
+  return isAlpha(*token->start);
+}
+
 void object(bool canAssign) {
   int count = 0;
   
-  if (check(TOKEN_IDENTIFIER)) {
+  if (!check(TOKEN_RIGHT_BRACE)) {
     do {
-      consume(TOKEN_IDENTIFIER, "Expect property identifier after ','.");
+      if (!isValidIdentifier(&parser.current)) {
+        error("Expect object property identifier.");
+      }
+
+      advance();
+      
       uint8_t name = identifierConstant(&parser.previous);
       consume(TOKEN_COLON, "Expect ':' after object property identifier.");
       
@@ -1723,9 +1740,9 @@ void object(bool canAssign) {
     } while (match(TOKEN_COMMA));
   }
 
-  emitBytes(OP_OBJECT, (uint8_t) count);
-
   consume(TOKEN_RIGHT_BRACE, "Expect '}' at the end of the object.");
+
+  emitBytes(OP_OBJECT, (uint8_t) count);
 }
 
 ParseRule rules[] = {

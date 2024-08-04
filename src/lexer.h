@@ -1,6 +1,8 @@
 #ifndef lexer_h
 #define lexer_h
 
+#include "common.h"
+
 typedef enum {
   // Single-character tokens.
   TOKEN_LEFT_PAREN,
@@ -91,5 +93,6 @@ void initLexer(const char* source);
 Token scanToken();
 void stackLexer(Lexer* nextLexer, const char* source);
 void popLexer();
+bool isAlpha(char c);
 
 #endif

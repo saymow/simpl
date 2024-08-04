@@ -97,7 +97,7 @@ static void skipWhitespace() {
 static Token string() {
   while (!isAtEnd() && peek() != '"') {
     if (peek() == '\n') lexer->line++;
-    if (peek() == '\\' && peekNext() == '\"') advance();
+    if (peek() == '\\' && (peekNext() == '\"' || peekNext() == '\\')) advance();
     
     advance();
   }
@@ -111,7 +111,7 @@ static Token string() {
 
 static bool isDigit(char c) { return c >= '0' && c <= '9'; }
 
-static bool isAlpha(char c) {
+bool isAlpha(char c) {
   return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 }
 
