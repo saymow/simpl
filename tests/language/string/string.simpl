@@ -16,6 +16,7 @@ System.log(name[8]);                                               // expect nil
 
 System.log(name[0] = "B");                                         // expect B
 
-
 System.log(name);                                                  // expect John_Doe
 
+
+System.log("\"Quoted\"");                                          // expect "Quoted"

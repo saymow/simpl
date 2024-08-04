@@ -7,8 +7,8 @@ System.log("John".length());                                                    
 System.log("Hello, World!".length());                                                      // expect 13
 System.log("1234567890".length());                                                         // expect 10
 System.log("The quick brown fox jumps over the lazy dog.".length());                       // expect 44
-System.log("\n".length());                                                                 // expect 2
-System.log("\t".length());                                                                 // expect 2
+System.log("\n".length());                                                                 // expect 1
+System.log("\t".length());                                                                 // expect 1
 System.log("    ".length());                                                               // expect 4
 System.log("a b c".length());                                                              // expect 5
 System.log("null".length());                                                               // expect 4
