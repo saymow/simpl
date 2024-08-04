@@ -68,4 +68,4 @@ exec-stress-gc:
 	@make compile-stress-gc --no-print-directory && make run --no-print-directory
 
 build:
-	@make compile-optimized && cp ./main.run ../build/simpl.exe && make compile-debug-gc && cp ./main.run ../build/simpl-stress-gc.exe
+	@make compile-debug-gc && cp ./main.run ../build/simpl-stress-gc.exe && make compile-optimized && cp ./main.run ../build/simpl.exe
