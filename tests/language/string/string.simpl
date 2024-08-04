@@ -20,3 +20,4 @@ System.log(name);                                                  // expect Joh
 
 
 System.log("\"Quoted\"");                                          // expect "Quoted"
+System.log("\\\\\\");                                              // expect \\\
