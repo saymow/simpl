@@ -1,0 +1,7019 @@
+var TokenType = {
+    LEFT_PAREN: "LEFT_PAREN",
+    RIGHT_PAREN: "RIGHT_PAREN",
+    LEFT_BRACE: "LEFT_BRACE",
+    RIGHT_BRACE: "RIGHT_BRACE",
+    LEFT_BRACKET: "LEFT_BRACKET",
+    RIGHT_BRACKET: "RIGHT_BRACKET",
+    COMMA: "COMMA",
+    DOT: "DOT",
+    QUESTION_MARK: "QUESTION_MARK",
+    COLON: "COLON",
+    SEMICOLON: "SEMICOLON",
+    NUMBER: "NUMBER",
+    PLUS: "PLUS",
+    PLUS_EQUAL: "PLUS_EQUAL",
+    MINUS: "MINUS", 
+    MINUS_EQUAL: "MINUS_EQUAL",
+    STAR: "STAR", 
+    STAR_EQUAL: "STAR_EQUAL",
+    SLASH: "SLASH",
+    SLASH_EQUAL: "SLASH_EQUAL",
+    BANG: "BANG",
+    BANG_EQUAL: "BANG_EQUAL",
+    EQUAL: "EQUAL",
+    EQUAL_EQUAL: "EQUAL_EQUAL",
+    GREATER: "GREATER",
+    GREATER_EQUAL: "GREATER_EQUAL",
+    LESS: "LESS",
+    LESS_EQUAL: "LESS_EQUAL",
+    IDENTIFIER: "IDENTIFIER",
+    STRING: "STRING",
+    AND: "AND",
+    CLASS: "CLASS",
+    EXTENDS: "EXTENDS",
+    ELSE: "ELSE",
+    FALSE: "FALSE",
+    FOR: "FOR",
+    FUN: "FUN",
+    IF: "IF",
+    NIL: "NIL",
+    OR: "OR",
+    PRINT: "PRINT",
+    RETURN: "RETURN",
+    SUPER: "SUPER",
+    THIS: "THIS",
+    TRUE: "TRUE",
+    VAR: "VAR",
+    WHILE: "WHILE",
+    IMPORT: "IMPORT",
+    FROM: "FROM",
+    EXPORT: "EXPORT",
+    TRY: "TRY",
+    CATCH: "CATCH",
+    THROW: "THROW",
+    BREAK: "BREAK",
+    CONTINUE: "CONTINUE",
+    SWITCH: "SWITCH",
+    CASE: "CASE",
+    DEFAULT: "DEFAULT",
+    OF: "OF",
+    ERROR: "ERROR",
+    EOF: "EOF"
+};
+
+
+class Lexer {
+    Lexer(source) {
+        this.source = source;
+        this.idx = 0;
+        this.startIdx = -1;
+        this.line = 1;
+        this.tokens = [];
+        this.Identifier = {
+            and: TokenType.AND,
+            class: TokenType.CLASS,
+            extends: TokenType.EXTENDS,
+            else: TokenType.ELSE,
+            false: TokenType.FALSE,
+            for: TokenType.FOR,
+            fun: TokenType.FUN,
+            if: TokenType.IF,
+            nil: TokenType.NIL,
+            or: TokenType.OR,
+            print: TokenType.PRINT,
+            return: TokenType.RETURN,
+            super: TokenType.SUPER,
+            this: TokenType.THIS,
+            true: TokenType.TRUE,
+            var: TokenType.VAR,
+            while: TokenType.WHILE,
+            import: TokenType.IMPORT,
+            from: TokenType.FROM,
+            export: TokenType.EXPORT,
+            try: TokenType.TRY,
+            catch: TokenType.CATCH,
+            throw: TokenType.THROW,
+            break: TokenType.BREAK,
+            continue: TokenType.CONTINUE,
+            switch: TokenType.SWITCH,
+            case: TokenType.CASE,
+            default: TokenType.DEFAULT,
+            of: TokenType.OF
+        };
+    }
+
+    addToken(tokenType, literal) {
+        this.tokens.push({
+            type: tokenType,
+            lexeme: this.source.substr(this.startIdx, this.idx),
+            literal: literal,
+            line: this.line,
+            startIdx: this.startIdx,
+            length: this.idx - this.startIdx
+        });
+    }
+
+    number() {
+        while (!this.atEnd() and this.isDigit(this.peek())) this.advance();
+    
+        if (this.peek() == "." and this.isDigit(this.peekNext())) {
+            this.advance();
+            while (!this.atEnd() and this.isDigit(this.peek())) this.advance();
+        }
+
+        return this.addToken(
+            TokenType.NUMBER, 
+            Number.toNumber(this.source.substr(this.startIdx, this.idx))
+        );
+    }
+
+    identifier() {
+        while (!this.atEnd() and this.isAlphaNumeric(this.peek())) this.advance();
+        var lexeme = this.source.substr(this.startIdx, this.idx);
+
+        if (this.Identifier[lexeme] != nil) {
+            return this.addToken(this.Identifier[lexeme], nil);
+        }
+
+        return this.addToken(TokenType.IDENTIFIER, nil);
+    }
+
+    string() {
+        while (!this.atEnd() and this.peek() != "\"") {
+            if (this.peek() == "\\n") this.line += 1;
+            if (this.peek() == "\\" and this.peekNext() == "\"") this.advance();
+
+            this.advance(); 
+        }
+        
+        this.advance();
+
+        if (this.atEnd()) {
+            System.log("start" + this.source.substr(this.startIdx, this.idx) + "end");
+            throw Error("Unterminated string");
+        }
+
+        return this.addToken(TokenType.STRING, nil);
+    }
+
+    scan() {
+        var char = this.advance();
+        
+        switch (char) {
+            case "(":
+                return this.addToken(TokenType.LEFT_PAREN, nil);
+            case ")":
+                return this.addToken(TokenType.RIGHT_PAREN, nil);
+            case "[":
+                return this.addToken(TokenType.LEFT_BRACKET, nil);
+            case "]":
+                return this.addToken(TokenType.RIGHT_BRACKET, nil);
+            case "{":
+                return this.addToken(TokenType.LEFT_BRACE, nil);
+            case "}":
+                return this.addToken(TokenType.RIGHT_BRACE, nil);
+            case ",":
+                return this.addToken(TokenType.COMMA, nil);
+            case ".":
+                return this.addToken(TokenType.DOT, nil);
+            case "?":
+                return this.addToken(TokenType.QUESTION_MARK, nil);
+            case ":":
+                return this.addToken(TokenType.COLON, nil);
+            case ";":
+                return this.addToken(TokenType.SEMICOLON, nil);
+            case "+": 
+                return this.addToken(this.match("=") ? TokenType.PLUS_EQUAL : TokenType.PLUS, nil);
+            case "-": 
+                return this.addToken(this.match("=") ? TokenType.MINUS_EQUAL : TokenType.MINUS, nil);
+            case "*": 
+                return this.addToken(this.match("=") ? TokenType.STAR_EQUAL : TokenType.STAR, nil);
+            case "/": 
+                return this.addToken(this.match("=") ? TokenType.SLASH_EQUAL : TokenType.SLASH, nil);
+            case "!":
+                return this.addToken(this.match("=") ? TokenType.BANG_EQUAL : TokenType.BANG, nil);
+            case "=":
+                return this.addToken(this.match("=") ? TokenType.EQUAL_EQUAL : TokenType.EQUAL, nil);
+            case ">":
+                return this.addToken(this.match("=") ? TokenType.GREATER_EQUAL : TokenType.GREATER, nil);
+            case "<":
+                return this.addToken(this.match("=") ? TokenType.LESS_EQUAL : TokenType.LESS, nil);
+            case "\"":
+                return this.string();
+            default: {
+                if (this.isDigit(char)) {
+                    return this.number(char);
+                } else if (this.isAlpha(char)) {
+                    return this.identifier(char);
+                }
+            }
+        }
+    }
+
+    execute() {
+        var len = this.source.length();
+
+        while (this.idx < len) {
+            this.startIdx = this.idx;
+            this.scan();
+        }
+
+        return this.tokens;
+    }
+
+    isAlphaNumeric(char) {
+        return this.isAlpha(char) or this.isDigit(char) or char == "_";
+    }
+
+    isAlpha(char) {
+        return (char.charCodeAt(0) >= 97 and char.charCodeAt(0) <= 122) or
+            (char.charCodeAt(0) >= 65 and char.charCodeAt(0) <= 90); 
+    }
+
+    isDigit(char) {
+        return Number.toNumber(char) != nil;
+    }
+
+    match(char) {
+        if (this.atEnd() or this.peek() != char) return false;
+        this.advance();
+        return true;
+    }
+
+    peek() {
+        return this.source[this.idx];
+    }
+
+    peekNext() {
+        if (this.idx + 1 >= this.source.length()) return nil;
+        return this.source[this.idx + 1];
+    }
+
+    advance() {
+        if (this.atEnd()) return nil;
+
+        var char = this.source[this.idx];
+        this.idx += 1;
+
+        return char;
+    }
+
+    atEnd() {
+        return this.idx >= this.source.length();
+    }
+}
+
+var lexer = Lexer("
+    class Lexer {
+        Lexer(source) {
+            this.source = source;
+            this.idx = 0;
+            this.startIdx = -1;
+            this.line = 1;
+            this.tokens = [];
+            this.Identifier = {
+                and: TokenType.AND,
+                class: TokenType.CLASS,
+                extends: TokenType.EXTENDS,
+                else: TokenType.ELSE,
+                false: TokenType.FALSE,
+                for: TokenType.FOR,
+                fun: TokenType.FUN,
+                if: TokenType.IF,
+                nil: TokenType.NIL,
+                or: TokenType.OR,
+                print: TokenType.PRINT,
+                return: TokenType.RETURN,
+                super: TokenType.SUPER,
+                this: TokenType.THIS,
+                true: TokenType.TRUE,
+                var: TokenType.VAR,
+                while: TokenType.WHILE,
+                import: TokenType.IMPORT,
+                from: TokenType.FROM,
+                export: TokenType.EXPORT,
+                try: TokenType.TRY,
+                catch: TokenType.CATCH,
+                throw: TokenType.THROW,
+                break: TokenType.BREAK,
+                continue: TokenType.CONTINUE,
+                switch: TokenType.SWITCH,
+                case: TokenType.CASE,
+                default: TokenType.DEFAULT,
+                of: TokenType.OF
+            };
+        }
+
+        addToken(tokenType, literal) {
+            this.tokens.push({
+                type: tokenType,
+                lexeme: this.source.substr(this.startIdx, this.idx),
+                literal: literal,
+                line: this.line,
+                startIdx: this.startIdx,
+                length: this.idx - this.startIdx
+            });
+        }
+
+        number() {
+            while (!this.atEnd() and this.isDigit(this.peek())) this.advance();
+        
+            if (this.peek() == \".\" and this.isDigit(this.peekNext())) {
+                this.advance();
+                while (!this.atEnd() and this.isDigit(this.peek())) this.advance();
+            }
+
+            return this.addToken(
+                TokenType.NUMBER, 
+                Number.toNumber(this.source.substr(this.startIdx, this.idx))
+            );
+        }
+
+        identifier() {
+            while (!this.atEnd() and this.isAlphaNumeric(this.peek())) this.advance();
+            var lexeme = this.source.substr(this.startIdx, this.idx);
+
+            if (this.Identifier[lexeme] != nil) {
+                return this.addToken(this.Identifier[lexeme], nil);
+            }
+
+            return this.addToken(TokenType.IDENTIFIER, nil);
+        }
+
+        string() {
+            while (!this.atEnd() and this.peek() != \"\\\"\") {
+                if (this.peek() == \"\\n\") this.line += 1;
+                if (this.peek() == \"\\\" and this.peekNext() == \"\\\"\") this.advance();
+
+                this.advance(); 
+            }
+            
+            this.advance();
+
+            if (this.atEnd()) {
+                throw Error(\"Unterminated string\");
+            }
+
+            return this.addToken(TokenType.STRING, nil);
+        }
+
+        scan() {
+            var char = this.advance();
+            
+            switch (char) {
+                case \"(\":
+                    return this.addToken(TokenType.LEFT_PAREN, nil);
+                case \")\":
+                    return this.addToken(TokenType.RIGHT_PAREN, nil);
+                case \"[\":
+                    return this.addToken(TokenType.LEFT_BRACKET, nil);
+                case \"]\":
+                    return this.addToken(TokenType.RIGHT_BRACKET, nil);
+                case \"{\":
+                    return this.addToken(TokenType.LEFT_BRACE, nil);
+                case \"}\":
+                    return this.addToken(TokenType.RIGHT_BRACE, nil);
+                case \",\":
+                    return this.addToken(TokenType.COMMA, nil);
+                case \".\":
+                    return this.addToken(TokenType.DOT, nil);
+                case \"?\":
+                    return this.addToken(TokenType.QUESTION_MARK, nil);
+                case \":\":
+                    return this.addToken(TokenType.COLON, nil);
+                case \";\":
+                    return this.addToken(TokenType.SEMICOLON, nil);
+                case \"+\": 
+                    return this.addToken(this.match(\"=\") ? TokenType.PLUS_EQUAL : TokenType.PLUS, nil);
+                case \"-\": 
+                    return this.addToken(this.match(\"=\") ? TokenType.MINUS_EQUAL : TokenType.MINUS, nil);
+                case \"*\": 
+                    return this.addToken(this.match(\"=\") ? TokenType.STAR_EQUAL : TokenType.STAR, nil);
+                case \"/\": 
+                    return this.addToken(this.match(\"=\") ? TokenType.SLASH_EQUAL : TokenType.SLASH, nil);
+                case \"!\":
+                    return this.addToken(this.match(\"=\") ? TokenType.BANG_EQUAL : TokenType.BANG, nil);
+                case \"=\":
+                    return this.addToken(this.match(\"=\") ? TokenType.EQUAL_EQUAL : TokenType.EQUAL, nil);
+                case \">\":
+                    return this.addToken(this.match(\"=\") ? TokenType.GREATER_EQUAL : TokenType.GREATER, nil);
+                case \"<\":
+                    return this.addToken(this.match(\"=\") ? TokenType.LESS_EQUAL : TokenType.LESS, nil);
+                case \"\\\"\":
+                    return this.string();
+                default: {
+                    if (this.isDigit(char)) {
+                        return this.number(char);
+                    } else if (this.isAlpha(char)) {
+                        return this.identifier(char);
+                    }
+                }
+            }
+        }
+
+        execute() {
+            var len = this.source.length();
+
+            while (this.idx < len) {
+                this.startIdx = this.idx;
+                this.scan();
+            }
+
+            return this.tokens;
+        }
+
+        isAlphaNumeric(char) {
+            return this.isAlpha(char) or this.isDigit(char) or char == \"_\";
+        }
+
+        isAlpha(char) {
+            return (char.charCodeAt(0) >= 97 and char.charCodeAt(0) <= 122) or
+                (char.charCodeAt(0) >= 65 and char.charCodeAt(0) <= 90); 
+        }
+
+        isDigit(char) {
+            return Number.toNumber(char) != nil;
+        }
+
+        match(char) {
+            if (this.atEnd() or this.peek() != char) return false;
+            this.advance();
+            return true;
+        }
+
+        peek() {
+            return this.source[this.idx];
+        }
+
+        peekNext() {
+            if (this.idx + 1 >= this.source.length()) return nil;
+            return this.source[this.idx + 1];
+        }
+
+        advance() {
+            if (this.atEnd()) return nil;
+
+            var char = this.source[this.idx];
+            this.idx += 1;
+
+            return char;
+        }
+
+        atEnd() {
+            return this.idx >= this.source.length();
+        }
+    }
+");
+var tokens = lexer.execute();
+
+System.log("[");
+
+for (token of tokens) {
+    System.log(" {"); 
+    System.log("   type: " + token.type + ", "); 
+    System.log("   literal: " + token.literal.toString() +  ","); 
+    System.log("   lexeme: " + token.lexeme.toString() +  ","); 
+    System.log(" },");
+}
+
+System.log("]");
+
+
+// expect [
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: class,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: Lexer,
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: Lexer,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: source,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: source,
+// expect  },
+// expect  {
+// expect    type: EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: =,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: source,
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: idx,
+// expect  },
+// expect  {
+// expect    type: EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: =,
+// expect  },
+// expect  {
+// expect    type: NUMBER, 
+// expect    literal: 0,
+// expect    lexeme: 0,
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: startIdx,
+// expect  },
+// expect  {
+// expect    type: EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: =,
+// expect  },
+// expect  {
+// expect    type: MINUS, 
+// expect    literal: nil,
+// expect    lexeme: -,
+// expect  },
+// expect  {
+// expect    type: NUMBER, 
+// expect    literal: 1,
+// expect    lexeme: 1,
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: line,
+// expect  },
+// expect  {
+// expect    type: EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: =,
+// expect  },
+// expect  {
+// expect    type: NUMBER, 
+// expect    literal: 1,
+// expect    lexeme: 1,
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: tokens,
+// expect  },
+// expect  {
+// expect    type: EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: =,
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACKET, 
+// expect    literal: nil,
+// expect    lexeme: [,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACKET, 
+// expect    literal: nil,
+// expect    lexeme: ],
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: Identifier,
+// expect  },
+// expect  {
+// expect    type: EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: =,
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: and,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: AND,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: class,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: CLASS,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: extends,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: EXTENDS,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: else,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: ELSE,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: false,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: FALSE,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: for,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: FOR,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: fun,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: FUN,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: if,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: IF,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: NIL,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: or,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: OR,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: print,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: PRINT,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: RETURN,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: super,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: SUPER,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: THIS,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: true,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TRUE,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: var,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: VAR,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: while,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: WHILE,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: import,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: IMPORT,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: from,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: FROM,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: export,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: EXPORT,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: try,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TRY,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: catch,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: CATCH,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: throw,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: THROW,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: break,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: BREAK,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: continue,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: CONTINUE,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: switch,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: SWITCH,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: case,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: CASE,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: default,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: DEFAULT,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: of,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: OF,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: addToken,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: tokenType,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: literal,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: tokens,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: push,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: type,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: tokenType,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: lexeme,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: source,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: substr,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: startIdx,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: idx,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: literal,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: literal,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: line,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: line,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: startIdx,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: startIdx,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: length,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: idx,
+// expect  },
+// expect  {
+// expect    type: MINUS, 
+// expect    literal: nil,
+// expect    lexeme: -,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: startIdx,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: number,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: while,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: BANG, 
+// expect    literal: nil,
+// expect    lexeme: !,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: atEnd,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: and,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: isDigit,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: peek,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: advance,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: if,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: peek,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: EQUAL_EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: ==,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: ".",
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: and,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: isDigit,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: peekNext,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: advance,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: while,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: BANG, 
+// expect    literal: nil,
+// expect    lexeme: !,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: atEnd,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: and,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: isDigit,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: peek,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: advance,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: addToken,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: NUMBER,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: Number,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: toNumber,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: source,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: substr,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: startIdx,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: idx,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: identifier,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: while,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: BANG, 
+// expect    literal: nil,
+// expect    lexeme: !,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: atEnd,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: and,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: isAlphaNumeric,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: peek,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: advance,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: var,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: lexeme,
+// expect  },
+// expect  {
+// expect    type: EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: =,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: source,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: substr,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: startIdx,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: idx,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: if,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: Identifier,
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACKET, 
+// expect    literal: nil,
+// expect    lexeme: [,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: lexeme,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACKET, 
+// expect    literal: nil,
+// expect    lexeme: ],
+// expect  },
+// expect  {
+// expect    type: BANG_EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: !=,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: addToken,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: Identifier,
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACKET, 
+// expect    literal: nil,
+// expect    lexeme: [,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: lexeme,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACKET, 
+// expect    literal: nil,
+// expect    lexeme: ],
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: addToken,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: IDENTIFIER,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: string,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: while,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: BANG, 
+// expect    literal: nil,
+// expect    lexeme: !,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: atEnd,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: and,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: peek,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: BANG_EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: !=,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "\"",
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: if,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: peek,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: EQUAL_EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: ==,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "\n",
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: line,
+// expect  },
+// expect  {
+// expect    type: PLUS_EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: +=,
+// expect  },
+// expect  {
+// expect    type: NUMBER, 
+// expect    literal: 1,
+// expect    lexeme: 1,
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: if,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: peek,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: EQUAL_EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: ==,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "\" and this.peekNext() == ",
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "",
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: advance,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: advance,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: advance,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: if,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: atEnd,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: throw,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: Error,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "Unterminated string",
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: addToken,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: STRING,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: scan,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: var,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: char,
+// expect  },
+// expect  {
+// expect    type: EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: =,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: advance,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: switch,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: char,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: case,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "(",
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: addToken,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: LEFT_PAREN,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: case,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: ")",
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: addToken,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: RIGHT_PAREN,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: case,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "[",
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: addToken,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: LEFT_BRACKET,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: case,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "]",
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: addToken,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: RIGHT_BRACKET,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: case,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "{",
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: addToken,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: LEFT_BRACE,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: case,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "}",
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: addToken,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: RIGHT_BRACE,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: case,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: ",",
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: addToken,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: COMMA,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: case,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: ".",
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: addToken,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: DOT,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: case,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "?",
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: addToken,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: QUESTION_MARK,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: case,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: ":",
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: addToken,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: COLON,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: case,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: ";",
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: addToken,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: SEMICOLON,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: case,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "+",
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: addToken,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: match,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "=",
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: QUESTION_MARK, 
+// expect    literal: nil,
+// expect    lexeme: ?,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: PLUS_EQUAL,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: PLUS,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: case,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "-",
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: addToken,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: match,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "=",
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: QUESTION_MARK, 
+// expect    literal: nil,
+// expect    lexeme: ?,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: MINUS_EQUAL,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: MINUS,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: case,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "*",
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: addToken,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: match,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "=",
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: QUESTION_MARK, 
+// expect    literal: nil,
+// expect    lexeme: ?,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: STAR_EQUAL,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: STAR,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: case,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "/",
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: addToken,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: match,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "=",
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: QUESTION_MARK, 
+// expect    literal: nil,
+// expect    lexeme: ?,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: SLASH_EQUAL,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: SLASH,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: case,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "!",
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: addToken,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: match,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "=",
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: QUESTION_MARK, 
+// expect    literal: nil,
+// expect    lexeme: ?,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: BANG_EQUAL,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: BANG,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: case,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "=",
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: addToken,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: match,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "=",
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: QUESTION_MARK, 
+// expect    literal: nil,
+// expect    lexeme: ?,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: EQUAL_EQUAL,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: EQUAL,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: case,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: ">",
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: addToken,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: match,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "=",
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: QUESTION_MARK, 
+// expect    literal: nil,
+// expect    lexeme: ?,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: GREATER_EQUAL,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: GREATER,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: case,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "<",
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: addToken,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: match,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "=",
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: QUESTION_MARK, 
+// expect    literal: nil,
+// expect    lexeme: ?,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: LESS_EQUAL,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: TokenType,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: LESS,
+// expect  },
+// expect  {
+// expect    type: COMMA, 
+// expect    literal: nil,
+// expect    lexeme: ,,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: case,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "\"",
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: string,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: default,
+// expect  },
+// expect  {
+// expect    type: COLON, 
+// expect    literal: nil,
+// expect    lexeme: :,
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: if,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: isDigit,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: char,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: number,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: char,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: else,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: if,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: isAlpha,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: char,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: identifier,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: char,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: execute,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: var,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: len,
+// expect  },
+// expect  {
+// expect    type: EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: =,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: source,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: length,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: while,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: idx,
+// expect  },
+// expect  {
+// expect    type: LESS, 
+// expect    literal: nil,
+// expect    lexeme: <,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: len,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: startIdx,
+// expect  },
+// expect  {
+// expect    type: EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: =,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: idx,
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: scan,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: tokens,
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: isAlphaNumeric,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: char,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: isAlpha,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: char,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: or,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: isDigit,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: char,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: or,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: char,
+// expect  },
+// expect  {
+// expect    type: EQUAL_EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: ==,
+// expect  },
+// expect  {
+// expect    type: STRING, 
+// expect    literal: nil,
+// expect    lexeme: "_",
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: isAlpha,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: char,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: char,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: charCodeAt,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: NUMBER, 
+// expect    literal: 0,
+// expect    lexeme: 0,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: GREATER_EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: >=,
+// expect  },
+// expect  {
+// expect    type: NUMBER, 
+// expect    literal: 97,
+// expect    lexeme: 97,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: and,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: char,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: charCodeAt,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: NUMBER, 
+// expect    literal: 0,
+// expect    lexeme: 0,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: LESS_EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: <=,
+// expect  },
+// expect  {
+// expect    type: NUMBER, 
+// expect    literal: 122,
+// expect    lexeme: 122,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: or,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: char,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: charCodeAt,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: NUMBER, 
+// expect    literal: 0,
+// expect    lexeme: 0,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: GREATER_EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: >=,
+// expect  },
+// expect  {
+// expect    type: NUMBER, 
+// expect    literal: 65,
+// expect    lexeme: 65,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: and,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: char,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: charCodeAt,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: NUMBER, 
+// expect    literal: 0,
+// expect    lexeme: 0,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: LESS_EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: <=,
+// expect  },
+// expect  {
+// expect    type: NUMBER, 
+// expect    literal: 90,
+// expect    lexeme: 90,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: isDigit,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: char,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: Number,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: toNumber,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: char,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: BANG_EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: !=,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: match,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: char,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: if,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: atEnd,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: or,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: peek,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: BANG_EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: !=,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: char,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: false,
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: advance,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: true,
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: peek,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: source,
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACKET, 
+// expect    literal: nil,
+// expect    lexeme: [,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: idx,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACKET, 
+// expect    literal: nil,
+// expect    lexeme: ],
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: peekNext,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: if,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: idx,
+// expect  },
+// expect  {
+// expect    type: PLUS, 
+// expect    literal: nil,
+// expect    lexeme: +,
+// expect  },
+// expect  {
+// expect    type: NUMBER, 
+// expect    literal: 1,
+// expect    lexeme: 1,
+// expect  },
+// expect  {
+// expect    type: GREATER_EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: >=,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: source,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: length,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: source,
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACKET, 
+// expect    literal: nil,
+// expect    lexeme: [,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: idx,
+// expect  },
+// expect  {
+// expect    type: PLUS, 
+// expect    literal: nil,
+// expect    lexeme: +,
+// expect  },
+// expect  {
+// expect    type: NUMBER, 
+// expect    literal: 1,
+// expect    lexeme: 1,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACKET, 
+// expect    literal: nil,
+// expect    lexeme: ],
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: advance,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: if,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: atEnd,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: nil,
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: var,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: char,
+// expect  },
+// expect  {
+// expect    type: EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: =,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: source,
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACKET, 
+// expect    literal: nil,
+// expect    lexeme: [,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: idx,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACKET, 
+// expect    literal: nil,
+// expect    lexeme: ],
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: idx,
+// expect  },
+// expect  {
+// expect    type: PLUS_EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: +=,
+// expect  },
+// expect  {
+// expect    type: NUMBER, 
+// expect    literal: 1,
+// expect    lexeme: 1,
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: char,
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: atEnd,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: LEFT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: {,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: return,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: idx,
+// expect  },
+// expect  {
+// expect    type: GREATER_EQUAL, 
+// expect    literal: nil,
+// expect    lexeme: >=,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: this,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: source,
+// expect  },
+// expect  {
+// expect    type: DOT, 
+// expect    literal: nil,
+// expect    lexeme: .,
+// expect  },
+// expect  {
+// expect    type: IDENTIFIER, 
+// expect    literal: nil,
+// expect    lexeme: length,
+// expect  },
+// expect  {
+// expect    type: LEFT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: (,
+// expect  },
+// expect  {
+// expect    type: RIGHT_PAREN, 
+// expect    literal: nil,
+// expect    lexeme: ),
+// expect  },
+// expect  {
+// expect    type: SEMICOLON, 
+// expect    literal: nil,
+// expect    lexeme: ;,
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect  {
+// expect    type: RIGHT_BRACE, 
+// expect    literal: nil,
+// expect    lexeme: },
+// expect  },
+// expect ]
