@@ -1120,7 +1120,27 @@ static void statement() {
   }
 }
 
-static void expression() { parsePrecedence(PREC_ASSIGNMENT); }
+static void expression() { 
+  parsePrecedence(PREC_ASSIGNMENT);
+
+  // Compile ternary operator
+  if (match(TOKEN_QUESTION_MARK)) {
+    int elseJump = emitJump(OP_JUMP_IF_FALSE);
+    
+    emitByte(OP_POP);
+    expression();
+    int thenJump = emitJump(OP_JUMP);
+
+    consume(TOKEN_COLON, "Expect ':' for ternary operator.");
+
+    patchJump(elseJump, 2);
+
+    emitByte(OP_POP);
+    expression();
+
+    patchJump(thenJump, 2);
+  }
+}
 
 ObjFunction* compile(const char* source, char* absPath) {
   Compiler compiler;

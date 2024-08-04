@@ -314,6 +314,8 @@ Token scanToken() {
       return makeToken(TOKEN_COMMA);
     case '.':
       return makeToken(TOKEN_DOT);
+    case '?':
+      return makeToken(TOKEN_QUESTION_MARK);
     case '-':
       return makeToken(match('=') ? TOKEN_MINUS_EQUAL : match('-') ? TOKEN_MINUS_MINUS : TOKEN_MINUS);
     case '+':

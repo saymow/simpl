@@ -11,6 +11,7 @@ typedef enum {
   TOKEN_RIGHT_BRACKET,
   TOKEN_COMMA,
   TOKEN_DOT,
+  TOKEN_QUESTION_MARK,
   TOKEN_COLON,
   TOKEN_SEMICOLON,
   // One or two character tokens.
