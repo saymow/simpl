@@ -1380,9 +1380,57 @@ static void literal(bool canAssign) {
   }
 }
 
+static ObjString* escapeString() {
+  const char* str = parser.previous.start + 1;
+  int length = parser.previous.length - 2;
+  int scapedLength = 0;
+
+  for (int idx = 0; idx < length; idx++) {
+    if (str[idx] != '\\') scapedLength++;
+  }
+
+  char buffer[scapedLength];
+
+  int count = 0;
+  for (int idx = 0; idx < length; idx++) {
+    if (str[idx] != '\\') {
+      buffer[count++] = str[idx];
+      continue;
+    }
+
+    switch (str[++idx]) {
+      case 'n': 
+        buffer[count++] = '\n';
+        break;
+      case 't': 
+        buffer[count++] = '\t';
+        break;
+      case 'b': 
+        buffer[count++] = '\b';
+        break;
+      case 'r': 
+        buffer[count++] = '\r';
+        break;
+      case 'f': 
+        buffer[count++] = '\f';
+        break;
+      case 'v': 
+        buffer[count++] = '\v';
+        break;
+      case '0': 
+        buffer[count++] = '\0';
+        break;
+      default:
+        buffer[count++] = str[idx];
+    }
+  }
+
+  return copyString(buffer, scapedLength); 
+}
+
 static void string(bool canAssign) {
   emitConstant(OBJ_VAL(
-      copyString(parser.previous.start + 1, parser.previous.length - 2)));
+      escapeString()));
 }
 
 static int resolveLocal(Compiler* compiler, Token* name) {

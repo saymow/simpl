@@ -95,14 +95,17 @@ static void skipWhitespace() {
 }
 
 static Token string() {
-  while (peek() != '"' && !isAtEnd()) {
+  while (!isAtEnd() && peek() != '"') {
     if (peek() == '\n') lexer->line++;
+    if (peek() == '\\' && peekNext() == '\"') advance();
+    
     advance();
   }
 
   if (isAtEnd()) return errorToken("Unterminated string.");
 
   advance();
+
   return makeToken(TOKEN_STRING);
 }
 
