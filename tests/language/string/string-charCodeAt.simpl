@@ -1,0 +1,10 @@
+// String.charCodeAt
+
+System.log("abcABC".charCodeAt(-1));                        // expect nil
+System.log("abcABC".charCodeAt(0));                         // expect 97
+System.log("abcABC".charCodeAt(1));                         // expect 98
+System.log("abcABC".charCodeAt(2));                         // expect 99
+System.log("abcABC".charCodeAt(3));                         // expect 65
+System.log("abcABC".charCodeAt(4));                         // expect 66
+System.log("abcABC".charCodeAt(5));                         // expect 67
+System.log("abcABC".charCodeAt(6));                         // expect nil
