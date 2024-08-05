@@ -1108,11 +1108,21 @@ static InterpretResult run() {
           concatenate();
         } else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
           BINARY_OP(NUMBER_VAL, +);
+        } else if (IS_STRING(peek(0)) || IS_STRING(peek(1))) {
+          ObjString* str1 = toString(peek(1));
+          ObjString* str2 = toString(peek(0));
+
+          pop();
+          pop();
+
+          push(OBJ_VAL(str1));
+          push(OBJ_VAL(str2));
+
+          concatenate();
         } else {
-          recoverableRuntimeError("Operands must be two numbers or two strings.");
+          recoverableRuntimeError("Invalid operands.");
           continue;
         }
-
         break;
       }
       case OP_SUBTRACT: {
