@@ -17,7 +17,7 @@ try {
 try {
     1 + true;
 } catch(err) {
-    System.log(err.message);                                                                // expect Operands must be two numbers or two strings.
+    System.log(err.message);                                                                // expect Invalid operands.
 }
 
 try {

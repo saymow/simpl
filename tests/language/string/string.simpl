@@ -21,3 +21,7 @@ System.log(name);                                                  // expect Joh
 
 System.log("\"Quoted\"");                                          // expect "Quoted"
 System.log("\\\\\\");                                              // expect \\\
+
+System.log("John_" + "Doe");                                       // expect John_Doe
+System.log("start" + 123);                                         // expect start123
+System.log(123 + "start");                                         // expect 123start
