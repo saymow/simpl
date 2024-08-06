@@ -1436,6 +1436,63 @@ static ObjString* escapeString() {
   return copyString(buffer, scapedLength); 
 }
 
+static void stringInterpolation(bool canAssign) {
+  ObjString* template = escapeString();
+  uint8_t placeholdersCount = 0; 
+
+  for (int idx = 0; idx < template->length; idx++) {
+    if (
+      template->chars[idx] == '$' &&
+      idx + 1 < template->length &&
+      template->chars[idx + 1] == '(' 
+    ) {
+      placeholdersCount++;
+
+      if (placeholdersCount > UINT8_MAX) {
+        error("Can't have more than 255 string interpolation placeholders.");
+      }
+
+      idx += 2;
+      int interpolationStart = idx;
+      int isPlaceholderOpen = 1;
+
+      while (isPlaceholderOpen > 0) {
+        if (template->chars[idx] == '(') isPlaceholderOpen++;
+        if (template->chars[idx] == ')') isPlaceholderOpen--;
+        idx++;
+      }
+      idx--;
+
+      Lexer interpolationLexer;
+      Parser interpolationParser;
+      Parser previousParser = parser;
+      int sourceLength = idx - interpolationStart; 
+      char source[sourceLength + 1]; 
+
+      interpolationParser.module = parser.module;
+      interpolationParser.hadError = parser.hadError;
+      interpolationParser.panicMode = false;
+      parser = interpolationParser;
+
+      for (int i = 0; i < sourceLength; i++) {
+        source[i] = template->chars[interpolationStart + i];
+      }
+      source[sourceLength] = '\0';
+
+      stackLexer(&interpolationLexer, source);
+
+      advance();
+      expression();
+
+      popLexer();
+      parser = previousParser;
+    }
+  }
+
+  emitBytes(OP_STRING_INTERPOLATION,  makeConstant(OBJ_VAL(template)));
+  emitByte(placeholdersCount);
+}
+
 static void string(bool canAssign) {
   emitConstant(OBJ_VAL(
       escapeString()));
@@ -1771,6 +1828,7 @@ ParseRule rules[] = {
     [TOKEN_LESS_EQUAL] = {NULL, binary, PREC_COMPARISON},
     [TOKEN_IDENTIFIER] = {variable, NULL, PREC_NONE},
     [TOKEN_STRING] = {string, NULL, PREC_NONE},
+    [TOKEN_STRING_INTERPOLATION] = {stringInterpolation, NULL, PREC_NONE},
     [TOKEN_NUMBER] = {number, NULL, PREC_NONE},
     [TOKEN_AND] = {NULL, _and, PREC_AND},
     [TOKEN_CLASS] = {NULL, NULL, PREC_NONE},

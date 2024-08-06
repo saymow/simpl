@@ -594,6 +594,74 @@ static inline void getObjectProperty(Obj* obj, Value index, Value* value) {
   }
 }
 
+static inline Value stringInterpolation(ObjString* template, uint8_t placeholdersCount) {
+  int length = template->length;
+  ValueArray valueArray;
+  initValueArray(&valueArray);
+
+  for (int i = 0; i < template->length; i++) {
+    if (
+      template->chars[i] == '$' &&
+      i + 1 < template->length &&
+      template->chars[i + 1] == '(' 
+    ) {
+      int placeholderStart = i;
+
+      i += 2;
+
+      Value value = pop();
+      ObjString* valueStr = toString(value);
+
+      writeValueArray(&valueArray, OBJ_VAL(valueStr));
+
+      int isPlaceholderOpen = 1;
+      while (isPlaceholderOpen > 0) {
+        if (template->chars[i] == '(') isPlaceholderOpen++;
+        if (template->chars[i] == ')') isPlaceholderOpen--;
+        i++;
+      }
+
+      // update str length to: length - placeholderLength + placeholderExpressionLength;
+      length = length - (i - placeholderStart) + valueStr->length;
+    }
+  }
+
+  char buffer[length + 1];
+  
+  int idx = 0;
+  for (int i = 0; i < template->length; i++) {
+    if (
+      template->chars[i] == '$' && 
+      i + 1 < template->length && 
+      template->chars[i + 1] == '(') {
+
+        // skip placeholder 
+        i += 2;
+        int isPlaceholderOpen = 1;
+
+        while (isPlaceholderOpen > 0) {
+          if (template->chars[i] == '(') isPlaceholderOpen++;
+          if (template->chars[i] == ')') isPlaceholderOpen--;
+          i++;
+        }
+        i--;
+
+        ObjString* valueStr = AS_STRING(valueArray.values[--valueArray.count]);
+
+        for (int j = 0; j < valueStr->length; j++) {
+          buffer[idx++] = valueStr->chars[j];
+        }
+    } else {
+      buffer[idx++] = template->chars[i];
+    }
+  }
+
+  freeValueArray(&valueArray);
+  buffer[idx] = '\0';
+
+  return OBJ_VAL(copyString(buffer, idx));
+}
+
 static InterpretResult run() {
   frame = &vm.frames[vm.framesCount - 1];
 
@@ -639,6 +707,13 @@ static InterpretResult run() {
       case OP_CONSTANT: {
         Value constant = READ_CONSTANT();
         push(constant);
+        break;
+      }
+      case OP_STRING_INTERPOLATION: {
+        ObjString* name = AS_STRING(READ_CONSTANT());
+        uint8_t placeholdersCount = READ_BYTE(); 
+        
+        push(stringInterpolation(name, placeholdersCount));
         break;
       }
       case OP_ARRAY: {

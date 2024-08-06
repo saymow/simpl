@@ -38,6 +38,7 @@ typedef enum {
   // Literals.
   TOKEN_IDENTIFIER,
   TOKEN_STRING,
+  TOKEN_STRING_INTERPOLATION,
   TOKEN_NUMBER,
   // Keywords.
   TOKEN_AND,

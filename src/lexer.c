@@ -94,11 +94,44 @@ static void skipWhitespace() {
   }
 }
 
-static Token string() {
+static Token stringInterpolation() {
+  int isPlaceholderOpen = 0;
+
   while (!isAtEnd() && peek() != '"') {
+    if (peek() == '$' && peekNext() == '(') {
+      if (isPlaceholderOpen > 0) {
+        return errorToken("Invalid string interpolation.");
+      }
+
+      isPlaceholderOpen = 1;
+      advance();
+    }
+    if (peek() == '(' && isPlaceholderOpen) isPlaceholderOpen++;
+    if (peek() == ')') isPlaceholderOpen--;
     if (peek() == '\n') lexer->line++;
     if (peek() == '\\' && (peekNext() == '\"' || peekNext() == '\\')) advance();
-    
+
+    advance();
+  }
+
+  if (isAtEnd()) return errorToken("Unterminated string.");
+
+  advance();
+
+  return makeToken(TOKEN_STRING_INTERPOLATION);
+}
+
+static Token string() {
+  while (!isAtEnd() && peek() != '"') {
+    if (peek() == '$' && peekNext() == '(') {
+      advance();
+      advance();
+      return stringInterpolation();  
+    }
+
+    if (peek() == '\n') lexer->line++;
+    if (peek() == '\\' && (peekNext() == '\"' || peekNext() == '\\')) advance();
+
     advance();
   }
 
