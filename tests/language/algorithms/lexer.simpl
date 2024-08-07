@@ -62,7 +62,6 @@ var TokenType = {
     EOF: "EOF"
 };
 
-
 class Lexer {
     Lexer(source) {
         this.source = source;
@@ -471,9 +470,9 @@ System.log("[");
 
 for (token of tokens) {
     System.log(" {"); 
-    System.log("   type: " + token.type + ", "); 
-    System.log("   literal: " + token.literal.toString() +  ","); 
-    System.log("   lexeme: " + token.lexeme.toString() +  ","); 
+    System.log("   type: $(token.type), "); 
+    System.log("   literal: $(token.literal.toString()),"); 
+    System.log("   lexeme: $(token.lexeme.toString()),"); 
     System.log(" },");
 }
 

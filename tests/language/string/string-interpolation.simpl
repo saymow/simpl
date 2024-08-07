@@ -1,0 +1,27 @@
+// String interpolation
+
+fun doSomething() {
+    return "something";
+}
+
+class Person {
+    Person(name, lastName) {
+        this.name = name;
+        this.lastName = lastName;
+    }
+}
+
+var name = "John";
+var lastName = "Doe";
+var age = 77;
+var person = Person(name, lastName);
+var interpolated = "The name is $(name) $(lastName).";
+
+System.log("$(name) $(lastName)");                                         // expect John Doe
+System.log("age: $(700 + 77)");                                            // expect age: 777
+System.log(interpolated);                                                  // expect The name is John Doe.
+System.log("call: $(doSomething())");                                      // expect call: something
+System.log("$(name) $(name) $(name) $(name) $(name) $(name) $(name)");     // expect John John John John John John John
+System.log("result: $(3 + 4 * 3 > 1)");                                    // expect result: true
+System.log("$(false ? name : "Doe")");                                     // expect Doe
+System.log("a$("")$("")$("")$("")b$("")$("")$("")$("")c");                 // expect abc
