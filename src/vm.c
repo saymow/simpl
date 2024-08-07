@@ -597,7 +597,7 @@ static inline void getObjectProperty(Obj* obj, Value index, Value* value) {
 // String interpolation is handled in two pass:
 //  - 1°) Compute resulting string length and store placeholder string values
 //  - 2°) Fill resulting string, swapping placeholder literal for placeholder string value 
-static inline Value stringInterpolation(ObjString* template, uint8_t placeholdersCount) {
+static inline Value stringInterpolation(ObjString* template) {
   ValueArray valueArray;
   initValueArray(&valueArray);
   int length = template->length;
@@ -723,9 +723,7 @@ static InterpretResult run() {
       }
       case OP_STRING_INTERPOLATION: {
         ObjString* name = AS_STRING(READ_CONSTANT());
-        uint8_t placeholdersCount = READ_BYTE(); 
-        
-        push(stringInterpolation(name, placeholdersCount));
+        push(stringInterpolation(name));
         break;
       }
       case OP_ARRAY: {

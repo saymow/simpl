@@ -97,6 +97,8 @@ int disassembleInstruction(Chunk* chunk, int offset) {
   switch (instruction) {
     case OP_CONSTANT:
       return constantInstruction("OP_CONSTANT", chunk, offset);
+    case OP_STRING_INTERPOLATION:
+      return constantInstruction("OP_STRING_INTERPOLATION", chunk, offset);
     case OP_CLASS:
       return constantInstruction("OP_CLASS", chunk, offset);
     case OP_INHERIT:
@@ -105,8 +107,6 @@ int disassembleInstruction(Chunk* chunk, int offset) {
       return constantInstruction("OP_SUPER", chunk, offset);
     case OP_GET_PROPERTY:
       return flaggedConstantInstruction("OP_GET_PROPERTY", chunk, offset);
-    case OP_STRING_INTERPOLATION:
-      return flaggedConstantInstruction("OP_STRING_INTERPOLATION", chunk, offset);
     case OP_SET_PROPERTY:
       return constantInstruction("OP_SET_PROPERTY", chunk, offset);
     case OP_GET_GLOBAL:

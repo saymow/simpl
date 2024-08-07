@@ -1504,7 +1504,6 @@ static void stringInterpolation(bool canAssign) {
   }
 
   emitBytes(OP_STRING_INTERPOLATION,  makeConstant(OBJ_VAL(template)));
-  emitByte(placeholdersCount);
 }
 
 static void string(bool canAssign) {
