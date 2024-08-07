@@ -33,6 +33,36 @@
           "ignoreFailures": true
         }
       ]
+    },
+    {
+      "name": "(gdb) Bash on Windows Launch - Input file",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${fileDirname}\\main-debugger.run",
+      "args": ["${fileDirname}\\program.simpl" , "<", "${fileDirname}\\program.in"],
+      // "preLaunchTask": "C/C++: gcc.exe build active file",
+      "stopAtEntry": false,
+      "cwd": "${fileDirname}",
+      "environment": [],
+      "externalConsole": false,
+      "pipeTransport": {
+        "debuggerPath": "C:/msys64/ucrt64/bin/gdb.exe",
+        "pipeProgram": "C:/Program Files/Git/bin/bash.exe",
+        "pipeArgs": ["-c"],
+        "pipeCwd": "${workspaceFolder}"
+      },
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        },
+        {
+          "description": "Set Disassembly Flavor to Intel",
+          "text": "-gdb-set disassembly-flavor intel",
+          "ignoreFailures": true
+        }
+      ]
     }
   ]
 }
