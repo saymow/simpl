@@ -1440,7 +1440,9 @@ static void stringInterpolation(bool canAssign) {
   ObjString* template = escapeString();
   uint8_t placeholdersCount = 0; 
 
+  // Iterate through string template and scan/compile every placeholder expression.
   for (int idx = 0; idx < template->length; idx++) {
+    // template placeholder slot found
     if (
       template->chars[idx] == '$' &&
       idx + 1 < template->length &&
@@ -1451,18 +1453,21 @@ static void stringInterpolation(bool canAssign) {
       if (placeholdersCount > UINT8_MAX) {
         error("Can't have more than 255 string interpolation placeholders.");
       }
-
+      
+      // skip "$(" chars 
       idx += 2;
       int interpolationStart = idx;
       int isPlaceholderOpen = 1;
 
+      // consume placeholder character until slot end 
       while (isPlaceholderOpen > 0) {
         if (template->chars[idx] == '(') isPlaceholderOpen++;
         if (template->chars[idx] == ')') isPlaceholderOpen--;
         idx++;
       }
       idx--;
-
+      
+      // setup lexer and parser
       Lexer interpolationLexer;
       Parser interpolationParser;
       Parser previousParser = parser;
@@ -1474,16 +1479,25 @@ static void stringInterpolation(bool canAssign) {
       interpolationParser.panicMode = false;
       parser = interpolationParser;
 
+      // setup source code (placeholder literal)
       for (int i = 0; i < sourceLength; i++) {
         source[i] = template->chars[interpolationStart + i];
       }
       source[sourceLength] = '\0';
 
+      // start lexer and parser
       stackLexer(&interpolationLexer, source);
-
       advance();
+
+      // compile expected expression
       expression();
 
+      // if there are more than one expression, throw error
+      if (*lexer->current != '\0') {
+        error("Invalid string interpolation expression.");
+      }
+
+      // setup previous lexer and parser back
       popLexer();
       parser = previousParser;
     }

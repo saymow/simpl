@@ -594,12 +594,16 @@ static inline void getObjectProperty(Obj* obj, Value index, Value* value) {
   }
 }
 
+// String interpolation is handled in two pass:
+//  - 1°) Compute resulting string length and store placeholder string values
+//  - 2°) Fill resulting string, swapping placeholder literal for placeholder string value 
 static inline Value stringInterpolation(ObjString* template, uint8_t placeholdersCount) {
-  int length = template->length;
   ValueArray valueArray;
   initValueArray(&valueArray);
+  int length = template->length;
 
   for (int i = 0; i < template->length; i++) {
+    // template placeholder slot found
     if (
       template->chars[i] == '$' &&
       i + 1 < template->length &&
@@ -607,22 +611,27 @@ static inline Value stringInterpolation(ObjString* template, uint8_t placeholder
     ) {
       int placeholderStart = i;
 
+      // skip $(   
       i += 2;
 
+      // Since we are popping from one stack to other, the items order is reversed.
+      // Which is exactly what we need.
       Value value = pop();
       ObjString* valueStr = toString(value);
-
       writeValueArray(&valueArray, OBJ_VAL(valueStr));
 
+      // consume everything until placeholder end
       int isPlaceholderOpen = 1;
       while (isPlaceholderOpen > 0) {
         if (template->chars[i] == '(') isPlaceholderOpen++;
         if (template->chars[i] == ')') isPlaceholderOpen--;
         i++;
       }
+      i--;
 
-      // update str length to: length - placeholderLength + placeholderExpressionLength;
-      length = length - (i - placeholderStart) + valueStr->length;
+      // Although this is computed in a reverse way, it is able to correctly get the resulting string length.
+      // It does so by incrementing the delta (placeholder length - placeholder-value length).
+      length = length - (i - placeholderStart + 1) + valueStr->length;
     }
   }
 
@@ -630,15 +639,17 @@ static inline Value stringInterpolation(ObjString* template, uint8_t placeholder
   
   int idx = 0;
   for (int i = 0; i < template->length; i++) {
+    // template placeholder slot found
     if (
       template->chars[i] == '$' && 
       i + 1 < template->length && 
       template->chars[i + 1] == '(') {
 
-        // skip placeholder 
+        // skip $( 
         i += 2;
-        int isPlaceholderOpen = 1;
 
+        // consume everything until placeholder end
+        int isPlaceholderOpen = 1;
         while (isPlaceholderOpen > 0) {
           if (template->chars[i] == '(') isPlaceholderOpen++;
           if (template->chars[i] == ')') isPlaceholderOpen--;
@@ -646,12 +657,13 @@ static inline Value stringInterpolation(ObjString* template, uint8_t placeholder
         }
         i--;
 
+        // write placeholder value on the buffer
         ObjString* valueStr = AS_STRING(valueArray.values[--valueArray.count]);
-
         for (int j = 0; j < valueStr->length; j++) {
           buffer[idx++] = valueStr->chars[j];
         }
     } else {
+      // write template-non-placeholder on the buffer
       buffer[idx++] = template->chars[i];
     }
   }

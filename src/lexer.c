@@ -95,9 +95,11 @@ static void skipWhitespace() {
 }
 
 static Token stringInterpolation() {
-  int isPlaceholderOpen = 0;
+  int isPlaceholderOpen = 1;
 
-  while (!isAtEnd() && peek() != '"') {
+  while (!isAtEnd() && (isPlaceholderOpen > 0 || peek() != '"')) {
+    if (peek() == '(' && isPlaceholderOpen) isPlaceholderOpen++;
+    if (peek() == ')') isPlaceholderOpen--;
     if (peek() == '$' && peekNext() == '(') {
       if (isPlaceholderOpen > 0) {
         return errorToken("Invalid string interpolation.");
@@ -106,14 +108,13 @@ static Token stringInterpolation() {
       isPlaceholderOpen = 1;
       advance();
     }
-    if (peek() == '(' && isPlaceholderOpen) isPlaceholderOpen++;
-    if (peek() == ')') isPlaceholderOpen--;
     if (peek() == '\n') lexer->line++;
     if (peek() == '\\' && (peekNext() == '\"' || peekNext() == '\\')) advance();
 
     advance();
   }
 
+  if (isPlaceholderOpen > 0) return errorToken("Unterminated string interpolation.");
   if (isAtEnd()) return errorToken("Unterminated string.");
 
   advance();
