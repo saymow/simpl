@@ -326,6 +326,22 @@ static inline bool __nativeSystemLog(int argCount, Value* args) {
   NATIVE_RETURN(NIL_VAL);  
 }
 
+static inline bool __nativeSystemScan(int argCount, Value* args) {
+  char buffer[1024];
+
+  if (fgets(buffer, 1024, stdin) == NULL) {
+    fflush(stdin);
+    push(OBJ_VAL(CONSTANT_STRING("Unexpected scan error.")));
+    return false;
+  }
+  fflush(stdin);
+
+  // replace new line with null terminator
+  buffer[strcspn(buffer, "\n")] = 0;
+
+  NATIVE_RETURN(OBJ_VAL(copyString(buffer, strlen(buffer))));  
+}
+
 static inline bool __nativeSystemClock(int argCount, Value* args) {
   NATIVE_RETURN(NUMBER_VAL(clock() / (double) CLOCKS_PER_SEC));
 }
@@ -825,6 +841,7 @@ void initializeCore(VM* vm) {
 
   defineNativeFunction(&vm->metaSystemClass->methods, "clock", __nativeSystemClock, ARGS_ARITY_0);
   defineNativeFunction(&vm->metaSystemClass->methods, "log", __nativeSystemLog, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaSystemClass->methods, "scan", __nativeSystemScan, ARGS_ARITY_0);
 
   vm->systemClass = defineNewClass("System");
   inherit((Obj *)vm->systemClass, vm->metaSystemClass);
