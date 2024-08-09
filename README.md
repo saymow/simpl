@@ -9,6 +9,13 @@
 <p>You can get a feel for <b>Simpl</b> syntax by looking at this lexer implementation: </p>
 
 ```
+var TokenType = {
+    LEFT_PAREN: "LEFT_PAREN",
+    RIGHT_PAREN: "RIGHT_PAREN",
+    LEFT_BRACE: "LEFT_BRACE",
+    ...
+};
+
 class Lexer {
     Lexer(source) {
         this.source = source;
@@ -20,32 +27,7 @@ class Lexer {
             and: TokenType.AND,
             class: TokenType.CLASS,
             extends: TokenType.EXTENDS,
-            else: TokenType.ELSE,
-            false: TokenType.FALSE,
-            for: TokenType.FOR,
-            fun: TokenType.FUN,
-            if: TokenType.IF,
-            nil: TokenType.NIL,
-            or: TokenType.OR,
-            print: TokenType.PRINT,
-            return: TokenType.RETURN,
-            super: TokenType.SUPER,
-            this: TokenType.THIS,
-            true: TokenType.TRUE,
-            var: TokenType.VAR,
-            while: TokenType.WHILE,
-            import: TokenType.IMPORT,
-            from: TokenType.FROM,
-            export: TokenType.EXPORT,
-            try: TokenType.TRY,
-            catch: TokenType.CATCH,
-            throw: TokenType.THROW,
-            break: TokenType.BREAK,
-            continue: TokenType.CONTINUE,
-            switch: TokenType.SWITCH,
-            case: TokenType.CASE,
-            default: TokenType.DEFAULT,
-            of: TokenType.OF
+            ...
         };
     }
 
