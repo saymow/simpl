@@ -4,25 +4,20 @@ System.log((1 == 1 ? (2 == 2 ? "both-true" : "second-false") : "first-false")); 
 System.log((1 == 1 ? (2 == 3 ? "second true" : "second-false") : "first-false"));                                                       // expect second-false
 System.log((1 == 2 ? (2 == 2 ? "both-true" : "second-false") : "first-false"));                                                         // expect first-false
 System.log((1 == 2 ? (2 == 3 ? "both false" : "second-false") : "first-false"));                                                        // expect first-false
-
 System.log((1 == 1 ? (2 == 2 ? (3 == 3 ? "all-true" : "third-false") : "second-false") : "first-false"));                               // expect all-true
 System.log((1 == 1 ? (2 == 2 ? (3 == 4 ? "third-true" : "third-false") : "second-false") : "first-false"));                             // expect third-false
 System.log((1 == 1 ? (2 == 3 ? (3 == 3 ? "second-true-third-true" : "second-true-third-false") : "second-false") : "first-false"));     // expect second-false
 System.log((1 == 2 ? (2 == 2 ? (3 == 3 ? "second-true-third-true" : "second-true-third-false") : "second-false") : "first-false"));     // expect first-false
-
 System.log((true ? (false ? "nested-true-true" : "nested-true-false") : "outer-false"));                                                // expect nested-true-false
 System.log((false ? (true ? "nested-false-true" : "nested-false-false") : "outer-false"));                                              // expect outer-false
-
 System.log((true ? (true ? (false ? "inner-true-false" : "inner true-true") : "inner-false") : "outer-false"));                         // expect inner true-true
 System.log((true ? (false ? (true ? "inner-false-true" : "inner-false-false") : "inner-true-false") : "outer-false"));                  // expect inner-true-false
 System.log((false ? (true ? (false ? "inner-true-false" : "inner true-true") : "inner-false") : "outer-false"));                        // expect outer-false
 System.log((false ? (false ? (true ? "inner-false-true" : "inner-false-false") : "inner-true-false") : "outer-false"));                 // expect outer-false
-
 System.log((1 + 1 == 2 ? (2 * 2 == 4 ? "math-true" : "math-false") : "math-outer-false"));                                              // expect math-true
 System.log((1 + 1 == 2 ? (2 * 2 == 5 ? "math-inner-false" : "math-inner true") : "math-outer-false"));                                  // expect math-inner true
 System.log((1 + 1 == 3 ? (2 * 2 == 4 ? "math-true" : "math-false") : "math-outer-false"));                                              // expect math-outer-false
 System.log((1 + 1 == 3 ? (2 * 2 == 5 ? "math-inner-false" : "math-inner true") : "math-outer-false"));                                  // expect math-outer-false
-
 System.log((true ? (1 == 1 ? (2 != 3 ? "nested-true" : "nested-false") : "inner-false") : "outer-false"));                              // expect nested-true
 System.log((true ? (1 != 1 ? (2 != 3 ? "nested-true" : "nested-false") : "inner-false") : "outer-false"));                              // expect inner-false
 System.log((false ? (1 == 1 ? (2 != 3 ? "nested-true" : "nested-false") : "inner-false") : "outer-false"));                             // expect outer-false
