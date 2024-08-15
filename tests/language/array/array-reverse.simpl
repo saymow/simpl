@@ -1,0 +1,8 @@
+// Array.reverse
+
+
+System.log([1, 2, 3, 4, 5].reverse());                              // expect [5, 4, 3, 2, 1]
+System.log([5, 4, 3, 2, 1].reverse());                              // expect [1, 2, 3, 4, 5]
+System.log(["a"].reverse());                                        // expect [a]
+System.log(["a", "b", "c"].reverse());                              // expect [c, b, a]
+System.log([].reverse());                                           // expect []
