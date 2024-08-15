@@ -314,6 +314,37 @@ static inline bool __nativeArrayReverse(int argCount, Value* args) {
   NATIVE_RETURN(OBJ_VAL(reversedArray));
 }
 
+static inline int quickSortPartition(ObjArray* arr, int left, int right) {
+  int p = (left + right) / 2;
+  int store = left;
+
+  swap(&arr->list, p, right);
+
+  for (int idx = left; idx < right; idx++) {
+    if (arr->list.values[idx] <= arr->list.values[right]) {
+      swap(&arr->list, idx, store++);
+    }
+  }
+  swap(&arr->list, right, store);
+
+  return store;
+} 
+
+static inline void quickSort(ObjArray* arr, int left, int right) {
+  if (left >= right) return;
+  int pi = quickSortPartition(arr, left, right);
+  quickSortPartition(arr, left, pi - 1);
+  quickSortPartition(arr, pi + 1, right);
+}
+
+static inline bool __nativeArraySort(int argCount, Value* args) {
+  ObjArray* array = AS_ARRAY(*args);
+
+  quickSort(array, 0, array->list.count - 1);
+
+  NATIVE_RETURN(OBJ_VAL(array));
+}
+
 static inline bool __nativeStaticArrayIsArray(int argCount, Value* args) {
   Value value = *(++args);
   NATIVE_RETURN(IS_ARRAY(value) ? TRUE_VAL : FALSE_VAL);
@@ -844,6 +875,7 @@ void initializeCore(VM* vm) {
   defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_15);
   defineNativeFunction(&vm->arrayClass->methods, "join", __nativeArrayJoin, ARGS_ARITY_1);
   defineNativeFunction(&vm->arrayClass->methods, "reverse", __nativeArrayReverse, ARGS_ARITY_0);
+  defineNativeFunction(&vm->arrayClass->methods, "sort", __nativeArraySort, ARGS_ARITY_0);
 
   vm->metaErrorClass = defineNewClass("MetaError");
   inherit((Obj *) vm->metaErrorClass, vm->klass);
