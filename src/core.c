@@ -294,6 +294,26 @@ static inline bool __nativeArrayJoin(int argCount, Value* args) {
   NATIVE_RETURN(OBJ_VAL(takeString(buffer, length)));
 }
 
+static inline bool __nativeArrayReverse(int argCount, Value* args) {
+  ObjArray* array = AS_ARRAY(*args);
+  ObjArray* reversedArray = newArray();
+
+  GCWhiteList((Obj* )reversedArray);
+
+  while (reversedArray->list.capacity < array->list.count) 
+    reversedArray->list.capacity = GROW_CAPACITY(reversedArray->list.capacity);
+  reversedArray->list.count = array->list.count;
+  reversedArray->list.values = GROW_ARRAY(Value, reversedArray->list.values, 0, reversedArray->list.capacity);
+
+  for (int idx = 0; idx < array->list.count; idx++) {
+    reversedArray->list.values[reversedArray->list.count - idx - 1] = array->list.values[idx]; 
+  }
+
+  GCPopWhiteList();
+
+  NATIVE_RETURN(OBJ_VAL(reversedArray));
+}
+
 static inline bool __nativeStaticArrayIsArray(int argCount, Value* args) {
   Value value = *(++args);
   NATIVE_RETURN(IS_ARRAY(value) ? TRUE_VAL : FALSE_VAL);
@@ -823,6 +843,7 @@ void initializeCore(VM* vm) {
   defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_14);
   defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_15);
   defineNativeFunction(&vm->arrayClass->methods, "join", __nativeArrayJoin, ARGS_ARITY_1);
+  defineNativeFunction(&vm->arrayClass->methods, "reverse", __nativeArrayReverse, ARGS_ARITY_0);
 
   vm->metaErrorClass = defineNewClass("MetaError");
   inherit((Obj *) vm->metaErrorClass, vm->klass);
