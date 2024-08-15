@@ -2,7 +2,7 @@
 
 <br>
 
-<p>&nbsp;&nbsp;&nbsp;&nbsp; <b>Simpl</b> is a simple OOP <a href="https://dev.to/lexplt/understanding-bytecode-interpreters-eig">bytecode script language</a>.</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; <b>Simpl</b> is a simple OOP <a href="https://dev.to/lexplt/understanding-bytecode-interpreters-eig">bytecode script language</a>. <b>Simpl</b> has a cousing programming language that runs on the Web, you can look at <a href="https://github.com/saymow/simpl-web" target="_blank">Simpl Web</a>.</p>
 
 <p><b>Simpl</b> has a <a href="https://github.com/saymow/simpl/tree/master/tests-runner/src" target="_blank">test runner</a>, hundreds of <a href="https://github.com/saymow/simpl/blob/master/tests/language/ternary-operator.simpl">test files<a/> and few scripts to run <a href="https://github.com/saymow/simpl/blob/master/tests/benchmark/fib.simpl">benchmarks</a>.</p>
 
@@ -78,7 +78,6 @@ class Lexer {
         this.advance();
 
         if (this.atEnd()) {
-            System.log("start" + this.source.substr(this.startIdx, this.idx) + "end");
             throw Error("Unterminated string");
         }
 
@@ -137,6 +136,8 @@ class Lexer {
                 }
             }
         }
+
+        throw Error("Unexpected token.");
     }
 
     execute() {
@@ -191,8 +192,4 @@ class Lexer {
         return this.idx >= this.source.length();
     }
 }
-
-var source = "System.log(\"Hello world\");";
-var lexer = Lexer(source);
-var tokens = lexer.execute();
 ```
