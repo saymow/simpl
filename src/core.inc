@@ -91,6 +91,47 @@ class Array {
     return acc;     
   }
 
+  sort() {
+    return this.sort((a, b) -> a < b);
+  }
+
+  sort(compare) {
+    fun partition(left, right) {
+      var pivot = (left + right) / 2;
+      var count = left;
+
+      var tmp = this[right]; 
+      this[right] = this[pivot];
+      this[pivot] = tmp;
+
+      for (var idx = left; idx < right; idx += 1) {
+        if (compare(this[idx], this[right])) {
+          tmp = this[idx];
+          this[idx] = this[count];
+          this[count] = tmp;
+          count += 1;
+        }
+      }
+
+      tmp = this[right];
+      this[right] = this[count];
+      this[count] = tmp; 
+
+      return count;
+    }
+    
+    fun quickSort(left, right) {
+      if (left >= right) return;
+      var pi = partition(left, right);
+      quickSort(left, pi - 1);
+      quickSort(pi + 1, right);
+    } 
+
+    quickSort(0, this.length() - 1);
+    
+    return this;   
+  }
+
   skip(count) {
     return this.slice(Math.max(count, 0));
   }
