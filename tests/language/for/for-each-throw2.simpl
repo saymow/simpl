@@ -4,7 +4,7 @@
 // Loops are correctly popped from their stack when there is a throw statement inside it.
 
 fun throwAt(num, message) {
-    for (i of [1, 2, 3]) {
+    for i of [1, 2, 3] {
         System.log("throwAt");
         if (num == 1) {
             throw message;

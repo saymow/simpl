@@ -2,11 +2,11 @@
 
 System.log("before");
 
-for (i of [0, 1, 2]) {
+for i of [0, 1, 2] {
     if (i == 1) continue;
-    for (j of [10, 11, 12]) {
+    for j of [10, 11, 12] {
         if (j == 11) continue;
-        for (k of [100, 101, 102]) {
+        for k of [100, 101, 102] {
             if (k == 101) continue;
             System.log(k);
         }

@@ -2,7 +2,7 @@
 
 System.log("before");
 
-for (idx of ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]) {
+for idx of ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"] {
     System.log(idx);
 }
 

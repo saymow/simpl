@@ -3,11 +3,11 @@
 
 System.log("before");
 
-for (i of [0, 1, 2, 3, 4, 5]) {
+for i of [0, 1, 2, 3, 4, 5] {
     if (i >= 3) break;
-    for (j of [10, 11, 12, 13, 14, 15]) {
+    for j of [10, 11, 12, 13, 14, 15] {
         if (j >= 13) break;
-        for (k of [100, 101, 102, 103, 104, 105]) {
+        for k of [100, 101, 102, 103, 104, 105] {
             if (k >= 103) break;    
             System.log(k);
         }

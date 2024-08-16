@@ -468,7 +468,7 @@ var tokens = lexer.execute();
 
 System.log("[");
 
-for (token of tokens) {
+for token of tokens {
     System.log(" {"); 
     System.log("   type: $(token.type), "); 
     System.log("   literal: $(token.literal.toString()),"); 

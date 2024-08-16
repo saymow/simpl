@@ -97,7 +97,7 @@ fun dijkstra(matrix, elements, origin, target) {
     return false;
 }
 
-for (element of elements) {
+for element of elements {
     System.log(dijkstra(matrix, elements, "A", element));
 }
 

@@ -1,7 +1,6 @@
 // For each break placed inside try-catch block 
 
-
-for (idx of [0, 1, 2]) {
+for idx of [0, 1, 2] {
     try { continue; }
     catch { }
 }

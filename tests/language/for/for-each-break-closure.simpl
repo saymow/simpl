@@ -4,7 +4,7 @@ fun hoc(a, b) {
     var funExpr;
     var shouldStop = false;
 
-    for (letter of ["a", "b", "c"]) {
+    for letter of ["a", "b", "c"] {
         funExpr = fun (c) {
             return a + b + c;
         };

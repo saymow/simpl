@@ -4,7 +4,7 @@
 // Loops are correctly popped from their stack when there is a return statement inside it.
 
 fun loopReturn() {
-    for (num of [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]) {
+    for num of [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] {
         if (num >= 5) {
             return;
         }
