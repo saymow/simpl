@@ -1,0 +1,29 @@
+// Array sort
+
+System.log(["c", "b", "a"].sort((a, b) -> a.charCodeAt(0) <= b.charCodeAt(0)));      // expect [a, b, c]
+System.log([5, 4, 3, 2, 1].sort());                                                  // expect [1, 2, 3, 4, 5]
+System.log(
+    [898, 988, 790, 306, 936, 151, 74, 932, 763, 231, 146, 958, 301, 945, 620, 637, 617, 919, 628, 275]
+    .sort()
+);                                                                                   // expect [74, 146, 151, 231, 275, 301, 306, 617, 620, 628, 637, 763, 790, 898, 919, 932, 936, 945, 958, 988]
+System.log(
+    ["azure","kinetic","zenith","ethereal","solace","cadence","ember","mirage","solace","lexicon","equinox","abyss","elixir","zenith","elixir","solace","lexicon","cadence","ember","abyss"]
+    .sort((a, b) -> a.charCodeAt(0) < b.charCodeAt(0))
+    
+);                                                                                   // expect [abyss, azure, abyss, cadence, cadence, equinox, elixir, elixir, ethereal, ember, ember, kinetic, lexicon, lexicon, mirage, solace, solace, solace, zenith, zenith]
+System.log([5, 4, 3, 2, 1].sort((a, b) -> a > b));                                   // expect [5, 4, 3, 2, 1]
+System.log(["c", "b", "a"].sort((a, b) -> a.charCodeAt(0) > b.charCodeAt(0)));       // expect [c, b, a]
+System.log([898, 988, 790, 306, 936, 151, 74, 932, 763, 231, 146, 958, 301, 945, 620, 637, 617, 919, 628, 275]
+    .sort((a, b) -> a / 3 - b / 2));                                                 // expect [617, 898, 301, 988, 146, 790, 620, 306, 628, 936, 958, 151, 945, 74, 637, 932, 919, 763, 275, 231]
+System.log([].sort());                                                               // expect []
+System.log([1, 2, 3, 2, 1].sort());                                                  // expect [1, 1, 2, 2, 3]
+System.log(
+    [
+        { name: "Alice", age: 30 },
+        { name: "Bob", age: 25 },
+        { name: "Charlie", age: 35 }
+    ]
+    .sort((a, b) -> a.age < b.age)
+    .map((person) -> "{ name: $(person.name), age: $(person.age) }")
+    .join(", ")
+);                                                                                   // expect { name: Bob, age: 25 }, { name: Alice, age: 30 }, { name: Charlie, age: 35 }
