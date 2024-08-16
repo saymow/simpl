@@ -725,8 +725,6 @@ static void forEachStatement() {
   expression();
   addSystemLocalVariable();
 
-  consume(TOKEN_RIGHT_PAREN, "Expect ')' after for clause.");
-
   int loopGuard = emitLoopGuard() + 2;
   int loopStart = currentChunk()->count;
 
@@ -770,12 +768,14 @@ static void forStatement() {
   beginLoop();
   beginScope();
 
+  if (check(TOKEN_IDENTIFIER)) {
+    forEachStatement();
+    return;
+  }
+
   consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
 
   if (match(TOKEN_SEMICOLON)) {
-  } else if (check(TOKEN_IDENTIFIER)) {
-    forEachStatement();
-    return;
   } else if (match(TOKEN_VAR)) {
     varDeclaration();
   } else {
