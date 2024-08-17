@@ -306,6 +306,10 @@ static void addLocal(Token name) {
   local->isCaptured = false;
 }
 
+static void removeLastLocal() {
+  current->localCount--;
+}
+
 static void markLocalInitialized() {
   if (GLOBAL_VARIABLES()) return;
   current->locals[current->localCount - 1].depth = current->scopeDepth;
@@ -703,17 +707,24 @@ static void addSystemLocalVariable() {
   local->isCaptured = false;
 }
 
-static void forInRangeStatement(uint8_t iterationVariableConstant) {
-  Token rangeSyntheticToken = syntheticToken(TOKEN_IDENTIFIER, "range");
+static void forInRangeStatement(int iterationVariableConstant) {
+  if (iterationVariableConstant < 0) {
+    // if "for range(...)", then last local variable
+    // "range" should be considered as reserved word
+    removeLastLocal();
+  } else {
+    Token rangeSyntheticToken = syntheticToken(TOKEN_IDENTIFIER, "range");
  
-  consume(TOKEN_IDENTIFIER, "Expect 'range' for range-based for.");
-  if (!identifiersEqual(&rangeSyntheticToken, &parser.previous)) {
-    error("Expect 'range' for range-based for.");
+    consume(TOKEN_IDENTIFIER, "Expect 'range' for range-based for.");
+    if (!identifiersEqual(&rangeSyntheticToken, &parser.previous)) {
+      error("Expect 'range' for range-based for.");
+    }
+    
+    defineVariable(iterationVariableConstant);
   }
 
   consume(TOKEN_LEFT_PAREN, "Expect '(' after 'range'.");
-
-  defineVariable(iterationVariableConstant);
+  
   expression();
 
   if (match(TOKEN_COMMA)) {
@@ -734,8 +745,14 @@ static void forInRangeStatement(uint8_t iterationVariableConstant) {
   // manually declaring ranged-base for variables.
   // We keep the expression results variable on the stack
   // until we reach the end of the scope.
+  // 
+  // track "start" variable conditionaly.
+  // if "for range(...)", then "start" is a system variable and 
+  // must be tracked. Otherwise, it is a user defined variable.  
+  if (iterationVariableConstant < 0) addSystemLocalVariable();
+  // track "end" variable
   addSystemLocalVariable();
-  addSystemLocalVariable();
+  // track "step" variable
   addSystemLocalVariable();
   
   emitByte(OP_RANGED_LOOP_SETUP);
@@ -749,50 +766,6 @@ static void forInRangeStatement(uint8_t iterationVariableConstant) {
   patchJump(loopGuard, 2);
   emitByte(OP_LOOP_GUARD_END);
 
-  endScope();
-  endLoop();
-}
-
-static void forEachStatement() {
-  uint8_t iterationVariableConstant = parseVariable("Expect for each iteration variable identifier.");
-
-  if (match(TOKEN_IN)) {
-    forInRangeStatement(iterationVariableConstant);
-    return;
-  }
-
-  consume(TOKEN_OF, "Expect 'of' after for each iteration variable.");
-
-  // manually declaring user iteration name variable 
-  defineVariable(iterationVariableConstant);
-  uint8_t iterationName = makeConstant(NIL_VAL);
-  emitBytes(OP_CONSTANT, iterationName);
-
-  // Below we declare auxiliary variables for the OP_NAMED_LOOP
-  // These variables are cleared once the scope is closed 
-
-  // manually declaring system iteration index variable
-  emitBytes(OP_CONSTANT, makeConstant(NUMBER_VAL(-1)));
-  addSystemLocalVariable();
-
-  // manually declaring system iterator variable.
-  // We keep the expression result variable on the stack
-  // until we reach the end of the scope.
-  expression();
-  addSystemLocalVariable();
-
-  int loopGuard = emitLoopGuard() + 2;
-  int loopStart = currentChunk()->count;
-
-  emitByte(OP_NAMED_LOOP);
-  
-  statement();
-
-  emitLoop(loopStart);
-  
-  patchJump(loopGuard, 2);
-  emitByte(OP_LOOP_GUARD_END);
-  
   // Normal loops are usualy compiled like this:
   //  
   //  <START>
@@ -815,9 +788,81 @@ static void forEachStatement() {
   // pop dummy value 
   emitByte(OP_POP);
 
-  // The manually declared iteration name is popped from the stack as soon as the block is closed
   endScope();
   endLoop();
+}
+
+static void sugaredForStatement() {
+  uint8_t iterationVariableConstant = parseVariable("Expect for each iteration variable identifier.");
+  Token rangeSyntheticToken = syntheticToken(TOKEN_IDENTIFIER, "range");
+
+  if (identifiersEqual(&parser.previous, &rangeSyntheticToken)) {
+    // handle "for range(...)"
+    forInRangeStatement(-1);
+  } else if (match(TOKEN_IN)) {
+    // handle "for idx of range(...)"
+    forInRangeStatement(iterationVariableConstant);
+  } else {
+    // handle "for element of elements"
+
+    consume(TOKEN_OF, "Expect 'of' after for each iteration variable.");
+
+    // manually declaring user iteration name variable 
+    defineVariable(iterationVariableConstant);
+    uint8_t iterationName = makeConstant(NIL_VAL);
+    emitBytes(OP_CONSTANT, iterationName);
+
+    // Below we declare auxiliary variables for the OP_NAMED_LOOP
+    // These variables are cleared once the scope is closed 
+
+    // manually declaring system iteration index variable
+    emitBytes(OP_CONSTANT, makeConstant(NUMBER_VAL(-1)));
+    addSystemLocalVariable();
+
+    // manually declaring system iterator variable.
+    // We keep the expression result variable on the stack
+    // until we reach the end of the scope.
+    expression();
+    addSystemLocalVariable();
+
+    int loopGuard = emitLoopGuard() + 2;
+    int loopStart = currentChunk()->count;
+
+    emitByte(OP_NAMED_LOOP);
+    
+    statement();
+
+    emitLoop(loopStart);
+    
+    patchJump(loopGuard, 2);
+    emitByte(OP_LOOP_GUARD_END);
+    
+    // Normal loops are usualy compiled like this:
+    //  
+    //  <START>
+    //  <EXPRESSION>
+    //  OP_JUMP_IF_FALSE     => <END>
+    //  OP_POP
+    //  ...
+    //  OP_JUMP              => <START>
+    //  <END>
+    //  OP_POP
+    //
+    // The last OP_POP is used to remove the OP_JUMP_IF_FALSE <EXPRESSION> from the stack.
+    //
+    // The LOOP_GUARD implementation is built on top of this concept and whenever it faces
+    // a "break" statement, it adds a dummy value to be consumed by the OP_POP after <END>. 
+    //
+    // Although we dont have any explict expression in this for-each, in order to comply with
+    // the LOOP_GUARD implementation, we will be popping the dummy value it adds. We will also
+    // be adding this dummy value where needed.
+    // pop dummy value 
+    emitByte(OP_POP);
+
+    // The manually declared iteration name is popped from the stack as soon as the block is closed
+    endScope();
+    endLoop();
+  }
 }
 
 static void forStatement() {
@@ -825,7 +870,7 @@ static void forStatement() {
   beginScope();
 
   if (check(TOKEN_IDENTIFIER)) {
-    forEachStatement();
+    sugaredForStatement();
     return;
   }
 
