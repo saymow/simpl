@@ -1539,7 +1539,7 @@ static ObjString* escapeString() {
 }
 
 static void stringInterpolation(bool canAssign) {
-  ObjString* template = escapeString();
+  ObjString* template = (ObjString*) GCWhiteList((Obj*)escapeString());
   uint8_t placeholdersCount = 0; 
 
   // Iterate through string template and scan/compile every placeholder expression.
@@ -1605,6 +1605,7 @@ static void stringInterpolation(bool canAssign) {
     }
   }
 
+  GCPopWhiteList();
   emitBytes(OP_STRING_INTERPOLATION,  makeConstant(OBJ_VAL(template)));
 }
 

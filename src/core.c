@@ -302,8 +302,8 @@ static inline bool __nativeArrayReverse(int argCount, Value* args) {
 
   while (reversedArray->list.capacity < array->list.count) 
     reversedArray->list.capacity = GROW_CAPACITY(reversedArray->list.capacity);
-  reversedArray->list.count = array->list.count;
   reversedArray->list.values = GROW_ARRAY(Value, reversedArray->list.values, 0, reversedArray->list.capacity);
+  reversedArray->list.count = array->list.count;
 
   for (int idx = 0; idx < array->list.count; idx++) {
     reversedArray->list.values[reversedArray->list.count - idx - 1] = array->list.values[idx]; 

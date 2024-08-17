@@ -598,8 +598,7 @@ static inline void getObjectProperty(Obj* obj, Value index, Value* value) {
 //  - 1°) Compute resulting string length and store placeholder string values
 //  - 2°) Fill resulting string, swapping placeholder literal for placeholder string value 
 static inline Value stringInterpolation(ObjString* template) {
-  ValueArray valueArray;
-  initValueArray(&valueArray);
+  ObjArray* valueArray = (ObjArray*) GCWhiteList((Obj*) newArray());
   int length = template->length;
 
   for (int i = 0; i < template->length; i++) {
@@ -617,8 +616,9 @@ static inline Value stringInterpolation(ObjString* template) {
       // Since we are popping from one stack to other, the items order is reversed.
       // Which is exactly what we need.
       Value value = pop();
-      ObjString* valueStr = toString(value);
-      writeValueArray(&valueArray, OBJ_VAL(valueStr));
+      ObjString* valueStr = (ObjString*) GCWhiteList((Obj*) toString(value));
+      writeValueArray(&valueArray->list, OBJ_VAL(valueStr));
+      GCPopWhiteList();
 
       // consume everything until placeholder end
       int isPlaceholderOpen = 1;
@@ -658,7 +658,7 @@ static inline Value stringInterpolation(ObjString* template) {
         i--;
 
         // write placeholder value on the buffer
-        ObjString* valueStr = AS_STRING(valueArray.values[--valueArray.count]);
+        ObjString* valueStr = AS_STRING(valueArray->list.values[--valueArray->list.count]);
         for (int j = 0; j < valueStr->length; j++) {
           buffer[idx++] = valueStr->chars[j];
         }
@@ -668,7 +668,7 @@ static inline Value stringInterpolation(ObjString* template) {
     }
   }
 
-  freeValueArray(&valueArray);
+  GCPopWhiteList(&valueArray);
   buffer[idx] = '\0';
 
   return OBJ_VAL(copyString(buffer, idx));
