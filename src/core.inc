@@ -17,7 +17,7 @@ class Array {
     var length = this.length();
     var newArray = Array.new(length);
 
-    for (var idx = 0; idx < length; idx += 1)  {
+    for idx in range(length)  {
       newArray[idx] = callback(this[idx], idx, this); 
     }
 
@@ -29,10 +29,10 @@ class Array {
   // But in order to do that, we would need access to a native method
   // that just upfrontly allocate the memory without changing the length.  
   filter(callback) {
-    var newArray = Array.new();
     var length = this.length();                
+    var newArray = Array.new();
 
-    for (var idx = 0; idx < length; idx += 1)  {
+    for idx in range(length) {
       if (callback(this[idx], idx, this)) {
         newArray.push(this[idx]); 
       }
@@ -42,9 +42,7 @@ class Array {
   }
 
   find(callback) {
-    var length = this.length();                
-
-    for (var idx = 0; idx < length; idx += 1)  {
+    for idx in range(this.length())  {
       if (callback(this[idx], idx, this)) {
         return this[idx];
       }
@@ -54,9 +52,7 @@ class Array {
   }
 
   findIndex(callback) {
-    var length = this.length();                
-
-    for (var idx = 0; idx < length; idx += 1)  {
+    for idx in range(this.length())  {
       if (callback(this[idx], idx, this)) {
         return idx;
       }
@@ -74,7 +70,7 @@ class Array {
 
     var acc = this[0];
 
-    for (var idx = 1; idx < length; idx += 1) {
+    for idx in range(1, length) {
       acc = callback(acc, this[idx], idx, this);
     }
 
@@ -82,9 +78,7 @@ class Array {
   }
 
   reduce(callback, acc) {
-    var length = this.length();
-    
-    for (var idx = 0; idx < length; idx += 1) {
+    for idx in range(this.length()) {
       acc = callback(acc, this[idx], idx, this);
     }
 
@@ -104,7 +98,7 @@ class Array {
       this[right] = this[pivot];
       this[pivot] = tmp;
 
-      for (var idx = left; idx < right; idx += 1) {
+      for idx in range(left, right) {
         if (compare(this[idx], this[right])) {
           tmp = this[idx];
           this[idx] = this[count];
