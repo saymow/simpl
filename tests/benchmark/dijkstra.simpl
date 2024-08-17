@@ -98,8 +98,8 @@ fun dijkstra(matrix, elements, origin, target) {
 
 var start = System.clock();
 
-for (var idx = 0; idx < N; idx += 1) {
-    for (element of elements) {
+for idx in range(N) {
+    for element of elements {
         dijkstra(matrix, elements, "A", element);
     }
 }

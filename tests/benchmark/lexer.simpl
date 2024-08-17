@@ -534,7 +534,7 @@ var source = "
     }
 ";
 
-for (var idx = 0; idx < N; idx += 1) {
+for range(N) {
     var lexer = Lexer(source);
     var tokens = lexer.execute();
 }

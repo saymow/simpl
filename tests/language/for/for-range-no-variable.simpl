@@ -1,0 +1,56 @@
+// For range loop without user defined variable
+
+for range(10) {
+    System.log("test");
+}
+
+// expect test
+// expect test
+// expect test
+// expect test
+// expect test
+// expect test
+// expect test
+// expect test
+// expect test
+// expect test
+
+for range(-10) {
+    System.log("test1");
+}
+
+// expect test1
+// expect test1
+// expect test1
+// expect test1
+// expect test1
+// expect test1
+// expect test1
+// expect test1
+// expect test1
+// expect test1
+
+for range(0, 10) {
+    System.log("test2");
+}
+
+// expect test2
+// expect test2
+// expect test2
+// expect test2
+// expect test2
+// expect test2
+// expect test2
+// expect test2
+// expect test2
+// expect test2
+
+for range(0, 10, 3) {
+    System.log("test3");
+}
+
+// expect test3
+// expect test3
+// expect test3
+// expect test3
+// expect !void
