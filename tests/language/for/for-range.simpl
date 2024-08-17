@@ -1,0 +1,40 @@
+// Standard for range loop
+
+for idx in range(0, 10, 1) {
+    System.log(idx);
+}
+
+// expect 0
+// expect 1
+// expect 2
+// expect 3
+// expect 4
+// expect 5
+// expect 6
+// expect 7
+// expect 8
+// expect 9
+
+for idx in range(0, 10, 3) {
+    System.log(idx);
+}
+
+// expect 0
+// expect 3
+// expect 6
+// expect 9
+
+for idx in range(10, 0, -1) {
+    System.log(idx);
+}
+
+// expect 10
+// expect 9
+// expect 8
+// expect 7
+// expect 6
+// expect 5
+// expect 4
+// expect 3
+// expect 2
+// expect 1
