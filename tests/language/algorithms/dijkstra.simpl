@@ -83,7 +83,7 @@ fun dijkstra(matrix, elements, origin, target) {
 
         if (item.idx == targetIdx) return path(order, elements, originIdx, targetIdx);
 
-        for (var idx = 0; idx < elements.length(); idx += 1) {
+        for idx in range(elements.length()) {
             if (matrix[item.idx][idx] == 1 and visited[idx] == nil) {
                 if (insertOrUpdatePriorityQueue(queue, { idx: idx, weight: item.weight + 1})) {
                     order[idx] = item.idx;

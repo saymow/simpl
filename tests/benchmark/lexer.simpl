@@ -549,3 +549,11 @@ System.log(System.clock() - start);
 // median                                                   51.133s
 // avg                                                      50.779s
 // stdDeviation                                              0.677s
+// -------------------------- BENCHMARK ---------------------------
+// version                     alpha-0.0.3 - improve for loops perf
+// rounds                                                         3
+// min                                                      46.768s
+// max                                                      46.983s
+// median                                                   46.802s
+// avg                                                      46.851s
+// stdDeviation                                              0.094s
