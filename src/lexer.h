@@ -51,6 +51,7 @@ typedef enum {
   TOKEN_IF,
   TOKEN_NIL,
   TOKEN_OR,
+  TOKEN_IN,
   TOKEN_PRINT,
   TOKEN_RETURN,
   TOKEN_SUPER,

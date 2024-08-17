@@ -656,7 +656,7 @@ static int emitLoopGuard() {
   // 2) comparison -> body -> (comparison | end)
   // 
   // The 2° scenario is handled by default, since the OP_LOOP_GUARD instruction is emitted right before the comparison.
-  // For the 1° scenario, we need to patch this offset.  
+  // For the 1° scenario, we need to patch this offset, to start just before the incrementer.  
   writeChunk(currentChunk(), 0x00, parser.previous.line);
   writeChunk(currentChunk(), 0x00, parser.previous.line);
 
@@ -703,8 +703,64 @@ static void addSystemLocalVariable() {
   local->isCaptured = false;
 }
 
+static void forInRangeStatement(uint8_t iterationVariableConstant) {
+  Token rangeSyntheticToken = syntheticToken(TOKEN_IDENTIFIER, "range");
+ 
+  consume(TOKEN_IDENTIFIER, "Expect 'range' for range-based for.");
+  if (!identifiersEqual(&rangeSyntheticToken, &parser.previous)) {
+    error("Expect 'range' for range-based for.");
+  }
+
+  consume(TOKEN_LEFT_PAREN, "Expect '(' after 'range'.");
+
+  defineVariable(iterationVariableConstant);
+  expression();
+
+  if (match(TOKEN_COMMA)) {
+    expression();
+    
+    if (match(TOKEN_COMMA)) {
+      expression();
+    } else {
+      emitBytes(OP_CONSTANT, makeConstant(NIL_VAL));
+    }
+  } else {
+    emitBytes(OP_CONSTANT, makeConstant(NIL_VAL));
+    emitBytes(OP_CONSTANT, makeConstant(NIL_VAL));
+  }
+
+  consume(TOKEN_RIGHT_PAREN, "Expect ')' after arguments.");
+
+  // manually declaring ranged-base for variables.
+  // We keep the expression results variable on the stack
+  // until we reach the end of the scope.
+  addSystemLocalVariable();
+  addSystemLocalVariable();
+  addSystemLocalVariable();
+  
+  emitByte(OP_RANGED_LOOP_SETUP);
+  int loopGuard = emitLoopGuard() + 2;
+  int loopStart = currentChunk()->count;
+  emitByte(OP_RANGED_LOOP);
+
+  statement();
+
+  emitLoop(loopStart);
+  patchJump(loopGuard, 2);
+  emitByte(OP_LOOP_GUARD_END);
+
+  endScope();
+  endLoop();
+}
+
 static void forEachStatement() {
   uint8_t iterationVariableConstant = parseVariable("Expect for each iteration variable identifier.");
+
+  if (match(TOKEN_IN)) {
+    forInRangeStatement(iterationVariableConstant);
+    return;
+  }
+
   consume(TOKEN_OF, "Expect 'of' after for each iteration variable.");
 
   // manually declaring user iteration name variable 

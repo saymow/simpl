@@ -211,6 +211,8 @@ static TokenType identifierType() {
     case 'i':
       if (lexer->current - lexer->start > 1) {
         switch (lexer->start[1]) {
+          case 'n':
+            return checkKeyword(2, 0, "", TOKEN_IN);
           case 'm':
             return checkKeyword(2, 4, "port", TOKEN_IMPORT);
           case 'f':

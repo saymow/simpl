@@ -887,6 +887,74 @@ static InterpretResult run() {
         frame->ip -= offset;
         break;
       }
+      case OP_RANGED_LOOP_SETUP: {
+        Value startValue = peek(2);
+        Value endValue = peek(1);
+        Value stepValue = peek(0);
+
+        if (!IS_NUMBER(startValue)) {
+          runtimeError(NULL, "Expected range arguments to be numbers.");
+        }
+
+        double start = AS_NUMBER(startValue);
+        double end;
+        double step;
+
+        if (IS_NIL(stepValue)) {
+          if (IS_NIL(endValue)) {
+            // handle "range(len)" -> "range(0, len, +-1)"
+            end = start;
+            start = 0;
+            step = end > 0 ? 1 : -1;
+          } else {
+            // handle "range(start, end)" -> "range(start, end, 1)"
+            if (!IS_NUMBER(endValue)) {
+              runtimeError(NULL, "Expected range arguments to be numbers.");
+            }
+
+            end = AS_NUMBER(endValue);
+            step = start < end ? 1 : -1;
+          }
+        } else {
+          // handle "for idx range(start, end, step)"
+          if (!(IS_NUMBER(endValue) && IS_NUMBER(stepValue))) {
+            runtimeError(NULL, "Expected range arguments to be numbers.");
+          }
+          end = AS_NUMBER(endValue);
+          step = AS_NUMBER(stepValue);
+        }
+
+        start -= step;
+
+        vm.stackTop[-3] = NUMBER_VAL(start);
+        vm.stackTop[-2] = NUMBER_VAL(end);
+        vm.stackTop[-1] = NUMBER_VAL(step);
+        break;
+      }
+      case OP_RANGED_LOOP: {
+        double current = AS_NUMBER(peek(2));
+        double end = AS_NUMBER(peek(1));
+        double step = AS_NUMBER(peek(0));
+
+        current += step; 
+
+        // Get out of the loop
+        if (step > 0 ? current >= end : current <= end) {
+          Loop* loop = &vm.loopStack[vm.loopStackCount - 1];
+
+
+          frame->ip = loop->outIp;
+          // For loops are usually terminated after an expression that is persisted on the stack.
+          // Although we dont have any explict expression in this for each, in order to comply with
+          // the LOOP_GUARD implementation, we will be popping the dummy value it adds. We will also
+          // be adding this dummy value where needed.
+          vm.stackTop = loop->frameStackTop + 1;
+          break;
+        }
+
+        vm.stackTop[-3] = NUMBER_VAL(current);
+        break;
+      }
       case OP_NAMED_LOOP: {   
         Value iterator = peek(0);
         Value iterationIdx = peek(1);

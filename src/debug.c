@@ -199,6 +199,10 @@ int disassembleInstruction(Chunk* chunk, int offset) {
       return jumpInstruction("OP_SWITCH", 1, chunk, offset);
     case OP_SWITCH_CASE:
       return jumpInstruction("OP_SWITCH_CASE", 1, chunk, offset);
+    case OP_RANGED_LOOP_SETUP:
+      return simpleInstruction("OP_RANGED_LOOP_SETUP", offset);
+    case OP_RANGED_LOOP:
+      return simpleInstruction("OP_RANGED_LOOP", offset);
     case OP_NAMED_LOOP:
       return simpleInstruction("OP_NAMED_LOOP", offset);
     case OP_LOOP:
