@@ -22,8 +22,8 @@ typedef struct {
 } Modules;
 
 void initModules(Modules* modules, const char* source);
-bool addDependency(Modules* modules, ModuleNode* origin, ModuleNode** node, const char* source); 
-void createModuleNode(ModuleNode* origin, ModuleNode** node, const char* source);
+bool addDependency(Modules* modules, ModuleNode* origin, ModuleNode** node, const char* absPath); 
+void createModuleNode(ModuleNode* origin, ModuleNode** node, const char* absPath, const char* source);
 void resolveDependency(ModuleNode* node, ObjModule* module);
 void freeModules(Modules *modules);
 

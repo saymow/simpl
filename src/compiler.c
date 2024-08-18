@@ -983,12 +983,12 @@ ObjModule* compileModule(ModuleNode* node, char *absPath, const char* source) {
 ObjModule* resolveModule(char* absPath, const char* source) {
   ModuleNode* node = NULL;
 
-  if (addDependency(&modules, parser.module, &node, source)) {
+  if (addDependency(&modules, parser.module, &node, absPath)) {
     // module already compiled and can be reused
     return node->module;
   } else {
     // create a module in COMPILING_STATE
-    createModuleNode(parser.module, &node, source);
+    createModuleNode(parser.module, &node, absPath, source);
     // compile source code
     ObjModule* module = compileModule(node, absPath, source);
     // resolve module to COMPILED_STATE

@@ -124,8 +124,8 @@ static bool searchNode(Modules* modules, module_id_t moduleId, ModuleNode** resp
     return false;   
 }
 
-bool addDependency(Modules* modules, ModuleNode* origin, ModuleNode** node, const char* source) {
-    module_id_t targetId = hashString(source, strlen(source));
+bool addDependency(Modules* modules, ModuleNode* origin, ModuleNode** node, const char* absPath) {
+    module_id_t targetId = hashString(absPath, strlen(absPath));
     ModuleNode *target = NULL;
 
     // module not found, you have to create a module 
@@ -151,9 +151,8 @@ bool addDependency(Modules* modules, ModuleNode* origin, ModuleNode** node, cons
     return true;
 }
 
-void createModuleNode(ModuleNode* origin, ModuleNode** moduleNode, const char* source) {
-    module_id_t targetId = hashString(source, strlen(source));
-    ModuleNode* node = allocateNode(targetId);
+void createModuleNode(ModuleNode* origin, ModuleNode** moduleNode, const char* absPath, const char* source) {
+    ModuleNode* node = allocateNode(hashString(absPath, strlen(absPath)));
 
     if (origin->importsCapacity < origin->importsCount + 1) {
         int oldCapacity = origin->importsCapacity;
