@@ -573,8 +573,9 @@ static inline bool __nativeStringTrimStart(int argCount, Value* args) {
   NATIVE_RETURN(OBJ_VAL(copyString(buffer, string->length - idx)));
 }
 
-static inline bool __nativeStaticStringIsString(int argCount, Value* args) {
-  NATIVE_RETURN(IS_STRING(*(++args)) ? TRUE_VAL : FALSE_VAL);
+static inline bool __nativeStringIsEmpty(int argCount, Value* args) {
+  ObjString* string = AS_STRING(*args);
+  NATIVE_RETURN(BOOL_VAL(string->length == 0));
 }
 
 static inline bool __nativeStaticStringNew(int argCount, Value* args) {
@@ -584,6 +585,41 @@ static inline bool __nativeStaticStringNew(int argCount, Value* args) {
   
   NATIVE_RETURN(OBJ_VAL(toString(*(++args))));
 }
+
+static inline bool __nativeStaticStringIsString(int argCount, Value* args) {
+  NATIVE_RETURN(IS_STRING(*(++args)) ? TRUE_VAL : FALSE_VAL);
+}
+
+// static inline bool __nativeStaticStringCompare(int argCount, Value* args) {
+//   ObjString* strA = SAFE_CONSUME_STRING(args, "base string");
+//   ObjString* strB = SAFE_CONSUME_STRING(args, "comparisson string");
+//   int length = strA->length > strB->length ? strA->length : strB->length;
+
+//   #define IS_ALPHANUMERIC(character)                  \
+//     (                                                 \
+//       ((character) >= 'a' && (character) <= 'b')   || \
+//       ((character) >= 'A' && (character) <= 'Z')   || \
+//       ((character) >= '0' && (character) <= '9')      \
+//     ) 
+
+//   for (int idx = 0; idx < length; idx++) {
+//     if (IS_ALPHANUMERIC(strA->chars[idx]) && IS_ALPHANUMERIC(strB->chars[idx])) {
+
+//     } else if (IS_ALPHANUMERIC(strA->chars[idx])) {
+//       NATIVE_RETURN(NUMBER_VAL(1));
+//     } else if (IS_ALPHANUMERIC(strB->chars[idx])) {
+//       NATIVE_RETURN(NUMBER_VAL(-1));
+//     } else {
+//       if (strA->chars[idx] < strB->chars[idx]) {
+//         NATIVE_RETURN(NUMBER_VAL(-1));
+//       } else if (strA->chars[idx] > strB->chars[idx]) {
+//         NATIVE_RETURN(NUMBER_VAL(1));
+//       }
+//     }
+//   }
+
+//   NATIVE_RETURN(NUMBER_VAL(0));
+// }
 
 static inline bool __nativeStaticNumberIsNumber(int argCount, Value* args) {
   NATIVE_RETURN(IS_NUMBER(*(++args)) ? TRUE_VAL : FALSE_VAL);
@@ -765,6 +801,7 @@ void initializeCore(VM* vm) {
   defineNativeFunction(&vm->stringClass->methods, "trimEnd", __nativeStringTrimEnd, ARGS_ARITY_0);
   defineNativeFunction(&vm->stringClass->methods, "trimStart", __nativeStringTrimStart, ARGS_ARITY_0);
   defineNativeFunction(&vm->stringClass->methods, "charCodeAt", __nativeStringCharCodeAt, ARGS_ARITY_1);
+  defineNativeFunction(&vm->stringClass->methods, "isEmpty", __nativeStringIsEmpty, ARGS_ARITY_0);
 
   inherit((Obj *)vm->nativeFunctionClass, vm->klass);
 
