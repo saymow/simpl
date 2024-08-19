@@ -1,0 +1,22 @@
+// String.isEmpty
+
+System.log("".isEmpty());                                                                   // expect true
+System.log("a".isEmpty());                                                                  // expect false
+System.log(" ".isEmpty());                                                                  // expect false
+System.log("John".isEmpty());                                                               // expect false
+System.log("Hello, World!".isEmpty());                                                      // expect false
+System.log("1234567890".isEmpty());                                                         // expect false
+System.log("The quick brown fox jumps over the lazy dog.".isEmpty());                       // expect false
+System.log("\n".isEmpty());                                                                 // expect false
+System.log("\t".isEmpty());                                                                 // expect false
+System.log("    ".isEmpty());                                                               // expect false
+System.log("a b c".isEmpty());                                                              // expect false
+System.log("null".isEmpty());                                                               // expect false
+System.log("undefined".isEmpty());                                                          // expect false
+System.log("true".isEmpty());                                                               // expect false
+System.log("false".isEmpty());                                                              // expect false
+System.log("abcdefghijklmnopqrstuvwxyz".isEmpty());                                         // expect false
+System.log("ABCDEFGHIJKLMNOPQRSTUVWXYZ".isEmpty());                                         // expect false
+System.log("Lorem ipsum dolor sit amet, consectetur adipiscing elit.".isEmpty());           // expect false
+System.log("!@#$%^&*()_+-=[]{}|;':,.<>/?".isEmpty());                                       // expect false
+System.log("`~".isEmpty());                                                                 // expect false
