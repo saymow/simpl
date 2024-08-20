@@ -27,3 +27,7 @@ System.log(
     .map((person) -> "{ name: $(person.name), age: $(person.age) }")
     .join(", ")
 );                                                                                   // expect { name: Bob, age: 25 }, { name: Alice, age: 30 }, { name: Charlie, age: 35 }
+System.log(
+    ["azure","kinetic","zenith","ethereal","solace","cadence","ember","mirage","solace","lexicon","equinox","abyss","elixir","zenith","elixir","solace","lexicon","cadence","ember","abyss"]
+    .sort((a, b) -> a.compare(b) == -1 ? true : false)
+);                                                                                   // expect [abyss, abyss, azure, cadence, cadence, elixir, elixir, ember, ember, equinox, ethereal, kinetic, lexicon, lexicon, mirage, solace, solace, solace, zenith, zenith]

@@ -1,0 +1,60 @@
+// String.compare
+
+// Simple Character Comparisons
+System.log("a".compare("b"));                                    // expect -1
+System.log("b".compare("a"));                                    // expect 1
+System.log("a".compare("a"));                                    // expect 0
+
+// Case Sensitivity
+System.log("A".compare("a"));                                    // expect -1
+System.log("a".compare("A"));                                    // expect 1
+System.log("A".compare("A"));                                    // expect 0
+
+// Strings of Different Lengths
+System.log("abc".compare("abcd"));                               // expect -1
+System.log("abcd".compare("abc"));                               // expect 1
+System.log("abc".compare("abc"));                                // expect 0
+
+// Numeric Comparisons
+System.log("1".compare("2"));                                    // expect -1
+System.log("2".compare("1"));                                    // expect 1
+System.log("2".compare("2"));                                    // expect 0
+System.log("10".compare("2"));                                   // expect -1
+
+// Symbol Comparisons
+System.log("!".compare("@"));                                    // expect -1
+System.log("@".compare("!"));                                    // expect 1
+System.log("#".compare("#"));                                    // expect 0
+
+// Mixed Characters
+System.log("a1".compare("a2"));                                  // expect -1
+System.log("a2".compare("a1"));                                  // expect 1
+System.log("a2".compare("a2"));                                  // expect 0
+System.log("a!".compare("a@"));                                  // expect -1
+System.log("a@".compare("a!"));                                  // expect 1
+System.log("a!".compare("a!"));                                  // expect 0
+
+// Usual Strings
+System.log("apple".compare("banana"));                           // expect -1
+System.log("banana".compare("apple"));                           // expect 1
+System.log("apple".compare("apple"));                            // expect 0
+System.log("applepie".compare("apple"));                         // expect 1
+
+// Empty Strings
+System.log("".compare("a"));                                     // expect -1
+System.log("a".compare(""));                                     // expect 1
+System.log("".compare(""));                                      // expect 0
+
+// Long Strings
+System.log("aaaaaaaaaaaaaaaaaaaaaaaaaaaaa".compare("aaaaaaaaaaaaaaaaaaaaaaaaaaaaab"));  // expect -1
+System.log("aaaaaaaaaaaaaaaaaaaaaaaaaaaaab".compare("aaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));  // expect 1
+System.log("aaaaaaaaaaaaaaaaaaaaaaaaaaaaa".compare("aaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));  // expect 0
+System.log("zzzzzzzzzzzzzzzzzzzzzzzzzzzzz".compare("zzzzzzzzzzzzzzzzzzzzzzzzzzzzza"));  // expect -1
+System.log("zzzzzzzzzzzzzzzzzzzzzzzzzzzzza".compare("zzzzzzzzzzzzzzzzzzzzzzzzzzzzz"));  // expect 1
+System.log("zzzzzzzzzzzzzzzzzzzzzzzzzzzzz".compare("zzzzzzzzzzzzzzzzzzzzzzzzzzzzz"));  // expect 0
+System.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA".compare("AAAAAAAAAAAAAAAAAAAAAAAAAAAAB"));  // expect -1
+System.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAB".compare("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA"));  // expect 1
+System.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA".compare("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA"));  // expect 0
+System.log("123456789012345678901234567890".compare("123456789012345678901234567891")); // expect -1
+System.log("123456789012345678901234567891".compare("123456789012345678901234567890")); // expect 1
+System.log("123456789012345678901234567890".compare("123456789012345678901234567890")); // expect 0
