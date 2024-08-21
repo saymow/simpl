@@ -1,0 +1,20 @@
+// Object.keys
+
+class City {
+    City(name, state, country) {
+        this.name = name;
+        this.state = state;
+        this.country = country;
+    }
+}
+
+var city = City("aaaa", "bbbb", "cccc");
+var person = {
+    name: "John",
+    lastName: "Doe",
+    age: 77,
+    test: nil
+};
+
+System.log(Object.keys(city));                                          // expect [country, name, state]
+System.log(Object.keys(person));                                        // expect [lastName, age, test, name]
