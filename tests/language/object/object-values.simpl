@@ -1,0 +1,20 @@
+// Object.values
+
+class City {
+    City(name, state, country) {
+        this.name = name;
+        this.state = state;
+        this.country = country;
+    }
+}
+
+var city = City("aaaa", "bbbb", "cccc");
+var person = {
+    name: "John",
+    lastName: "Doe",
+    age: 77,
+    test: nil
+};
+
+System.log(Object.values(city));                                          // expect [cccc, aaaa, bbbb]
+System.log(Object.values(person));                                        // expect [Doe, 77, nil, John]
