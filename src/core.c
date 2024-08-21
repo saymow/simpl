@@ -39,6 +39,19 @@
         })                                                                          \
     )                                                                               \
 
+#define SAFE_CONSUME_OBJECT_INSTANCE(args, name)                                    \
+    (ObjInstance *) (                                                               \
+        IS_INSTANCE(*(++args)) ?                                                    \
+        AS_INSTANCE(*args)     :                                                    \
+        ({                                                                          \
+            char * buffer = ALLOCATE(char, 64);                                     \
+            int length = sprintf(buffer, "Expected %s to be an object.", name);     \
+            push(OBJ_VAL(takeString(buffer, length)));                              \
+            return false;                                                           \
+            NULL;                                                                   \
+        })                                                                          \
+    )    
+
 // Ensure the index is in [0, length)
 // 1°) If index >= length, it returns length - 1 (capping the index).
 // 2°) If index in [0, length), it returns index.
@@ -706,6 +719,27 @@ static inline bool __nativeStaticErrorNew(int argCount, Value* args) {
   NATIVE_RETURN(OBJ_VAL(instance));
 }
 
+static inline bool __nativeStaticObjectKeys(int argCount, Value* args) {
+  ObjInstance* instance = (ObjInstance*) GCWhiteList((Obj*) SAFE_CONSUME_OBJECT_INSTANCE(args, "argument"));
+  ObjArray* arr = (ObjArray*) GCWhiteList((Obj*) newArray());
+
+  for (int idx = 0; idx <= instance->properties.capacity; idx++) {
+    Entry* entry = &instance->properties.entries[idx];
+    if (entry->key != NULL) {
+      ObjString* string = (ObjString*) GCWhiteList((Obj*) toString(OBJ_VAL(entry->key)));
+      writeValueArray(&arr->list, OBJ_VAL(string));
+      GCPopWhiteList();
+    }
+  }
+
+  // Pop instance 
+  GCPopWhiteList();
+  // Pop array 
+  GCPopWhiteList();
+  
+  NATIVE_RETURN(OBJ_VAL(arr));
+}
+
 static void defineNativeFunction(Table* methods, const char* string, NativeFn function, Arity arity) {
   ObjString* name = copyString(string, strlen(string));
   ObjNativeFn* native = newNativeFunction(function, name, arity);
@@ -751,6 +785,7 @@ void initializeCore(VM* vm) {
   vm->metaMathClass = NULL;
   vm->metaErrorClass = NULL;
   vm->metaSystemClass = NULL;
+  vm->metaObjectClass = NULL;
   vm->nilClass = NULL;
   vm->boolClass = NULL;
   vm->numberClass = NULL;
@@ -762,6 +797,7 @@ void initializeCore(VM* vm) {
   vm->errorClass = NULL;
   vm->moduleExportsClass = NULL;
   vm->systemClass = NULL;
+  vm->objectClass = NULL;
 
   vm->klass = defineNewClass("Class");
   vm->metaStringClass = defineNewClass("MetaString");
@@ -848,6 +884,12 @@ void initializeCore(VM* vm) {
   defineNativeFunction(&vm->metaArrayClass->methods, "Array", __nativeStaticArrayNew, ARGS_ARITY_0);
   defineNativeFunction(&vm->metaArrayClass->methods, "Array", __nativeStaticArrayNew, ARGS_ARITY_1);
 
+  vm->metaObjectClass = defineNewClass("MetaObject");
+  inherit((Obj *) vm->metaObjectClass, vm->klass);
+
+  // Object static methods 
+  defineNativeFunction(&vm->metaObjectClass->methods, "keys", __nativeStaticObjectKeys, ARGS_ARITY_1);
+
   vm->arrayClass = defineNewClass("Array");
   inherit((Obj *)vm->arrayClass, vm->metaArrayClass);
 
@@ -900,8 +942,10 @@ void initializeCore(VM* vm) {
   vm->systemClass = defineNewClass("System");
   inherit((Obj *)vm->systemClass, vm->metaSystemClass);
 
-  vm->state = EXTENDING;
+  vm->objectClass = defineNewClass("Object");
+  inherit((Obj *) vm->objectClass, vm->metaObjectClass);
 
+  vm->state = EXTENDING;
   interpret(coreExtension, NULL);
 
   tableSet(&vm->global, vm->errorClass->name, OBJ_VAL(vm->errorClass));
@@ -910,4 +954,5 @@ void initializeCore(VM* vm) {
   tableSet(&vm->global, vm->mathClass->name, OBJ_VAL(vm->mathClass));
   tableSet(&vm->global, vm->arrayClass->name, OBJ_VAL(vm->arrayClass));
   tableSet(&vm->global, vm->systemClass->name, OBJ_VAL(vm->systemClass));
+  tableSet(&vm->global, vm->objectClass->name, OBJ_VAL(vm->objectClass));
 }

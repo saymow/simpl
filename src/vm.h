@@ -105,6 +105,8 @@ typedef struct {
   ObjClass* metaErrorClass;
   // - Where System methods are defined
   ObjClass* metaSystemClass;
+  // - Where Object static methods are defined
+  ObjClass* metaObjectClass;
 
   // Data Type Classes are superclasses of all data types
   // - Where nil literal inherits from
@@ -129,6 +131,9 @@ typedef struct {
   ObjClass* moduleExportsClass;
   // - Placeholder System subclass (used to access superclass)
   ObjClass* systemClass;
+  // - Placeholder System object (used to access superclass)
+  // This class is not part of objectInstance inherintance chain
+  ObjClass* objectClass;
 
   // Default name for lambda functions
   ObjString* lambdaFunctionName;

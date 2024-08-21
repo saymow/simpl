@@ -119,7 +119,6 @@ void tableAddAll(Table* from, Table* to) {
   }
 }
 
-
 // When inheriting from a class we essentialy want to copy its methods.
 // But a simple copy creates a bug in which a subclass is able to create overloaded
 // methods for its superclass. In order to fix it, we need to create
