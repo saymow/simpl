@@ -740,6 +740,27 @@ static inline bool __nativeStaticObjectKeys(int argCount, Value* args) {
   NATIVE_RETURN(OBJ_VAL(arr));
 }
 
+static inline bool __nativeStaticObjectValues(int argCount, Value* args) {
+  ObjInstance* instance = (ObjInstance*) GCWhiteList((Obj*) SAFE_CONSUME_OBJECT_INSTANCE(args, "argument"));
+  ObjArray* arr = (ObjArray*) GCWhiteList((Obj*) newArray());
+
+  for (int idx = 0; idx <= instance->properties.capacity; idx++) {
+    Entry* entry = &instance->properties.entries[idx];
+    if (entry->key != NULL) {
+      ObjString* string = (ObjString*) GCWhiteList((Obj*) toString(entry->value));
+      writeValueArray(&arr->list, OBJ_VAL(string));
+      GCPopWhiteList();
+    }
+  }
+
+  // Pop instance 
+  GCPopWhiteList();
+  // Pop array 
+  GCPopWhiteList();
+  
+  NATIVE_RETURN(OBJ_VAL(arr));
+}
+
 static void defineNativeFunction(Table* methods, const char* string, NativeFn function, Arity arity) {
   ObjString* name = copyString(string, strlen(string));
   ObjNativeFn* native = newNativeFunction(function, name, arity);
@@ -889,6 +910,7 @@ void initializeCore(VM* vm) {
 
   // Object static methods 
   defineNativeFunction(&vm->metaObjectClass->methods, "keys", __nativeStaticObjectKeys, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaObjectClass->methods, "values", __nativeStaticObjectValues, ARGS_ARITY_1);
 
   vm->arrayClass = defineNewClass("Array");
   inherit((Obj *)vm->arrayClass, vm->metaArrayClass);
