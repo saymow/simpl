@@ -56,7 +56,7 @@
 // 1°) If index >= length, it returns length - 1 (capping the index).
 // 2°) If index in [0, length), it returns index.
 // 3°) If index in [-length, 0), it returns length + idx.
-// 4°) If none of these conditions are met, it returns 0.
+// 4°) Otherwise returns 0.
 #define SAFE_INDEX(idx, length)                                                     \
     ((idx) >= (length) ?                                                            \
         (length) - 1 :                                                              \
@@ -66,22 +66,11 @@
         (length) + (idx) :                                                          \
         0)))                     
 
-// Ensure the index is in [0, +Infinity]
-// 1°) If index in [0, length), it returns index.
-// 2°) If index in [-length, 0), it returns length + idx.
-// 3°) If none of these conditions are met, it returns 0.
-#define UNCAPPED_SAFE_INDEX(idx, length)                                            \
-     ((idx) >= 0 ?                                                                  \
-        (idx) :                                                                     \
-     (-(idx) < (length) ?                                                           \
-        (length) + (idx) :                                                          \
-        0))
-
 // Ensure the index is in [0, length]
 // 1°) If index >= length, it returns length - 1 (capping the index).
 // 2°) If index in [0, length], it returns index.
 // 3°) If index in [-length, 0), it returns length + idx.
-// 4°) If none of these conditions are met, it returns 0.
+// 4°) Otherwise returns 0.
 #define SAFE_INDEX_INCLUSIVE(idx, length)                                           \
     ((idx) > (length) ?                                                             \
         (length)     :                                                              \
@@ -91,10 +80,25 @@
         (length) + (idx) + 1 :                                                      \
         0)))     
 
-#define SAFE_NEGATIVE_INDEX(idx, length)                                            \
+// Ensure the index is in [0, +Infinity]
+// 1°) If index >= 0, it returns index.
+// 2°) If index in [-length, 0), it returns length + idx.
+// 3°) Otherwise returns +Infinity.
+#define UNCAPPED_NEGATIVE_CIRCULAR_INDEX(idx, length)                               \
+     ((idx) >= 0 ?                                                                  \
+        (idx) :                                                                     \
+     (-(idx) <= (length) ?                                                           \
+        (length) + (idx) :                                                          \
+        INFINITY))
+
+// Ensure the index is in [0, length]
+// 1°) If index >= 0, it returns index.
+// 3°) If index in [-length, 0), it returns length + idx.
+// 4°) Otherwise returns 0.
+#define SAFE_NEGATIVE_CIRCULAR_INDEX(idx, length)                                   \
     ((idx) >= 0 ?                                                                   \
         (idx) :                                                                     \
-        (-(idx) < (length) ?                                                        \
+        (-(idx) <= (length) ?                                                        \
             (length) + (idx) :                                                      \
             0))
       
@@ -209,7 +213,7 @@ static inline bool __nativeArraySlice(int argCount, Value* args) {
   if (argCount >= 1) {
     start = SAFE_CONSUME_NUMBER(args, "start");
     // start is inclusive
-    start = UNCAPPED_SAFE_INDEX(start, array->list.count);
+    start = SAFE_NEGATIVE_CIRCULAR_INDEX(start, array->list.count);
     if (argCount == 2) {
       end = SAFE_CONSUME_NUMBER(args, "end");
       // end is exclusive, so we need to be able to access the length-ith positon.
@@ -259,6 +263,29 @@ static inline bool __nativeArrayInsert(int argCount, Value* args) {
   for (int idx = 0; idx < valuesToInsert; idx++) {
     array->list.values[idx + insertIndex] = *(++args);
   }
+
+  NATIVE_RETURN(OBJ_VAL(array));
+}
+
+static inline bool __nativeArrayRemove(int argCount, Value* args) {
+  ObjArray* array = AS_ARRAY(*args);
+  int removeIdx = SAFE_CONSUME_NUMBER(args, "index");
+  int valuesToRemove = SAFE_CONSUME_NUMBER(args, "count");
+  int removedValues = 0;
+
+  removeIdx = UNCAPPED_NEGATIVE_CIRCULAR_INDEX(removeIdx, array->list.count);
+
+  // Count values that actually are gonna me removed
+  for (int idx = 0; idx < valuesToRemove && removeIdx + idx < array->list.count; idx++) {
+    removedValues++;
+  }
+
+  // Shift existing right values to the left
+  for (int idx = removeIdx + removedValues; idx < array->list.count; idx++) {
+    array->list.values[idx - removedValues] = array->list.values[idx]; 
+  }
+
+  array->list.count -= removedValues;
 
   NATIVE_RETURN(OBJ_VAL(array));
 }
@@ -416,7 +443,7 @@ static inline bool __nativeStringIncludes(int argCount, Value* args) {
 
   if (argCount > 1) {
     start = (int) SAFE_CONSUME_NUMBER(args, "start");
-    start = SAFE_NEGATIVE_INDEX(start, string->length); 
+    start = SAFE_NEGATIVE_CIRCULAR_INDEX(start, string->length); 
   }
 
   if (searchString->length == 0) {
@@ -484,7 +511,7 @@ static inline bool __nativeStringSubstr(int argCount, Value* args) {
   int end = string->length;
 
   start = SAFE_CONSUME_NUMBER(args, "startIdx");
-  start = SAFE_NEGATIVE_INDEX(start, string->length);
+  start = SAFE_NEGATIVE_CIRCULAR_INDEX(start, string->length);
 
   if (argCount > 1) {
     end = SAFE_CONSUME_NUMBER(args, "endIdx");
@@ -972,6 +999,7 @@ void initializeCore(VM* vm) {
   defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_13);
   defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_14);
   defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_15);
+   defineNativeFunction(&vm->arrayClass->methods, "remove", __nativeArrayRemove, ARGS_ARITY_2);
   defineNativeFunction(&vm->arrayClass->methods, "join", __nativeArrayJoin, ARGS_ARITY_1);
   defineNativeFunction(&vm->arrayClass->methods, "reverse", __nativeArrayReverse, ARGS_ARITY_0);
 
