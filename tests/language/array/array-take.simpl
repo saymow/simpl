@@ -1,0 +1,9 @@
+// Array.take
+
+System.log(["a", "b", "c", "d"].take(0));                  // expect []
+System.log(["a", "b", "c", "d"].take(1));                  // expect [a]
+System.log(["a", "b", "c", "d"].take(2));                  // expect [a, b]
+System.log(["a", "b", "c", "d"].take(3));                  // expect [a, b, c]
+System.log(["a", "b", "c", "d"].take(4));                  // expect [a, b, c, d]
+System.log(["a", "b", "c", "d"].take(5));                  // expect [a, b, c, d]
+System.log(["a", "b", "c", "d"].take(-1));                 // expect []
