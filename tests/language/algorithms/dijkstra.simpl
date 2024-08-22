@@ -1,3 +1,5 @@
+// Dijkstra
+
 var elements = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
 var matrix = [
     [0, 1, 0, 1, 0, 0, 0, 1, 0, 0],     // A         
