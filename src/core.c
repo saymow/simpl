@@ -354,6 +354,23 @@ static inline bool __nativeArrayReverse(int argCount, Value* args) {
   NATIVE_RETURN(OBJ_VAL(reversedArray));
 }
 
+static inline bool __nativeArrayTake(int argCount, Value* args) {
+  ObjArray* array = AS_ARRAY(*args);
+  int count = SAFE_CONSUME_NUMBER(args, "argument");
+  ObjArray* responseArray = newArray();
+  count = count > array->list.count ? array->list.count : count;
+
+  GCWhiteList((Obj* )responseArray);
+
+  for (int idx = 0; idx < count; idx++) {
+    writeValueArray(&responseArray->list, array->list.values[idx]); 
+  }
+
+  GCPopWhiteList();
+
+  NATIVE_RETURN(OBJ_VAL(responseArray));
+}
+
 static inline bool __nativeStaticArrayIsArray(int argCount, Value* args) {
   Value value = *(++args);
   NATIVE_RETURN(IS_ARRAY(value) ? TRUE_VAL : FALSE_VAL);
@@ -999,7 +1016,8 @@ void initializeCore(VM* vm) {
   defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_13);
   defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_14);
   defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert, ARGS_ARITY_15);
-   defineNativeFunction(&vm->arrayClass->methods, "remove", __nativeArrayRemove, ARGS_ARITY_2);
+  defineNativeFunction(&vm->arrayClass->methods, "remove", __nativeArrayRemove, ARGS_ARITY_2);
+  defineNativeFunction(&vm->arrayClass->methods, "take", __nativeArrayTake, ARGS_ARITY_1);
   defineNativeFunction(&vm->arrayClass->methods, "join", __nativeArrayJoin, ARGS_ARITY_1);
   defineNativeFunction(&vm->arrayClass->methods, "reverse", __nativeArrayReverse, ARGS_ARITY_0);
 
