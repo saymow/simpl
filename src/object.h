@@ -81,7 +81,7 @@ typedef struct ObjClosure {
   ObjFunction *function;
 } ObjClosure;
 
-typedef bool (*NativeFn)(int argCount, Value *args);
+typedef bool (*NativeFn)(void* thread, int argCount, Value *args);
 
 typedef struct {
   Obj obj;

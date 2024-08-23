@@ -69,28 +69,47 @@ typedef struct Switch {
 } Switch;
 
 typedef struct {
+  // Program frames 
   CallFrame frames[FRAMES_MAX];
   int framesCount;
 
-  Value stack[STACK_MAX];
-  Value* stackTop;
+  // Base namespace for all modules, where native classes are defined   
+  Table global;
 
+  // Program stack
+  Value stack[STACK_MAX];
+  // Program stack pointer
+  Value* stackTop;
+  
+  // Closure is handled through upvalues.
+  // This list stores open upvalues, i.e, access to variables in an outer scope
+  // other than the global.
+  ObjUpValue* upvalues;
+
+  // Active Loop registers
+  Loop loopStack[LOOP_STACK_MAX];
+  int loopStackCount;
+
+  // Active try-catch block registers
+  TryCatch tryCatchStack[TRY_CATCH_STACK_MAX];
+  int tryCatchStackCount; 
+
+  // Active switch block registers
+  Switch switchStack[SWITCH_STACK_MAX];
+  int switchStackCount;
+} Thread;
+
+typedef struct {
   // String interning table.
   // For performance sake, strings are interned and reused in case it appears
   // somewhere else in the code.
   Table strings;
-  
-  // Base namespace for all modules, where native classes are defined   
-  Table global;
 
-  // Closure is handled through upvalues.
-  // This list stores open upvalues, i.e, access to variables in an outer scope
-  // other than the global. 
-  ObjUpValue* upvalues;
+  // Process main thread program
+  Thread program;
   
   // Root class, everything inherits from it
   ObjClass* klass;
-  
   // Meta Classes are used to define static methods and are exposed to the global namespace
   // These are superclasses of the Data Type Classes
   // - Where Array static methods are defined 
@@ -134,21 +153,8 @@ typedef struct {
   // - Placeholder System object (used to access superclass)
   // This class is not part of objectInstance inherintance chain
   ObjClass* objectClass;
-
   // Default name for lambda functions
   ObjString* lambdaFunctionName;
-
-  // Active Loop registers
-  Loop loopStack[LOOP_STACK_MAX];
-  int loopStackCount;
-
-  // Active try-catch block registers
-  TryCatch tryCatchStack[TRY_CATCH_STACK_MAX];
-  int tryCatchStackCount; 
-
-  // Active switch block registers
-  Switch switchStack[SWITCH_STACK_MAX];
-  int switchStackCount;
 
   // Garbage Collector fields
   // Memory allocating are handling in three ways:
@@ -157,10 +163,8 @@ typedef struct {
   //    3. Compound allocation, a garbage-collector-tracked object has pointers to several
   //    manually allocated objects. Garbage Collector can handle this by freing the object
   //    and its pointers, if the object has ownership of it. 
-
   // All tracked objects that Gargage Collector has control over
   Obj* objects;
-
   // Most Objects only exists in the presence of others Objects. For instance a Function
   // MUST be associated with a String in order to have a name to be referenced.
   // This field is intended to track the objects assembly line, i.e, objects that are not
@@ -168,7 +172,6 @@ typedef struct {
   // if the garbage collection is triggered.
   Obj* GCWhiteList[GC_WHITE_LIST_MAX];
   int GCWhiteListCount;
-
   // Quantity of bytes allocated by the program, it can be manual allocation or not.
   // TODO: files read are not being counted on this.  
   size_t bytesAllocated;
@@ -176,14 +179,12 @@ typedef struct {
   // TODO: there may exist a corner case in which a Garbage collection is triggered
   // because of too much manual memory allocation - which it should not.
   size_t GCThreshold;
-  
   // Garbage Collector Auxiliary list of Objects it was able to mark
   // The collected objects are: ALL_OBJECTS - MARKED_OBJECTS
   // That is, objects it could not mark
   int grayCount;
   int grayCapacity;
   Obj** grayStack;
-
   // The process of initializing the VM is complex and need VM itself to interpret
   // some core functionalities. For this, we have a few states to tweak the VM behavior
   // a little:
@@ -215,10 +216,10 @@ extern VM vm;
 void initVM();
 void freeVM();
 InterpretResult interpret(const char* source, char* absPath);
-void push(Value value);
-Value pop();
-Value peek(int distance);
-ObjString* stackTrace();
+void push(Thread* program, Value value);
+Value pop(Thread* program);
+Value peek(Thread* program, int distance);
+ObjString* stackTrace(Thread* program);
 Obj* GCWhiteList(Obj* obj);
 void GCPopWhiteList();
 

@@ -20,7 +20,7 @@
         ({                                                                          \
             char * buffer = ALLOCATE(char, 64);                                     \
             int length = sprintf(buffer, "Expected %s to be a number.", name);      \
-            push(OBJ_VAL(takeString(buffer, length)));                              \
+            push(&vm.program, OBJ_VAL(takeString(buffer, length)));                 \
             return false;                                                           \
             0.0;                                                                    \
         })                                                                          \
@@ -33,7 +33,7 @@
         ({                                                                          \
             char * buffer = ALLOCATE(char, 64);                                     \
             int length = sprintf(buffer, "Expected %s to be a string.", name);      \
-            push(OBJ_VAL(takeString(buffer, length)));                              \
+            push(&vm.program, OBJ_VAL(takeString(buffer, length)));                 \
             return false;                                                           \
             NULL;                                                                   \
         })                                                                          \
@@ -46,7 +46,7 @@
         ({                                                                          \
             char * buffer = ALLOCATE(char, 64);                                     \
             int length = sprintf(buffer, "Expected %s to be an object.", name);     \
-            push(OBJ_VAL(takeString(buffer, length)));                              \
+            push(&vm.program, OBJ_VAL(takeString(buffer, length)));                 \
             return false;                                                           \
             NULL;                                                                   \
         })                                                                          \
@@ -102,9 +102,9 @@
             (length) + (idx) :                                                      \
             0))
       
-#define NATIVE_RETURN(value)                                                        \
+#define NATIVE_RETURN(thread, value)                                                \
     do {                                                                            \
-      push(value);                                                                  \
+      push(thread, value);                                                          \
       return true;                                                                  \
     } while(false)                                                                  \
 
@@ -114,16 +114,16 @@ static inline void swap(ValueArray* arr, int i, int j) {
     arr->values[j] = tmp;
 }
 
-static inline bool __nativeClassToString(int argCount, Value* args) {
-  NATIVE_RETURN(OBJ_VAL(toString(*args)));
+static inline bool __nativeClassToString(void* thread, int argCount, Value* args) {
+  NATIVE_RETURN(thread, OBJ_VAL(toString(*args)));
 }
 
-static inline bool __nativeArrayLength(int argCount, Value* args) {
+static inline bool __nativeArrayLength(void* thread, int argCount, Value* args) {
   ObjArray* array = AS_ARRAY(*args);
-  NATIVE_RETURN(NUMBER_VAL(array->list.count));
+  NATIVE_RETURN(thread, NUMBER_VAL(array->list.count));
 }
 
-static inline bool __nativeArrayPush(int argCount, Value* args) {
+static inline bool __nativeArrayPush(void* thread, int argCount, Value* args) {
   ObjArray* array = AS_ARRAY(*args);
   Value value = *(++args);
 
@@ -135,14 +135,14 @@ static inline bool __nativeArrayPush(int argCount, Value* args) {
 
   array->list.values[array->list.count++] = value;
 
-  NATIVE_RETURN(NUMBER_VAL(array->list.count));
+  NATIVE_RETURN(thread, NUMBER_VAL(array->list.count));
 }
 
-static inline bool __nativeArrayPop(int argCount, Value* args) {
+static inline bool __nativeArrayPop(void* thread, int argCount, Value* args) {
   ObjArray* array = AS_ARRAY(*args);
 
   if (array->list.count == 0) {
-    NATIVE_RETURN(NIL_VAL);
+    NATIVE_RETURN(thread, NIL_VAL);
   }
 
   Value value = array->list.values[--array->list.count];
@@ -154,10 +154,10 @@ static inline bool __nativeArrayPop(int argCount, Value* args) {
     array->list.values = GROW_ARRAY(Value, array->list.values, oldCapacity, array->list.capacity);
   }
 
-  NATIVE_RETURN(value);
+  NATIVE_RETURN(thread, value);
 }
 
-static inline bool __nativeArrayUnshift(int argCount, Value* args) {
+static inline bool __nativeArrayUnshift(void* thread, int argCount, Value* args) {
   ObjArray* array = AS_ARRAY(*args);
   Value value = *(++args);
 
@@ -173,14 +173,14 @@ static inline bool __nativeArrayUnshift(int argCount, Value* args) {
   
   array->list.values[0] = value;
 
-  NATIVE_RETURN(NUMBER_VAL(++array->list.count)); 
+  NATIVE_RETURN(thread, NUMBER_VAL(++array->list.count)); 
 }
 
-static inline bool __nativeArrayShift(int argCount, Value* args) {
+static inline bool __nativeArrayShift(void* thread, int argCount, Value* args) {
   ObjArray* array = AS_ARRAY(*args);
 
   if (array->list.count == 0) {
-    NATIVE_RETURN(NIL_VAL);
+    NATIVE_RETURN(thread, NIL_VAL);
   }
 
   Value value = array->list.values[0];
@@ -197,15 +197,15 @@ static inline bool __nativeArrayShift(int argCount, Value* args) {
     array->list.values = GROW_ARRAY(Value, array->list.values, oldCapacity, array->list.capacity);
   }
 
-  NATIVE_RETURN(value);
+  NATIVE_RETURN(thread, value);
 }
 
-static inline bool __nativeArraySlice(int argCount, Value* args) {
+static inline bool __nativeArraySlice(void* thread, int argCount, Value* args) {
   ObjArray* array = AS_ARRAY(*args);
   ObjArray* slicedArray = newArray();
   
   // push beforehand to the stack to protect from the GC 
-  push(OBJ_VAL(slicedArray));
+  push(thread, OBJ_VAL(slicedArray));
 
   int start = 0;
   int end = array->list.count;
@@ -228,20 +228,20 @@ static inline bool __nativeArraySlice(int argCount, Value* args) {
   return true;
 }
 
-static inline bool __nativeArrayIndexOf(int argCount, Value* args) {
+static inline bool __nativeArrayIndexOf(void* thread, int argCount, Value* args) {
   ObjArray* array = AS_ARRAY(*args);
   Value value = *(++args);
 
   for (int idx = 0; idx < array->list.count; idx++) {
     if (valuesEqual(array->list.values[idx], value)) {
-      NATIVE_RETURN(NUMBER_VAL(idx));
+      NATIVE_RETURN(thread, NUMBER_VAL(idx));
     }
   }
 
-  NATIVE_RETURN(NUMBER_VAL(-1));
+  NATIVE_RETURN(thread, NUMBER_VAL(-1));
 }
 
-static inline bool __nativeArrayInsert(int argCount, Value* args) {
+static inline bool __nativeArrayInsert(void* thread, int argCount, Value* args) {
   ObjArray* array = AS_ARRAY(*args);
   int valuesToInsert = argCount - 1;
   int insertIndex = SAFE_CONSUME_NUMBER(args, "index");
@@ -264,10 +264,10 @@ static inline bool __nativeArrayInsert(int argCount, Value* args) {
     array->list.values[idx + insertIndex] = *(++args);
   }
 
-  NATIVE_RETURN(OBJ_VAL(array));
+  NATIVE_RETURN(thread, OBJ_VAL(array));
 }
 
-static inline bool __nativeArrayRemove(int argCount, Value* args) {
+static inline bool __nativeArrayRemove(void* thread, int argCount, Value* args) {
   ObjArray* array = AS_ARRAY(*args);
   int removeIdx = SAFE_CONSUME_NUMBER(args, "index");
   int valuesToRemove = SAFE_CONSUME_NUMBER(args, "count");
@@ -287,14 +287,14 @@ static inline bool __nativeArrayRemove(int argCount, Value* args) {
 
   array->list.count -= removedValues;
 
-  NATIVE_RETURN(OBJ_VAL(array));
+  NATIVE_RETURN(thread, OBJ_VAL(array));
 }
 
-static inline bool __nativeArrayJoin(int argCount, Value* args) {
+static inline bool __nativeArrayJoin(void* thread, int argCount, Value* args) {
   ObjArray* array = AS_ARRAY(*args);
 
   if (array->list.count == 0) {
-    NATIVE_RETURN(OBJ_VAL(CONSTANT_STRING("")));
+    NATIVE_RETURN(thread, OBJ_VAL(CONSTANT_STRING("")));
   }
 
   ObjString* separator = SAFE_CONSUME_STRING(args, "separator");
@@ -331,10 +331,10 @@ static inline bool __nativeArrayJoin(int argCount, Value* args) {
   // Pop tmpArray from GC white list
   GCPopWhiteList();
 
-  NATIVE_RETURN(OBJ_VAL(takeString(buffer, length)));
+  NATIVE_RETURN(thread, OBJ_VAL(takeString(buffer, length)));
 }
 
-static inline bool __nativeArrayReverse(int argCount, Value* args) {
+static inline bool __nativeArrayReverse(void* thread, int argCount, Value* args) {
   ObjArray* array = AS_ARRAY(*args);
   ObjArray* reversedArray = newArray();
 
@@ -351,10 +351,10 @@ static inline bool __nativeArrayReverse(int argCount, Value* args) {
 
   GCPopWhiteList();
 
-  NATIVE_RETURN(OBJ_VAL(reversedArray));
+  NATIVE_RETURN(thread, OBJ_VAL(reversedArray));
 }
 
-static inline bool __nativeArrayTake(int argCount, Value* args) {
+static inline bool __nativeArrayTake(void* thread, int argCount, Value* args) {
   ObjArray* array = AS_ARRAY(*args);
   int count = SAFE_CONSUME_NUMBER(args, "argument");
   ObjArray* responseArray = newArray();
@@ -368,20 +368,20 @@ static inline bool __nativeArrayTake(int argCount, Value* args) {
 
   GCPopWhiteList();
 
-  NATIVE_RETURN(OBJ_VAL(responseArray));
+  NATIVE_RETURN(thread, OBJ_VAL(responseArray));
 }
 
-static inline bool __nativeStaticArrayIsArray(int argCount, Value* args) {
+static inline bool __nativeStaticArrayIsArray(void* thread, int argCount, Value* args) {
   Value value = *(++args);
-  NATIVE_RETURN(IS_ARRAY(value) ? TRUE_VAL : FALSE_VAL);
+  NATIVE_RETURN(thread, IS_ARRAY(value) ? TRUE_VAL : FALSE_VAL);
 }
 
-static inline bool __nativeStaticArrayNew(int argCount, Value* args) {
+static inline bool __nativeStaticArrayNew(void* thread, int argCount, Value* args) {
   ObjArray* array = newArray();
   int length = argCount == 1 ? SAFE_CONSUME_NUMBER(args, "length") : 0;
 
   // push beforehand to the stack to protect from the GC
-  push(OBJ_VAL(array));
+  push(thread, OBJ_VAL(array));
 
   while (array->list.capacity < length) {
     array->list.capacity = GROW_CAPACITY(array->list.capacity);
@@ -397,18 +397,18 @@ static inline bool __nativeStaticArrayNew(int argCount, Value* args) {
   return true;
 }
 
-static inline bool __nativeSystemLog(int argCount, Value* args) {
+static inline bool __nativeSystemLog(void* thread, int argCount, Value* args) {
   printValue(*(++args));
   printf("\n");
-  NATIVE_RETURN(NIL_VAL);  
+  NATIVE_RETURN(thread, NIL_VAL);  
 }
 
-static inline bool __nativeSystemScan(int argCount, Value* args) {
+static inline bool __nativeSystemScan(void* thread, int argCount, Value* args) {
   char buffer[1024];
 
   if (fgets(buffer, 1024, stdin) == NULL) {
     fflush(stdin);
-    push(OBJ_VAL(CONSTANT_STRING("Unexpected scan error.")));
+    push(thread, OBJ_VAL(CONSTANT_STRING("Unexpected scan error.")));
     return false;
   }
   fflush(stdin);
@@ -416,14 +416,14 @@ static inline bool __nativeSystemScan(int argCount, Value* args) {
   // replace new line with null terminator
   buffer[strcspn(buffer, "\n")] = 0;
 
-  NATIVE_RETURN(OBJ_VAL(copyString(buffer, strlen(buffer))));  
+  NATIVE_RETURN(thread, OBJ_VAL(copyString(buffer, strlen(buffer))));  
 }
 
-static inline bool __nativeSystemClock(int argCount, Value* args) {
-  NATIVE_RETURN(NUMBER_VAL(clock() / (double) CLOCKS_PER_SEC));
+static inline bool __nativeSystemClock(void* thread, int argCount, Value* args) {
+  NATIVE_RETURN(thread, NUMBER_VAL(clock() / (double) CLOCKS_PER_SEC));
 }
 
-static inline bool __nativeStringToUpperCase(int argCount, Value* args) {
+static inline bool __nativeStringToUpperCase(void* thread, int argCount, Value* args) {
   ObjString* string = AS_STRING(*args);
   char buffer[string->length];
 
@@ -435,10 +435,10 @@ static inline bool __nativeStringToUpperCase(int argCount, Value* args) {
     }
   }
 
-  NATIVE_RETURN(OBJ_VAL(copyString(buffer, string->length)));
+  NATIVE_RETURN(thread, OBJ_VAL(copyString(buffer, string->length)));
 }
 
-static inline bool __nativeStringToLowerCase(int argCount, Value* args) {
+static inline bool __nativeStringToLowerCase(void* thread, int argCount, Value* args) {
   ObjString* string = AS_STRING(*args);
   char buffer[string->length];
 
@@ -450,10 +450,10 @@ static inline bool __nativeStringToLowerCase(int argCount, Value* args) {
     }
   }
 
-  NATIVE_RETURN(OBJ_VAL(copyString(buffer, string->length)));
+  NATIVE_RETURN(thread, OBJ_VAL(copyString(buffer, string->length)));
 }
 
-static inline bool __nativeStringIncludes(int argCount, Value* args) {
+static inline bool __nativeStringIncludes(void* thread, int argCount, Value* args) {
   ObjString* string = AS_STRING(*args);
   ObjString* searchString = SAFE_CONSUME_STRING(args, "searchString");
   int start = 0;
@@ -464,7 +464,7 @@ static inline bool __nativeStringIncludes(int argCount, Value* args) {
   }
 
   if (searchString->length == 0) {
-    NATIVE_RETURN(TRUE_VAL);
+    NATIVE_RETURN(thread, TRUE_VAL);
   }
 
   for (int i = start; i < string->length; i++) {
@@ -478,20 +478,20 @@ static inline bool __nativeStringIncludes(int argCount, Value* args) {
     }
 
     if (j == searchString->length) {
-      NATIVE_RETURN(TRUE_VAL);
+      NATIVE_RETURN(thread, TRUE_VAL);
     }
   }
 
-  NATIVE_RETURN(FALSE_VAL);
+  NATIVE_RETURN(thread, FALSE_VAL);
 }
 
-static inline bool __nativeStringSplit(int argCount, Value* args) {
+static inline bool __nativeStringSplit(void* thread, int argCount, Value* args) {
   ObjString* string = AS_STRING(*args);
   ObjString* separator = SAFE_CONSUME_STRING(args, "separator");
   ObjArray* response = newArray();
 
   // push beforehand to the stack to protect from the GC 
-  push(OBJ_VAL(response));
+  push(thread, OBJ_VAL(response));
 
   int k = 0;  
   for (int i = 0; i < string->length; i++) {
@@ -522,7 +522,7 @@ static inline bool __nativeStringSplit(int argCount, Value* args) {
   return true;
 }
 
-static inline bool __nativeStringSubstr(int argCount, Value* args) {
+static inline bool __nativeStringSubstr(void* thread, int argCount, Value* args) {
   ObjString* string = AS_STRING(*args);
   int start = 0;
   int end = string->length;
@@ -542,52 +542,51 @@ static inline bool __nativeStringSubstr(int argCount, Value* args) {
     buffer[idx - start] = string->chars[idx];
   }
 
-  NATIVE_RETURN(OBJ_VAL(copyString(buffer, length)));
+  NATIVE_RETURN(thread, OBJ_VAL(copyString(buffer, length)));
 }
 
-static inline bool __nativeStringLength(int argCount, Value* args) {
+static inline bool __nativeStringLength(void* thread, int argCount, Value* args) {
   ObjString* string = AS_STRING(*args);
-  NATIVE_RETURN(NUMBER_VAL(string->length));
+  NATIVE_RETURN(thread, NUMBER_VAL(string->length));
 }
 
-static inline bool __nativeStringEndsWith(int argCount, Value* args) {
+static inline bool __nativeStringEndsWith(void* thread, int argCount, Value* args) {
   ObjString* string = AS_STRING(*args);
   ObjString* searchString = SAFE_CONSUME_STRING(args, "searchString");
   int start = string->length - searchString->length;
 
   // searchString length is greater than string length
   if (start < 0) {
-    NATIVE_RETURN(FALSE_VAL);
+    NATIVE_RETURN(thread, FALSE_VAL);
   }
 
   for (int idx = 0; idx < searchString->length; idx++) {
     if (searchString->chars[idx] != string->chars[start + idx]) {
-      NATIVE_RETURN(FALSE_VAL);
+      NATIVE_RETURN(thread, FALSE_VAL);
     }
   }
 
-  NATIVE_RETURN(TRUE_VAL);
+  NATIVE_RETURN(thread, TRUE_VAL);
 }
 
-static inline bool __nativeStringStarsWith(int argCount, Value* args) {
+static inline bool __nativeStringStarsWith(void* thread, int argCount, Value* args) {
   ObjString* string = AS_STRING(*args);
   ObjString* searchString = SAFE_CONSUME_STRING(args, "searchString");
 
   if (searchString->length > string->length) {
-    NATIVE_RETURN(FALSE_VAL);
+    NATIVE_RETURN(thread, FALSE_VAL);
   }
 
   for (int idx = 0; idx < searchString->length; idx++) {
     if (searchString->chars[idx] != string->chars[idx]) {
-      push(FALSE_VAL);
-      return true;
+      NATIVE_RETURN(thread, FALSE_VAL);
     }
   }
 
-  NATIVE_RETURN(TRUE_VAL);
+  NATIVE_RETURN(thread, TRUE_VAL);
 }
 
-static inline bool __nativeStringTrimEnd(int argCount, Value* args) {
+static inline bool __nativeStringTrimEnd(void* thread, int argCount, Value* args) {
   ObjString* string = AS_STRING(*args);
   int idx = string->length - 1;
 
@@ -600,21 +599,21 @@ static inline bool __nativeStringTrimEnd(int argCount, Value* args) {
   memcpy(buffer, string->chars, idx + 2);
   buffer[idx + 1] = '\0'; 
 
-  NATIVE_RETURN(OBJ_VAL(copyString(buffer, idx + 1)));
+  NATIVE_RETURN(thread, OBJ_VAL(copyString(buffer, idx + 1)));
 }
 
-static inline bool __nativeStringCharCodeAt(int argCount, Value* args) {
+static inline bool __nativeStringCharCodeAt(void* thread, int argCount, Value* args) {
   ObjString* string = AS_STRING(*args);
   int index = SAFE_CONSUME_NUMBER(args, "index");
 
   if (index < 0 || index >= string->length) {
-    NATIVE_RETURN(NIL_VAL);
+    NATIVE_RETURN(thread, NIL_VAL);
   }
 
-  NATIVE_RETURN(NUMBER_VAL((int) string->chars[index]));
+  NATIVE_RETURN(thread, NUMBER_VAL((int) string->chars[index]));
 }
 
-static inline bool __nativeStringTrimStart(int argCount, Value* args) {
+static inline bool __nativeStringTrimStart(void* thread, int argCount, Value* args) {
   ObjString* string = AS_STRING(*args);
   int idx = 0;
 
@@ -627,70 +626,70 @@ static inline bool __nativeStringTrimStart(int argCount, Value* args) {
   memcpy(buffer, &string->chars[idx], string->length - idx);
   buffer[string->length - idx] = '\0'; 
 
-  NATIVE_RETURN(OBJ_VAL(copyString(buffer, string->length - idx)));
+  NATIVE_RETURN(thread, OBJ_VAL(copyString(buffer, string->length - idx)));
 }
 
-static inline bool __nativeStringIsEmpty(int argCount, Value* args) {
+static inline bool __nativeStringIsEmpty(void* thread, int argCount, Value* args) {
   ObjString* string = AS_STRING(*args);
-  NATIVE_RETURN(BOOL_VAL(string->length == 0));
+  NATIVE_RETURN(thread, BOOL_VAL(string->length == 0));
 }
 
 // Returns:
 // -1: "baseStr" is less than "compareString"
 //  0: strings are equal
 //  1:  "baseStr" is more than "compareString"
-static inline bool __nativeStringCompare(int argCount, Value* args) {
+static inline bool __nativeStringCompare(void* thread, int argCount, Value* args) {
   ObjString* strA = AS_STRING(*args);
   ObjString* strB = SAFE_CONSUME_STRING(args, "comparisson string");
   int length = strA->length > strB->length ? strA->length : strB->length;
 
   for (int idx = 0; idx < length; idx++) {
     if (strA->chars[idx] < strB->chars[idx]) {
-      NATIVE_RETURN(NUMBER_VAL(-1));
+      NATIVE_RETURN(thread, NUMBER_VAL(-1));
     } else if (strA->chars[idx] > strB->chars[idx]) {
-      NATIVE_RETURN(NUMBER_VAL(1));
+      NATIVE_RETURN(thread, NUMBER_VAL(1));
     } 
   }
 
   if (strA->length < strB->length) {
-    NATIVE_RETURN(NUMBER_VAL(-1));
+    NATIVE_RETURN(thread, NUMBER_VAL(-1));
   } else if (strA->length > strB->length) {
-    NATIVE_RETURN(NUMBER_VAL(1));
+    NATIVE_RETURN(thread, NUMBER_VAL(1));
   } else {
-    NATIVE_RETURN(NUMBER_VAL(0));
+    NATIVE_RETURN(thread, NUMBER_VAL(0));
   }
 }
 
-static inline bool __nativeStaticStringNew(int argCount, Value* args) {
+static inline bool __nativeStaticStringNew(void* thread, int argCount, Value* args) {
   if (argCount == 0) {
-    NATIVE_RETURN(OBJ_VAL(CONSTANT_STRING("")));  
+    NATIVE_RETURN(thread, OBJ_VAL(CONSTANT_STRING("")));  
   }
   
-  NATIVE_RETURN(OBJ_VAL(toString(*(++args))));
+  NATIVE_RETURN(thread, OBJ_VAL(toString(*(++args))));
 }
 
-static inline bool __nativeStaticStringIsString(int argCount, Value* args) {
-  NATIVE_RETURN(IS_STRING(*(++args)) ? TRUE_VAL : FALSE_VAL);
+static inline bool __nativeStaticStringIsString(void* thread, int argCount, Value* args) {
+  NATIVE_RETURN(thread, IS_STRING(*(++args)) ? TRUE_VAL : FALSE_VAL);
 }
 
-static inline bool __nativeStaticNumberIsNumber(int argCount, Value* args) {
-  NATIVE_RETURN(IS_NUMBER(*(++args)) ? TRUE_VAL : FALSE_VAL);
+static inline bool __nativeStaticNumberIsNumber(void* thread, int argCount, Value* args) {
+  NATIVE_RETURN(thread, IS_NUMBER(*(++args)) ? TRUE_VAL : FALSE_VAL);
 }
 
-static inline bool __nativeStaticNumberToNumber(int argCount, Value* args) {
+static inline bool __nativeStaticNumberToNumber(void* thread, int argCount, Value* args) {
   ObjString* string = SAFE_CONSUME_STRING(args, "argument");
   char *end_ptr;
   double number = strtod(string->chars, &end_ptr);
 
   // to do: better handle this parse error
   if (*end_ptr != '\0') {
-    NATIVE_RETURN(NIL_VAL);
+    NATIVE_RETURN(thread, NIL_VAL);
   }
 
-  NATIVE_RETURN(NUMBER_VAL(number));
+  NATIVE_RETURN(thread, NUMBER_VAL(number));
 }
 
-static inline bool __nativeStaticNumberToInteger(int argCount, Value* args) {
+static inline bool __nativeStaticNumberToInteger(void* thread, int argCount, Value* args) {
   Value value = *(++args);
 
   if (IS_STRING(value)) {
@@ -700,38 +699,38 @@ static inline bool __nativeStaticNumberToInteger(int argCount, Value* args) {
 
     // to do: better handle this parse error
     if (end_ptr == text) {
-      NATIVE_RETURN(NIL_VAL);
+      NATIVE_RETURN(thread, NIL_VAL);
     }
 
-    NATIVE_RETURN(NUMBER_VAL(integer));
+    NATIVE_RETURN(thread, NUMBER_VAL(integer));
   } else if (IS_NUMBER(value)) {
     int integer = trunc(AS_NUMBER(value));
     
-    NATIVE_RETURN(NUMBER_VAL(integer));
+    NATIVE_RETURN(thread, NUMBER_VAL(integer));
   } else {
-    push(OBJ_VAL(CONSTANT_STRING("Expected argument to be a string or a number.")));                              
+    push(thread, OBJ_VAL(CONSTANT_STRING("Expected argument to be a string or a number.")));                              
     return false;                                                           
   }
 }
 
-static inline bool __nativeStaticMathAbs(int argCount, Value* args) {
+static inline bool __nativeStaticMathAbs(void* thread, int argCount, Value* args) {
   double num = SAFE_CONSUME_NUMBER(args, "argument");
-  NATIVE_RETURN(NUMBER_VAL(num < 0 ? -num : num));
+  NATIVE_RETURN(thread, NUMBER_VAL(num < 0 ? -num : num));
 }
 
-static inline bool __nativeStaticMathMin(int argCount, Value* args) {
+static inline bool __nativeStaticMathMin(void* thread, int argCount, Value* args) {
   double num = SAFE_CONSUME_NUMBER(args, "first argument");
   double num2 = SAFE_CONSUME_NUMBER(args, "second argument");
-  NATIVE_RETURN(NUMBER_VAL(num < num2 ? num : num2));
+  NATIVE_RETURN(thread, NUMBER_VAL(num < num2 ? num : num2));
 }
 
-static inline bool __nativeStaticMathMax(int argCount, Value* args) {
+static inline bool __nativeStaticMathMax(void* thread, int argCount, Value* args) {
   double num = SAFE_CONSUME_NUMBER(args, "first argument");
   double num2 = SAFE_CONSUME_NUMBER(args, "second argument");
-  NATIVE_RETURN(NUMBER_VAL(num > num2 ? num : num2));
+  NATIVE_RETURN(thread, NUMBER_VAL(num > num2 ? num : num2));
 }
 
-static inline bool __nativeStaticMathClamp(int argCount, Value* args) {
+static inline bool __nativeStaticMathClamp(void* thread, int argCount, Value* args) {
   double bound = SAFE_CONSUME_NUMBER(args, "lower bound");
   double num = SAFE_CONSUME_NUMBER(args, "argument");
   double bound1 = SAFE_CONSUME_NUMBER(args, "high bound");
@@ -739,13 +738,13 @@ static inline bool __nativeStaticMathClamp(int argCount, Value* args) {
   double min = bound < bound1 ? bound : bound1;
   double max = bound > bound1 ? bound : bound1;
 
-  NATIVE_RETURN(NUMBER_VAL(num > max ? max : num < min ? min : num));
+  NATIVE_RETURN(thread, NUMBER_VAL(num > max ? max : num < min ? min : num));
 }
 
-static inline bool __nativeStaticErrorNew(int argCount, Value* args) {
+static inline bool __nativeStaticErrorNew(void* thread, int argCount, Value* args) {
   ObjInstance* instance = (ObjInstance*) GCWhiteList((Obj*) newInstance(vm.errorClass));
   ObjString* message = (ObjString*) GCWhiteList((Obj*) SAFE_CONSUME_STRING(args, "error message"));
-  ObjString* stack = (ObjString*) GCWhiteList((Obj*) stackTrace());
+  ObjString* stack = (ObjString*) GCWhiteList((Obj*) stackTrace(thread));
 
   tableSet(&instance->properties, (ObjString*) GCWhiteList((Obj*) CONSTANT_STRING("message")), OBJ_VAL(message));
   tableSet(&instance->properties, (ObjString*) GCWhiteList((Obj*) CONSTANT_STRING("stack")), OBJ_VAL(stack));
@@ -760,10 +759,10 @@ static inline bool __nativeStaticErrorNew(int argCount, Value* args) {
   // Pop instance ObjInstance  
   GCPopWhiteList();  
   
-  NATIVE_RETURN(OBJ_VAL(instance));
+  NATIVE_RETURN(thread, OBJ_VAL(instance));
 }
 
-static inline bool __nativeStaticObjectKeys(int argCount, Value* args) {
+static inline bool __nativeStaticObjectKeys(void* thread, int argCount, Value* args) {
   ObjInstance* instance = (ObjInstance*) GCWhiteList((Obj*) SAFE_CONSUME_OBJECT_INSTANCE(args, "argument"));
   ObjArray* arr = (ObjArray*) GCWhiteList((Obj*) newArray());
 
@@ -781,10 +780,10 @@ static inline bool __nativeStaticObjectKeys(int argCount, Value* args) {
   // Pop array 
   GCPopWhiteList();
   
-  NATIVE_RETURN(OBJ_VAL(arr));
+  NATIVE_RETURN(thread, OBJ_VAL(arr));
 }
 
-static inline bool __nativeStaticObjectValues(int argCount, Value* args) {
+static inline bool __nativeStaticObjectValues(void* thread, int argCount, Value* args) {
   ObjInstance* instance = (ObjInstance*) GCWhiteList((Obj*) SAFE_CONSUME_OBJECT_INSTANCE(args, "argument"));
   ObjArray* arr = (ObjArray*) GCWhiteList((Obj*) newArray());
 
@@ -802,10 +801,10 @@ static inline bool __nativeStaticObjectValues(int argCount, Value* args) {
   // Pop array 
   GCPopWhiteList();
   
-  NATIVE_RETURN(OBJ_VAL(arr));
+  NATIVE_RETURN(thread, OBJ_VAL(arr));
 }
 
-static inline bool __nativeStaticObjectEntries(int argCount, Value* args) {
+static inline bool __nativeStaticObjectEntries(void* thread, int argCount, Value* args) {
   ObjInstance* instance = (ObjInstance*) GCWhiteList((Obj*) SAFE_CONSUME_OBJECT_INSTANCE(args, "argument"));
   ObjArray* arr = (ObjArray*) GCWhiteList((Obj*) newArray());
 
@@ -834,7 +833,7 @@ static inline bool __nativeStaticObjectEntries(int argCount, Value* args) {
   // Pop array 
   GCPopWhiteList();
   
-  NATIVE_RETURN(OBJ_VAL(arr));
+  NATIVE_RETURN(thread, OBJ_VAL(arr));
 }
 
 static void defineNativeFunction(Table* methods, const char* string, NativeFn function, Arity arity) {
@@ -869,7 +868,7 @@ static inline void inherit(Obj* obj, ObjClass* superclass) {
   }
 }
 
-void initializeCore(VM* vm) {
+void initCore(VM* vm) {
   //                        System class initialization
   //
   // The order which class are initialized is extremely important to ensure the propper
@@ -1049,11 +1048,11 @@ void initializeCore(VM* vm) {
   vm->state = EXTENDING;
   interpret(coreExtension, NULL);
 
-  tableSet(&vm->global, vm->errorClass->name, OBJ_VAL(vm->errorClass));
-  tableSet(&vm->global, vm->stringClass->name, OBJ_VAL(vm->stringClass));
-  tableSet(&vm->global, vm->numberClass->name, OBJ_VAL(vm->numberClass));
-  tableSet(&vm->global, vm->mathClass->name, OBJ_VAL(vm->mathClass));
-  tableSet(&vm->global, vm->arrayClass->name, OBJ_VAL(vm->arrayClass));
-  tableSet(&vm->global, vm->systemClass->name, OBJ_VAL(vm->systemClass));
-  tableSet(&vm->global, vm->objectClass->name, OBJ_VAL(vm->objectClass));
+  tableSet(&vm->program.global, vm->errorClass->name, OBJ_VAL(vm->errorClass));
+  tableSet(&vm->program.global, vm->stringClass->name, OBJ_VAL(vm->stringClass));
+  tableSet(&vm->program.global, vm->numberClass->name, OBJ_VAL(vm->numberClass));
+  tableSet(&vm->program.global, vm->mathClass->name, OBJ_VAL(vm->mathClass));
+  tableSet(&vm->program.global, vm->arrayClass->name, OBJ_VAL(vm->arrayClass));
+  tableSet(&vm->program.global, vm->systemClass->name, OBJ_VAL(vm->systemClass));
+  tableSet(&vm->program.global, vm->objectClass->name, OBJ_VAL(vm->objectClass));
 }

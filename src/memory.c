@@ -162,27 +162,27 @@ static void markGCWhiteList() {
 }
 
 static void markRoots() {
-  for (Value* slot = vm.stack; slot < vm.stackTop; slot++) {
+  for (Value* slot = vm.program.stack; slot < vm.program.stackTop; slot++) {
     markValue(*slot);
   }
 
-  for (int idx = 0; idx < vm.framesCount; idx++) {
-    markTable(&vm.frames[idx].namespace);
-    if (vm.frames[idx].type == FRAME_TYPE_MODULE) {
-      markObject((Obj*) vm.frames[idx].as.module);
+  for (int idx = 0; idx < vm.program.framesCount; idx++) {
+    markTable(&vm.program.frames[idx].namespace);
+    if (vm.program.frames[idx].type == FRAME_TYPE_MODULE) {
+      markObject((Obj*) vm.program.frames[idx].as.module);
     } else {
-      markObject((Obj*) vm.frames[idx].as.closure);
+      markObject((Obj*) vm.program.frames[idx].as.closure);
     }
   }
 
-  for (ObjUpValue* upvalue = vm.upvalues; upvalue != NULL;
+  for (ObjUpValue* upvalue = vm.program.upvalues; upvalue != NULL;
        upvalue = upvalue->next) {
     markObject((Obj*)upvalue);
   }
 
   markGCWhiteList();
   markCompilerRoots();
-  markTable(&vm.global);
+  markTable(&vm.program.global);
   markObject((Obj*)vm.lambdaFunctionName);
   markObject((Obj*)vm.klass);
   markObject((Obj*)vm.metaArrayClass);

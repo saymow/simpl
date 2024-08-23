@@ -28,10 +28,10 @@ void writeChunk(Chunk* chunk, uint8_t byte, int line) {
 
 int addConstant(Chunk* chunk, Value value) {
   // Garbage Collector 👌
-  push(value);
+  push(&vm.program, value);
   writeValueArray(&chunk->constants, value);
   // Garbage Collector 👌
-  pop();
+  pop(&vm.program);
   return chunk->constants.count - 1;
 }
 
