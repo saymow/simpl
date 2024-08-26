@@ -1,0 +1,40 @@
+// Array of length = 500000000 multiplication with 100 threads
+
+fun program(ctx) {
+    var sum = 0;
+
+    for idx in range(ctx.start, ctx.end) {
+        sum += ctx.array[idx];
+    }
+
+    return sum;
+}
+
+fun papallelSum(array, threadsCount) {
+    var threads = Array(threadsCount);
+    var count = 0;
+
+    for idx in range(threadsCount) {
+        var start = count;
+        count += array.length() / threadsCount;
+        threads[idx] = System.Thread(program, { array: array, start: start, end: count });
+    } 
+
+    return threads.reduce((acc, thread) -> acc + System.threadJoin(thread), 0);
+}
+
+var array = Array(500000000).map(() -> 1);
+var start = System.clock();
+
+papallelSum(array, 100);
+
+System.log(System.clock() - start);
+
+// -------------------------- BENCHMARK ---------------------------
+// version                   alpha-0.0.3 - implement multithreading
+// rounds                                                         3
+// min                                                       5.285s
+// max                                                       5.489s
+// median                                                    5.356s
+// avg                                                       5.377s
+// stdDeviation                                              0.085s
