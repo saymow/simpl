@@ -460,7 +460,10 @@ static inline bool __nativeSystemThread(void* currentThread, int argCount, Value
 
   push(thread->program, OBJ_VAL(function));
   callEntry(thread->program, function);
-  if (argCount > 1) push(thread->program, *(++args)); 
+  if (function->function->arity > 0) {
+    if (argCount > 1) push(thread->program, *(++args));
+    else push(thread->program, NIL_VAL);
+  } 
 
   if (pthread_create(&thread->pthreadId, NULL, runThread, thread->program) != 0) {
     push(currentThread, OBJ_VAL(CONSTANT_STRING("Can't spawn new thread.")));                              
