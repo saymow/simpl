@@ -439,10 +439,18 @@ static inline bool __nativeSystemClock(void* thread, int argCount, Value* args) 
 
 void *runThread(void* ctx) {
   Thread* programThread = (Thread*) ctx;
-  InterpretResult* result =  ALLOCATE(InterpretResult, 1);
 
-  *result = run(programThread);
-  pthread_exit(result);
+  InterpretResult result = run(programThread);
+  
+  if (result == INTERPRET_OK) {
+    Value* returnValue = ALLOCATE(Value, 1);
+    *returnValue = peek(programThread, 0);
+
+    pthread_exit(returnValue);
+  } else {
+    pthread_exit(NULL);
+  }
+
   return NULL;
 } 
 
@@ -471,21 +479,21 @@ static inline bool __nativeSystemThreadJoin(void* currentThread, int argCount, V
     push(currentThread, OBJ_VAL(CONSTANT_STRING("Can't find thread.")));                              
     return false;
   }
-
   if (pthread_join(thread->pthreadId, &res) != 0) {
     push(currentThread, OBJ_VAL(CONSTANT_STRING("Can't join thread.")));                              
     return false;
   } 
-  
-  if ((*(int *) res) == INTERPRET_RUNTIME_ERROR) {
-    push(currentThread, OBJ_VAL(CONSTANT_STRING("joined thread errored.")));                              
+  if ((void *) res == NULL) {
+    push(currentThread, OBJ_VAL(CONSTANT_STRING("Joined thread errored.")));                              
     return false;
   }
+
+  Value returnValue = *(Value *) res;  
 
   killThread(threadId);
   FREE(int*, res);
 
-  NATIVE_RETURN(currentThread, NIL_VAL);
+  NATIVE_RETURN(currentThread, returnValue);
 }
 
 static inline bool __nativeStringToUpperCase(void* thread, int argCount, Value* args) {

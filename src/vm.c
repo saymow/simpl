@@ -1531,6 +1531,10 @@ InterpretResult run(Thread* program) {
         program->framesCount--;
         if (program->framesCount == 0) {
           pop(program);
+          
+          if (&vm.program != program) {
+            push(program, result);
+          }          
           return INTERPRET_OK;
         }
 
