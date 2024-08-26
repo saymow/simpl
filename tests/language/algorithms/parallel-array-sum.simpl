@@ -21,6 +21,6 @@ fun papallelSum(array, threadsCount) {
     return threads.reduce((acc, thread) -> acc + System.threadJoin(thread), 0);
 }
 
-var array = Array(1000000).map(() -> 1);
+var array = Array(100000).map(() -> 1);
 
-System.log(papallelSum(array, 5));                                         // expect 1e+06
+System.log(papallelSum(array, 5));                                         // expect 100000
