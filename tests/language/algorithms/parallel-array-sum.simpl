@@ -1,0 +1,26 @@
+fun program(ctx) {
+    var sum = 0;
+
+    for idx in range(ctx.start, ctx.end) {
+        sum += ctx.array[idx];
+    }
+
+    return sum;
+}
+
+fun papallelSum(array, threadsCount) {
+    var threads = Array(threadsCount);
+    var count = 0;
+
+    for idx in range(threadsCount) {
+        var start = count;
+        count += array.length() / threadsCount;
+        threads[idx] = System.Thread(program, { array: array, start: start, end: count });
+    } 
+
+    return threads.reduce((acc, thread) -> acc + System.threadJoin(thread), 0);
+}
+
+var array = Array(1000000).map(() -> 1);
+
+System.log(papallelSum(array, 5));                                         // expect 1e+06
