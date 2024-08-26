@@ -38,6 +38,7 @@ void initProgram(Thread* program) {
 }
 
 ActiveThread* spawnThread() {
+  // Lock memory allocation area
   pthread_mutex_lock(&vm.memoryAllocationMutex);
 
   ActiveThread* thread = ALLOCATE(ActiveThread, 1);
@@ -52,11 +53,13 @@ ActiveThread* spawnThread() {
   thread->next = vm.threads;
   vm.threads = thread;
 
+  // Unlock memory allocation area
   pthread_mutex_unlock(&vm.memoryAllocationMutex);
   return thread;
 }
 
 ActiveThread* getThread(uint32_t threadId) {
+  // Lock memory allocation area
   pthread_mutex_lock(&vm.memoryAllocationMutex);
   ActiveThread* thread = vm.threads;
 
@@ -64,11 +67,13 @@ ActiveThread* getThread(uint32_t threadId) {
     thread = thread->next;
   }
 
+  // Unlock memory allocation area
   pthread_mutex_unlock(&vm.memoryAllocationMutex);
   return thread;
 }
 
 void killThread(uint32_t threadId) {
+  // Lock memory allocation area
   pthread_mutex_lock(&vm.memoryAllocationMutex);
 
   ActiveThread* tmp = vm.threads;
@@ -91,6 +96,7 @@ void killThread(uint32_t threadId) {
   FREE(Thread, tmp->program);
   FREE(ActiveThread, tmp);
 
+  // Unlock memory allocation area
   pthread_mutex_unlock(&vm.memoryAllocationMutex);
 }
 
@@ -131,13 +137,20 @@ void freeVM() {
   freeTable(&vm.strings);
 }
 
+// GCWhiteList is not a thread-safe function.
+// GCWhiteList should always be followed by a corresponding GCPopWhiteList call.
+// We leverage this fact to guarantuee mutual exclusion.
 Obj* GCWhiteList(Obj* obj) {
+  // Lock memory allocation area
+  pthread_mutex_lock(&vm.memoryAllocationMutex);
   vm.GCWhiteList[vm.GCWhiteListCount++] = obj;
   return obj;
 }
 
 void GCPopWhiteList() {
   vm.GCWhiteListCount--;
+  // Unlock memory allocation area
+  pthread_mutex_unlock(&vm.memoryAllocationMutex);
 }
 
 
@@ -751,6 +764,7 @@ static inline Value stringInterpolation(Thread* program, ObjString* template) {
 InterpretResult run(Thread* program) {
   program->frame = &program->frames[program->framesCount - 1];
 
+#define IS_WORKER_THREAD() &vm.program != program
 #define READ_BYTE() (*program->frame->ip++)
 #define READ_CONSTANT() (IS_FRAME_MODULE(program->frame) ? FRAME_AS_MODULE(program->frame)->function->chunk.constants.values[READ_BYTE()] : FRAME_AS_CLOSURE(program->frame)->function->chunk.constants.values[READ_BYTE()]) 
 #define READ_SHORT() \
@@ -1532,9 +1546,11 @@ InterpretResult run(Thread* program) {
         if (program->framesCount == 0) {
           pop(program);
           
-          if (&vm.program != program) {
+          //Worker threads are expected to return something.  
+          if (IS_WORKER_THREAD()) {
             push(program, result);
           }          
+          
           return INTERPRET_OK;
         }
 

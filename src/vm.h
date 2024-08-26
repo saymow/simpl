@@ -180,7 +180,8 @@ typedef struct {
   // Default name for lambda functions
   ObjString* lambdaFunctionName;
 
-  // Only one thread can allocate memory at a time 
+  // Only one thread can allocate memory at a time, in order to avoid complications with the GC
+  // This mutex is used to guarantee mutual exclusion between threads.
   pthread_mutex_t memoryAllocationMutex;
   pthread_mutexattr_t memoryAllocationMutexAttr;
   

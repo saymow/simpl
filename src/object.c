@@ -14,6 +14,8 @@
   (type *)allocateObj(objectType, sizeof(type))
 
 Obj *allocateObj(ObjType type, size_t size) {
+  // Lock memory allocation area
+  pthread_mutex_lock(&vm.memoryAllocationMutex);
   Obj *object = reallocate(NULL, 0, size);
   object->type = type;
   object->isMarked = false;
@@ -25,6 +27,9 @@ Obj *allocateObj(ObjType type, size_t size) {
 #ifdef DEBUG_LOG_GC
   printf("%p allocate %lld for %d\n", (void *)object, size, type);
 #endif
+
+  // Unlock memory allocation area
+  pthread_mutex_unlock(&vm.memoryAllocationMutex);
 
   return object;
 }
