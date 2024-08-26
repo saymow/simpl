@@ -1,6 +1,7 @@
 #include "memory.h"
 
 #include <stdlib.h>
+#include <pthread.h>
 
 #include "compiler.h"
 #include "vm.h"
@@ -15,9 +16,12 @@
 #define GC_HEAP_GROW_FACTOR 2
 
 void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
+  // Lock memory allocation area
+  pthread_mutex_lock(&vm.memoryAllocationMutex);
+
   vm.bytesAllocated += newSize - oldSize;
 
-  if (newSize > oldSize) {
+  if (newSize > oldSize ) {
 #ifdef DEBUG_STRESS_GC
     if (vm.state == INITIALIZED) {
       startGarbageCollector();
@@ -31,13 +35,18 @@ void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
 
   if (newSize == 0) {
     free(pointer);
+
+    // Unlock memory allocation area
+    pthread_mutex_unlock(&vm.memoryAllocationMutex);
     return NULL;
-  }
+  } 
 
   void* result = realloc(pointer, newSize);
 
   if (result == NULL) exit(1);
 
+  // Unlock memory allocation area
+  pthread_mutex_unlock(&vm.memoryAllocationMutex);
   return result;
 }
 
@@ -161,28 +170,42 @@ static void markGCWhiteList() {
   }
 }
 
-static void markRoots() {
-  for (Value* slot = vm.program.stack; slot < vm.program.stackTop; slot++) {
+static void markProgram(Thread* program) {
+  markTable(&program->global);
+
+  for (Value* slot = program->stack; slot < program->stackTop; slot++) {
     markValue(*slot);
   }
-
-  for (int idx = 0; idx < vm.program.framesCount; idx++) {
-    markTable(&vm.program.frames[idx].namespace);
-    if (vm.program.frames[idx].type == FRAME_TYPE_MODULE) {
-      markObject((Obj*) vm.program.frames[idx].as.module);
+  
+  for (int idx = 0; idx < program->framesCount; idx++) {
+    markTable(&program->frames[idx].namespace);
+    if (program->frames[idx].type == FRAME_TYPE_MODULE) {
+      markObject((Obj*) program->frames[idx].as.module);
     } else {
-      markObject((Obj*) vm.program.frames[idx].as.closure);
+      markObject((Obj*) program->frames[idx].as.closure);
     }
   }
 
-  for (ObjUpValue* upvalue = vm.program.upvalues; upvalue != NULL;
+  for (ObjUpValue* upvalue = program->upvalues; upvalue != NULL;
        upvalue = upvalue->next) {
     markObject((Obj*)upvalue);
   }
+}
 
+static void markThreads() {
+  ActiveThread* thread = vm.threads;
+
+  while (thread != NULL) {
+    markProgram(thread->program);
+    thread = thread->next;
+  } 
+}
+
+static void markRoots() {
+  markProgram(&vm.program);
+  markThreads();
   markGCWhiteList();
   markCompilerRoots();
-  markTable(&vm.program.global);
   markObject((Obj*)vm.lambdaFunctionName);
   markObject((Obj*)vm.klass);
   markObject((Obj*)vm.metaArrayClass);

@@ -1,5 +1,7 @@
 #include "vm.h"
 
+#include <assert.h>
+#include <pthread.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +17,6 @@
 #include "core.h"
 
 VM vm;
-CallFrame* frame;
 
 static void closeUpValue(ObjUpValue* upvalue);
 static void closeUpValues(Thread* program, Value* last);
@@ -28,16 +29,81 @@ static void resetStack(Thread* program) { program->stackTop = program->stack; }
 void initProgram(Thread* program) {
   initTable(&program->global);
   resetStack(program);
+  program->frame = NULL;
   program->upvalues = NULL;
   program->framesCount = 0;
-  program->tryCatchStackCount = 0;
   program->loopStackCount = 0;
+  program->tryCatchStackCount = 0;
+  program->switchStackCount = 0;
+}
+
+ActiveThread* spawnThread() {
+  pthread_mutex_lock(&vm.memoryAllocationMutex);
+
+  ActiveThread* thread = ALLOCATE(ActiveThread, 1);
+  Thread* programThread = ALLOCATE(Thread, 1);
+
+  initProgram(programThread);
+  attachCore(&vm, programThread);
+
+  thread->id = vm.threadsCount++;
+  thread->program = programThread;
+  
+  thread->next = vm.threads;
+  vm.threads = thread;
+
+  pthread_mutex_unlock(&vm.memoryAllocationMutex);
+  return thread;
+}
+
+ActiveThread* getThread(uint32_t threadId) {
+  pthread_mutex_lock(&vm.memoryAllocationMutex);
+  ActiveThread* thread = vm.threads;
+
+  while (thread != NULL && thread->id != threadId) {
+    thread = thread->next;
+  }
+
+  pthread_mutex_unlock(&vm.memoryAllocationMutex);
+  return thread;
+}
+
+void killThread(uint32_t threadId) {
+  pthread_mutex_lock(&vm.memoryAllocationMutex);
+
+  ActiveThread* tmp = vm.threads;
+  ActiveThread* prev = NULL;
+
+  while (tmp != NULL && tmp->id != threadId) {
+    prev = tmp;
+    tmp = tmp->next;
+  }
+
+  if (tmp == NULL) return;
+  
+  if (prev == NULL) {
+    vm.threads = vm.threads->next;
+  } else {
+    prev->next = tmp->next;
+  }
+
+  freeProgram(tmp->program);
+  FREE(Thread, tmp->program);
+  FREE(ActiveThread, tmp);
+
+  pthread_mutex_unlock(&vm.memoryAllocationMutex);
+}
+
+void freeProgram(Thread* program) {
+  freeTable(&program->global);
 }
 
 void initVM() {
   vm.state = INITIALIZING;
   
   initTable(&vm.strings);
+  vm.threads = NULL;
+  vm.threadsCount = 0;
   vm.objects = NULL;
   vm.grayCount = 0;
   vm.grayCapacity = 0;
@@ -46,16 +112,23 @@ void initVM() {
   vm.GCThreshold = 1024 * 1024;
   vm.GCWhiteListCount = 0;
 
+  pthread_mutexattr_init(&vm.memoryAllocationMutexAttr);
+  pthread_mutexattr_settype(&vm.memoryAllocationMutexAttr, PTHREAD_MUTEX_RECURSIVE);
+  pthread_mutex_init(&vm.memoryAllocationMutex, &vm.memoryAllocationMutexAttr);
+
   initProgram(&vm.program);
   initCore(&vm);
+  attachCore(&vm, &vm.program);
 
   vm.lambdaFunctionName = CONSTANT_STRING("lambda function");
 
   vm.state = INITIALIZED;
 }
 
-void freeProgrm(Thread* program) {
-  freeTable(&program->global);
+void freeVM() {
+  freeProgram(&vm.program);
+  freeObjects();
+  freeTable(&vm.strings);
 }
 
 Obj* GCWhiteList(Obj* obj) {
@@ -67,10 +140,6 @@ void GCPopWhiteList() {
   vm.GCWhiteListCount--;
 }
 
-void freeVM() {
-  freeObjects();
-  freeTable(&vm.strings);
-}
 
 ObjString* stackTrace(Thread* program) {
   char buffer[1024];
@@ -165,8 +234,8 @@ static void recoverableRuntimeError(Thread* program, const char* format, ...) {
 
   // Get back to the closest try-catch block frame and move ip to the start of the catch block statement. 
   program->stackTop = tryCatch->frameStackTop;
-  frame = tryCatch->frame;
-  frame->ip = tryCatch->catchIp;
+  program->frame = tryCatch->frame;
+  program->frame->ip = tryCatch->catchIp;
 
   // If the catch block is compiled to receive a param, it should expect the param as a local variable in the stack
   if (tryCatch->hasCatchParameter) {
@@ -212,15 +281,15 @@ static void concatenate(Thread* program) {
   push(program, value);
 }
 
-static bool callEntry(Thread* program, ObjClosure* closure) {
-  CallFrame* frame = &program->frames[program->framesCount++];
-  frame->type = FRAME_TYPE_CLOSURE;
-  frame->as.closure = closure;
-  frame->ip = closure->function->chunk.code;
-  frame->slots = program->stackTop - 1;
+bool callEntry(Thread* thread, ObjClosure* closure) {
+  thread->frame = &thread->frames[thread->framesCount++];
+  thread->frame->type = FRAME_TYPE_CLOSURE;
+  thread->frame->as.closure = closure;
+  thread->frame->ip = closure->function->chunk.code;
+  thread->frame->slots = thread->stackTop - 1;
 
-  initTable(&frame->namespace);
-  tableAddAll(&program->global, &frame->namespace);
+  initTable(&thread->frame->namespace);
+  tableAddAll(&thread->global, &thread->frame->namespace);
 
   return true;
 }
@@ -679,13 +748,13 @@ static inline Value stringInterpolation(Thread* program, ObjString* template) {
   return OBJ_VAL(copyString(buffer, idx));
 }
 
-static InterpretResult run(Thread* program) {
-  frame = &program->frames[program->framesCount - 1];
+InterpretResult run(Thread* program) {
+  program->frame = &program->frames[program->framesCount - 1];
 
-#define READ_BYTE() (*frame->ip++)
-#define READ_CONSTANT() (IS_FRAME_MODULE(frame) ? FRAME_AS_MODULE(frame)->function->chunk.constants.values[READ_BYTE()] : FRAME_AS_CLOSURE(frame)->function->chunk.constants.values[READ_BYTE()]) 
+#define READ_BYTE() (*program->frame->ip++)
+#define READ_CONSTANT() (IS_FRAME_MODULE(program->frame) ? FRAME_AS_MODULE(program->frame)->function->chunk.constants.values[READ_BYTE()] : FRAME_AS_CLOSURE(program->frame)->function->chunk.constants.values[READ_BYTE()]) 
 #define READ_SHORT() \
-  (frame->ip += 2, (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1]))
+  (program->frame->ip += 2, (uint16_t)((program->frame->ip[-2] << 8) | program->frame->ip[-1]))
 #define READ_STRING() (AS_STRING(READ_CONSTANT()))
 #define BINARY_OP(program, valueType, op)                                   \
   do {                                                                      \
@@ -708,14 +777,14 @@ static InterpretResult run(Thread* program) {
     }
     printf("\n");
     
-    if (IS_FRAME_MODULE(frame)) {
+    if (IS_FRAME_MODULE(program->frame)) {
       disassembleInstruction(
-        &FRAME_AS_MODULE(frame)->function->chunk,
-        (int)(frame->ip - FRAME_AS_MODULE(frame)->function->chunk.code));
+        &FRAME_AS_MODULE(program->frame)->function->chunk,
+        (int)(program->frame->ip - FRAME_AS_MODULE(program->frame)->function->chunk.code));
     } else {
       disassembleInstruction(
-        &FRAME_AS_CLOSURE(frame)->function->chunk,
-        (int)(frame->ip - FRAME_AS_CLOSURE(frame)->function->chunk.code));
+        &FRAME_AS_CLOSURE(program->frame)->function->chunk,
+        (int)(program->frame->ip - FRAME_AS_CLOSURE(program->frame)->function->chunk.code));
     }
 #endif
 
@@ -750,7 +819,7 @@ static InterpretResult run(Thread* program) {
         break;
       }
       case OP_DEFINE_GLOBAL: {
-        tableSet(&frame->namespace, READ_STRING(), peek(program, 0));
+        tableSet(&program->frame->namespace, READ_STRING(), peek(program, 0));
         pop(program);
         break;
       }
@@ -758,7 +827,7 @@ static InterpretResult run(Thread* program) {
         ObjString* name = READ_STRING();
         Value value;
 
-        if (!tableGet(&frame->namespace, name, &value)) {
+        if (!tableGet(&program->frame->namespace, name, &value)) {
           recoverableRuntimeError(program, "Undefined variable '%s'", name->chars);
           continue;
         }
@@ -769,8 +838,8 @@ static InterpretResult run(Thread* program) {
       case OP_SET_GLOBAL: {
         ObjString* name = READ_STRING();
 
-        if (tableSet(&frame->namespace, name, peek(program, 0))) {
-          tableDelete(&frame->namespace, name);
+        if (tableSet(&program->frame->namespace, name, peek(program, 0))) {
+          tableDelete(&program->frame->namespace, name);
           recoverableRuntimeError(program, "Undefined variable '%s'", name->chars);
           continue;
         }
@@ -778,21 +847,21 @@ static InterpretResult run(Thread* program) {
       }
       case OP_GET_LOCAL: {
         uint8_t slot = READ_BYTE();
-        push(program, frame->slots[slot]);
+        push(program, program->frame->slots[slot]);
         break;
       }
       case OP_SET_LOCAL: {
-        frame->slots[READ_BYTE()] = peek(program, 0);
+        program->frame->slots[READ_BYTE()] = peek(program, 0);
         break;
       }
       case OP_GET_UPVALUE: {
         uint8_t slot = READ_BYTE();
-        push(program, *FRAME_AS_CLOSURE(frame)->upvalues[slot]->location);
+        push(program, *FRAME_AS_CLOSURE(program->frame)->upvalues[slot]->location);
         break;
       }
       case OP_SET_UPVALUE: {
         uint8_t slot = READ_BYTE();
-        *FRAME_AS_CLOSURE(frame)->upvalues[slot]->location = peek(program, 0);
+        *FRAME_AS_CLOSURE(program->frame)->upvalues[slot]->location = peek(program, 0);
         break;
       }
       case OP_GET_PROPERTY: {
@@ -819,7 +888,7 @@ static InterpretResult run(Thread* program) {
           continue;
         }
 
-        frame = &program->frames[program->framesCount - 1];
+        program->frame = &program->frames[program->framesCount - 1];
         break;
       }
       case OP_SET_PROPERTY: {
@@ -879,17 +948,17 @@ static InterpretResult run(Thread* program) {
       }
       case OP_JUMP: {
         uint16_t offset = READ_SHORT();
-        frame->ip += offset;
+        program->frame->ip += offset;
         break;
       }
       case OP_JUMP_IF_FALSE: {
         uint16_t offset = READ_SHORT();
-        if (isFalsey(peek(program, 0))) frame->ip += offset;
+        if (isFalsey(peek(program, 0))) program->frame->ip += offset;
         break;
       }
       case OP_LOOP: {
         uint16_t offset = READ_SHORT();
-        frame->ip -= offset;
+        program->frame->ip -= offset;
         break;
       }
       case OP_RANGED_LOOP_SETUP: {
@@ -948,7 +1017,7 @@ static InterpretResult run(Thread* program) {
           Loop* loop = &program->loopStack[program->loopStackCount - 1];
 
 
-          frame->ip = loop->outIp;
+          program->frame->ip = loop->outIp;
           // For loops are usually terminated after an expression that is persisted on the stack.
           // Although we dont have any explict expression in this for each, in order to comply with
           // the LOOP_GUARD implementation, we will be popping the dummy value it adds. We will also
@@ -975,7 +1044,7 @@ static InterpretResult run(Thread* program) {
           Loop* loop = &program->loopStack[program->loopStackCount - 1];
 
 
-          frame->ip = loop->outIp;
+          program->frame->ip = loop->outIp;
           // For loops are usually terminated after an expression that is persisted on the stack.
           // Although we dont have any explict expression in this for each, in order to comply with
           // the LOOP_GUARD implementation, we will be popping the dummy value it adds. We will also
@@ -1001,10 +1070,10 @@ static InterpretResult run(Thread* program) {
         // push loop
         Loop* loop = &program->loopStack[program->loopStackCount++];
 
-        loop->frame = frame;
+        loop->frame = program->frame;
         loop->frameStackTop = program->stackTop;
-        loop->startIp = frame->ip + startOffset;
-        loop->outIp = frame->ip + outOffset; 
+        loop->startIp = program->frame->ip + startOffset;
+        loop->outIp = program->frame->ip + outOffset; 
         break;
       }
       case OP_LOOP_BREAK: {
@@ -1013,14 +1082,14 @@ static InterpretResult run(Thread* program) {
         // Pop any existing try-catch block inside loop block 
         while (
           program->tryCatchStackCount > 0 &&
-          program->tryCatchStack[program->tryCatchStackCount - 1].frame == frame &&
+          program->tryCatchStack[program->tryCatchStackCount - 1].frame == program->frame &&
           program->tryCatchStack[program->tryCatchStackCount - 1].outIp > loop->startIp &&
           program->tryCatchStack[program->tryCatchStackCount - 1].outIp < loop->outIp 
         ) {
           program->tryCatchStackCount--;
         }
 
-        frame->ip = loop->outIp;
+        program->frame->ip = loop->outIp;
         // For loops are usually terminated after an expression that is persisted on the stack.
         // Hence, at the end of the loop there is an OP_POP to get rid of it. In this exceptional 
         // situation we have to push a dummy value to the stack that will be popped.  
@@ -1035,14 +1104,14 @@ static InterpretResult run(Thread* program) {
         // Pop any existing try-catch block inside loop block 
         while (
           program->tryCatchStackCount > 0 &&
-          program->tryCatchStack[program->tryCatchStackCount - 1].frame == frame &&
+          program->tryCatchStack[program->tryCatchStackCount - 1].frame == program->frame &&
           program->tryCatchStack[program->tryCatchStackCount - 1].outIp > loop->startIp &&
           program->tryCatchStack[program->tryCatchStackCount - 1].outIp < loop->outIp 
         ) {
           program->tryCatchStackCount--;
         }
 
-        frame->ip = loop->startIp;
+        program->frame->ip = loop->startIp;
         program->stackTop = loop->frameStackTop;
 
         closeUpValues(program, loop->frameStackTop - 1);
@@ -1065,11 +1134,11 @@ static InterpretResult run(Thread* program) {
         // push try-catch block
         TryCatch* tryCatch = &program->tryCatchStack[program->tryCatchStackCount++];
 
-        tryCatch->frame = frame;
+        tryCatch->frame = program->frame;
         tryCatch->frameStackTop = program->stackTop;
-        tryCatch->startIp = frame->ip;
-        tryCatch->catchIp = frame->ip + catchOffset;
-        tryCatch->outIp = frame->ip + outOffset;
+        tryCatch->startIp = program->frame->ip;
+        tryCatch->catchIp = program->frame->ip + catchOffset;
+        tryCatch->outIp = program->frame->ip + outOffset;
         tryCatch->hasCatchParameter = hasCatchParameter;
         break;  
       }
@@ -1080,7 +1149,7 @@ static InterpretResult run(Thread* program) {
         // Move to the end of the try-catch block and skip catch statement
         // We are always gonna reach this intruction inside the same frame the try-catch block was created,
         // if we dont reach any throw statement. Hence, no need to update the current frame.
-        frame->ip = tryCatch->outIp;
+        program->frame->ip = tryCatch->outIp;
         break;
       }
       case OP_THROW: {
@@ -1132,8 +1201,8 @@ static InterpretResult run(Thread* program) {
 
         // Get back to the closest try-catch block frame and move ip to the start of the catch block statement. 
         program->stackTop = tryCatch->frameStackTop;
-        frame = tryCatch->frame;
-        frame->ip = tryCatch->catchIp;
+        program->frame = tryCatch->frame;
+        program->frame->ip = tryCatch->catchIp;
 
         // If the catch block is compiled to receive a param, it should expect the param as a local variable in the stack
         if (tryCatch->hasCatchParameter) {
@@ -1155,10 +1224,10 @@ static InterpretResult run(Thread* program) {
         uint16_t outOffset = READ_SHORT();
 
         switchBlock->expression = &program->stackTop[-1];
-        switchBlock->startIp = frame->ip;
-        switchBlock->outIp = frame->ip + outOffset;
+        switchBlock->startIp = program->frame->ip;
+        switchBlock->outIp = program->frame->ip + outOffset;
         switchBlock->fallThrough = false;
-        switchBlock->frame = frame;
+        switchBlock->frame = program->frame;
         break;
       }
       case OP_SWITCH_BREAK: {
@@ -1169,14 +1238,14 @@ static InterpretResult run(Thread* program) {
         // Pop any existing try-catch block inside switch block 
         while (
           program->tryCatchStackCount > 0 &&
-          program->tryCatchStack[program->tryCatchStackCount - 1].frame == frame &&
+          program->tryCatchStack[program->tryCatchStackCount - 1].frame == program->frame &&
           program->tryCatchStack[program->tryCatchStackCount - 1].outIp > switchBlock->startIp &&
           program->tryCatchStack[program->tryCatchStackCount - 1].outIp < switchBlock->outIp 
         ) {
           program->tryCatchStackCount--;
         }
 
-        frame->ip = switchBlock->outIp;
+        program->frame->ip = switchBlock->outIp;
         program->stackTop = switchBlock->expression + 1;
 
         closeUpValues(program, switchBlock->expression - 1);
@@ -1209,7 +1278,6 @@ static InterpretResult run(Thread* program) {
           break;
         }
 
-
         while (switchBlock->expression != &program->stackTop[-1]) {
           if (valuesEqual(*switchBlock->expression, pop(program))) {
             hasMatch = true;
@@ -1219,7 +1287,7 @@ static InterpretResult run(Thread* program) {
         if (hasMatch) {
           switchBlock->fallThrough = true;
         } else {
-          frame->ip += offset;
+          program->frame->ip += offset;
         }
         break;
       }
@@ -1238,7 +1306,7 @@ static InterpretResult run(Thread* program) {
 
         if (!switchBlock->fallThrough && defaultOffset > 0) {
           switchBlock->fallThrough = true;
-          frame->ip -= defaultOffset;
+          program->frame->ip -= defaultOffset;
         } else {
           program->switchStackCount--;
         }
@@ -1323,7 +1391,7 @@ static InterpretResult run(Thread* program) {
         if (!callValue(program, peek(program, argCount), argCount)) {
           continue;
         }
-        frame = &program->frames[program->framesCount - 1];
+        program->frame = &program->frames[program->framesCount - 1];
         break;
       }
       case OP_CLOSURE: {
@@ -1334,8 +1402,8 @@ static InterpretResult run(Thread* program) {
           uint8_t index = READ_BYTE();
           uint8_t isLocal = READ_BYTE();
 
-          if (isLocal) closure->upvalues[idx] = captureUpvalue(program, frame->slots + index);
-          else closure->upvalues[idx] = FRAME_AS_CLOSURE(frame)->upvalues[index];
+          if (isLocal) closure->upvalues[idx] = captureUpvalue(program, program->frame->slots + index);
+          else closure->upvalues[idx] = FRAME_AS_CLOSURE(program->frame)->upvalues[index];
         }
         break;
       }
@@ -1404,7 +1472,7 @@ static InterpretResult run(Thread* program) {
       case OP_EXPORT: {
         ObjString* name = READ_STRING();
 
-        if (!tableSet(&FRAME_AS_MODULE(frame)->exports, name, pop(program))) {
+        if (!tableSet(&FRAME_AS_MODULE(program->frame)->exports, name, pop(program))) {
           runtimeError(program, NULL, "Already exporting member with name '%s'.", name->chars);
         }
 
@@ -1418,7 +1486,7 @@ static InterpretResult run(Thread* program) {
           push(program, OBJ_VAL(module->function));
           callModule(program, module);
 
-          frame = &program->frames[program->framesCount - 1];
+          program->frame = &program->frames[program->framesCount - 1];
         } else {
           // If resolved, just copy it exports properties
           ObjInstance* exports = newInstance(vm.moduleExportsClass);
@@ -1431,32 +1499,32 @@ static InterpretResult run(Thread* program) {
       case OP_RETURN: {
         Value result = pop(program);
 
-        closeUpValues(program, frame->slots);
+        closeUpValues(program, program->frame->slots);
 
-        if (IS_FRAME_MODULE(frame)) {
+        if (IS_FRAME_MODULE(program->frame)) {
           // Free module variables namespace and flag as evaluated 
-          freeTable(&frame->namespace);
-          FRAME_AS_MODULE(frame)->evaluated = true;
+          freeTable(&program->frame->namespace);
+          FRAME_AS_MODULE(program->frame)->evaluated = true;
 
           // Copy it exports properties to frame call result
           ObjInstance* exports = (ObjInstance*) GCWhiteList((Obj*) newInstance(vm.moduleExportsClass));
-          tableAddAll(&FRAME_AS_MODULE(frame)->exports, &exports->properties);
+          tableAddAll(&FRAME_AS_MODULE(program->frame)->exports, &exports->properties);
           GCPopWhiteList();
           result = OBJ_VAL(exports);
         } 
 
         // Ensure loop blocks are popped if returned inside them
-        while (program->loopStackCount > 0 && program->loopStack[program->loopStackCount - 1].frame == frame) {
+        while (program->loopStackCount > 0 && program->loopStack[program->loopStackCount - 1].frame == program->frame) {
           program->loopStackCount--;
         }
 
         // Ensure switch blocks are popped if returned inside them
-        while (program->switchStackCount > 0 && program->switchStack[program->switchStackCount - 1].frame == frame) {
+        while (program->switchStackCount > 0 && program->switchStack[program->switchStackCount - 1].frame == program->frame) {
           program->switchStackCount--;
         }
 
         // Ensure try-catch blocks are popped if returned inside them 
-        while(program->tryCatchStackCount > 0 && program->tryCatchStack[program->tryCatchStackCount - 1].frame == frame) {
+        while(program->tryCatchStackCount > 0 && program->tryCatchStack[program->tryCatchStackCount - 1].frame == program->frame) {
           program->tryCatchStackCount--;
         }
 
@@ -1466,10 +1534,10 @@ static InterpretResult run(Thread* program) {
           return INTERPRET_OK;
         }
 
-        program->stackTop = frame->slots;
+        program->stackTop = program->frame->slots;
         push(program, result);
 
-        frame = &program->frames[program->framesCount - 1];
+        program->frame = &program->frames[program->framesCount - 1];
         break;
       }
 
@@ -1478,9 +1546,9 @@ static InterpretResult run(Thread* program) {
     }
   }
 
-#undef BINARY_OP
-#undef READ_CONSTANT
-#undef READ_BYTE
+  #undef BINARY_OP
+  #undef READ_CONSTANT
+  #undef READ_BYTE
 }
 
 InterpretResult interpret(const char* source, char* absPath) {
@@ -1497,7 +1565,7 @@ InterpretResult interpret(const char* source, char* absPath) {
   callEntry(&vm.program, closure);
 
   InterpretResult result = run(&vm.program);
-  freeProgrm(&vm.program);
+  freeProgram(&vm.program);
 
   return result;
 }

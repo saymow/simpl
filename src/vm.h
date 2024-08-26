@@ -1,6 +1,8 @@
 #ifndef vm_h
 #define vm_h
 
+#include <pthread.h>
+
 #include "chunk.h"
 #include "object.h"
 #include "table.h"
@@ -72,6 +74,9 @@ typedef struct {
   // Program frames 
   CallFrame frames[FRAMES_MAX];
   int framesCount;
+  
+  // Current frame pointer
+  CallFrame* frame;
 
   // Base namespace for all modules, where native classes are defined   
   Table global;
@@ -99,6 +104,20 @@ typedef struct {
   int switchStackCount;
 } Thread;
 
+typedef struct ActiveThread {
+  // id
+  uint32_t id;
+
+  // pthreads id
+  pthread_t pthreadId; 
+
+  // Program thread
+  Thread* program;
+
+  // A pointer to next active thread
+  struct ActiveThread* next;
+} ActiveThread;
+
 typedef struct {
   // String interning table.
   // For performance sake, strings are interned and reused in case it appears
@@ -107,6 +126,11 @@ typedef struct {
 
   // Process main thread program
   Thread program;
+
+  // Process active threads linked list 
+  ActiveThread* threads;
+  // Used to assign threads ids and keep them trackable 
+  uint32_t threadsCount;
   
   // Root class, everything inherits from it
   ObjClass* klass;
@@ -156,6 +180,10 @@ typedef struct {
   // Default name for lambda functions
   ObjString* lambdaFunctionName;
 
+  // Only one thread can allocate memory at a time 
+  pthread_mutex_t memoryAllocationMutex;
+  pthread_mutexattr_t memoryAllocationMutexAttr;
+  
   // Garbage Collector fields
   // Memory allocating are handling in three ways:
   //    1. Manual allocation, e.g, module resolution
@@ -182,9 +210,9 @@ typedef struct {
   // Garbage Collector Auxiliary list of Objects it was able to mark
   // The collected objects are: ALL_OBJECTS - MARKED_OBJECTS
   // That is, objects it could not mark
+  Obj** grayStack;
   int grayCount;
   int grayCapacity;
-  Obj** grayStack;
   // The process of initializing the VM is complex and need VM itself to interpret
   // some core functionalities. For this, we have a few states to tweak the VM behavior
   // a little:
@@ -214,8 +242,14 @@ extern VM vm;
 #define FRAME_AS_CLOSURE(frame) ((frame)->as.closure)
 
 void initVM();
+ActiveThread* spawnThread();
+ActiveThread* getThread(uint32_t threadId);
+void killThread(uint32_t threadId);
+void freeProgram(Thread* program);
 void freeVM();
 InterpretResult interpret(const char* source, char* absPath);
+bool callEntry(Thread* thread, ObjClosure* closure);
+InterpretResult run(Thread* program);
 void push(Thread* program, Value value);
 Value pop(Thread* program);
 Value peek(Thread* program, int distance);

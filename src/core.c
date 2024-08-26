@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
+#include <pthread.h>
 
 #include "core.h"
 
@@ -50,7 +51,20 @@
             return false;                                                           \
             NULL;                                                                   \
         })                                                                          \
-    )    
+    )                                                                               \
+
+#define SAFE_CONSUME_FUNCTION(args, name)                                           \
+    (ObjClosure *) (                                                                \
+        IS_CLOSURE(*(++args)) ?                                                     \
+        AS_CLOSURE(*args)     :                                                     \
+        ({                                                                          \
+            char * buffer = ALLOCATE(char, 64);                                     \
+            int length = sprintf(buffer, "Expected %s to be a funcion.", name);     \
+            push(&vm.program, OBJ_VAL(takeString(buffer, length)));                 \
+            return false;                                                           \
+            NULL;                                                                   \
+        })                                                                          \
+    )                                                                               \
 
 // Ensure the index is in [0, length)
 // 1°) If index >= length, it returns length - 1 (capping the index).
@@ -421,6 +435,56 @@ static inline bool __nativeSystemScan(void* thread, int argCount, Value* args) {
 
 static inline bool __nativeSystemClock(void* thread, int argCount, Value* args) {
   NATIVE_RETURN(thread, NUMBER_VAL(clock() / (double) CLOCKS_PER_SEC));
+}
+
+void *runThread(void* ctx) {
+  Thread* programThread = (Thread*) ctx;
+  InterpretResult* result =  ALLOCATE(InterpretResult, 1);
+
+  *result = run(programThread);
+  pthread_exit(result);
+  return NULL;
+} 
+
+static inline bool __nativeSystemThread(void* currentThread, int argCount, Value* args) {
+  ObjClosure* function = SAFE_CONSUME_FUNCTION(args, "argument");
+  ActiveThread* thread = spawnThread();
+
+  push(thread->program, OBJ_VAL(function));
+  callEntry(thread->program, function);
+
+  if (pthread_create(&thread->pthreadId, NULL, runThread, thread->program) != 0) {
+    push(currentThread, OBJ_VAL(CONSTANT_STRING("Can't spawn new thread.")));                              
+    return false;
+  }
+
+  NATIVE_RETURN(currentThread, NUMBER_VAL((double) thread->id));
+}
+
+static inline bool __nativeSystemThreadJoin(void* currentThread, int argCount, Value* args) {
+  int threadId = (int) SAFE_CONSUME_NUMBER(args, "thread id");
+  ActiveThread* thread = getThread(threadId);
+  void* res;
+
+  if (thread == NULL) {
+    push(currentThread, OBJ_VAL(CONSTANT_STRING("Can't find thread.")));                              
+    return false;
+  }
+
+  if (pthread_join(thread->pthreadId, &res) != 0) {
+    push(currentThread, OBJ_VAL(CONSTANT_STRING("Can't join thread.")));                              
+    return false;
+  } 
+  
+  if ((*(int *) res) == INTERPRET_RUNTIME_ERROR) {
+    push(currentThread, OBJ_VAL(CONSTANT_STRING("joined thread errored.")));                              
+    return false;
+  }
+
+  killThread(threadId);
+  FREE(int*, res);
+
+  NATIVE_RETURN(currentThread, NIL_VAL);
 }
 
 static inline bool __nativeStringToUpperCase(void* thread, int argCount, Value* args) {
@@ -1038,6 +1102,8 @@ void initCore(VM* vm) {
   defineNativeFunction(&vm->metaSystemClass->methods, "clock", __nativeSystemClock, ARGS_ARITY_0);
   defineNativeFunction(&vm->metaSystemClass->methods, "log", __nativeSystemLog, ARGS_ARITY_1);
   defineNativeFunction(&vm->metaSystemClass->methods, "scan", __nativeSystemScan, ARGS_ARITY_0);
+  defineNativeFunction(&vm->metaSystemClass->methods, "Thread", __nativeSystemThread, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaSystemClass->methods, "threadJoin", __nativeSystemThreadJoin, ARGS_ARITY_1);
 
   vm->systemClass = defineNewClass("System");
   inherit((Obj *)vm->systemClass, vm->metaSystemClass);
@@ -1046,13 +1112,16 @@ void initCore(VM* vm) {
   inherit((Obj *) vm->objectClass, vm->metaObjectClass);
 
   vm->state = EXTENDING;
+  
   interpret(coreExtension, NULL);
+}
 
-  tableSet(&vm->program.global, vm->errorClass->name, OBJ_VAL(vm->errorClass));
-  tableSet(&vm->program.global, vm->stringClass->name, OBJ_VAL(vm->stringClass));
-  tableSet(&vm->program.global, vm->numberClass->name, OBJ_VAL(vm->numberClass));
-  tableSet(&vm->program.global, vm->mathClass->name, OBJ_VAL(vm->mathClass));
-  tableSet(&vm->program.global, vm->arrayClass->name, OBJ_VAL(vm->arrayClass));
-  tableSet(&vm->program.global, vm->systemClass->name, OBJ_VAL(vm->systemClass));
-  tableSet(&vm->program.global, vm->objectClass->name, OBJ_VAL(vm->objectClass));
+void attachCore(VM* vm, Thread* thread) {
+  tableSet(&thread->global, vm->errorClass->name, OBJ_VAL(vm->errorClass));
+  tableSet(&thread->global, vm->stringClass->name, OBJ_VAL(vm->stringClass));
+  tableSet(&thread->global, vm->numberClass->name, OBJ_VAL(vm->numberClass));
+  tableSet(&thread->global, vm->mathClass->name, OBJ_VAL(vm->mathClass));
+  tableSet(&thread->global, vm->arrayClass->name, OBJ_VAL(vm->arrayClass));
+  tableSet(&thread->global, vm->systemClass->name, OBJ_VAL(vm->systemClass));
+  tableSet(&thread->global, vm->objectClass->name, OBJ_VAL(vm->objectClass));
 }
