@@ -1,0 +1,38 @@
+// Parallel program with mutexes
+
+fun program(ctx) {
+    Parallelism.lock("critical-area");
+    var threadId = ctx.count -= 1;
+
+    System.log("Thread $(threadId) entered critical area");
+    System.log("Thread $(threadId) is about to leave critical area");
+    Parallelism.unlock("critical-area");
+}
+
+var state = { count: 10 };
+var threads = Array(10).map(() -> System.Thread(program, state));
+
+for thread of threads {
+    System.threadJoin(thread);
+}
+
+// expect Thread 9 entered critical area
+// expect Thread 9 is about to leave critical area
+// expect Thread 8 entered critical area
+// expect Thread 8 is about to leave critical area
+// expect Thread 7 entered critical area
+// expect Thread 7 is about to leave critical area
+// expect Thread 6 entered critical area
+// expect Thread 6 is about to leave critical area
+// expect Thread 5 entered critical area
+// expect Thread 5 is about to leave critical area
+// expect Thread 4 entered critical area
+// expect Thread 4 is about to leave critical area
+// expect Thread 3 entered critical area
+// expect Thread 3 is about to leave critical area
+// expect Thread 2 entered critical area
+// expect Thread 2 is about to leave critical area
+// expect Thread 1 entered critical area
+// expect Thread 1 is about to leave critical area
+// expect Thread 0 entered critical area
+// expect Thread 0 is about to leave critical area
