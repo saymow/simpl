@@ -1358,7 +1358,8 @@ static void grouping(bool canAssign) {
           // parse TOKEN_IDENTIFIER
           declareVariableUsingToken(&name);
           markLocalInitialized();
-          // ----
+
+          compiler.function->arity = 1;
 
           consume(TOKEN_GREATER, "Expect '>' for anonymous function.");
           
