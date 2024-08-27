@@ -107,16 +107,22 @@ typedef struct {
 typedef struct ActiveThread {
   // id
   uint32_t id;
-
   // pthreads id
   pthread_t pthreadId; 
-
   // Program thread
   Thread* program;
-
-  // A pointer to next active thread
+  // Pointer to next active thread
   struct ActiveThread* next;
 } ActiveThread;
+
+typedef struct ThreadLock {
+  // id
+  ObjString* id;
+  // pthreads mutex
+  pthread_mutex_t mutex;
+  // Pointer to next active thread
+  struct ThreadLock* next; 
+} ThreadLock;
 
 typedef struct {
   // String interning table.
@@ -131,6 +137,9 @@ typedef struct {
   ActiveThread* threads;
   // Used to assign threads ids and keep them trackable 
   uint32_t threadsCount;
+
+  // Process critical sections locks linked list 
+  ThreadLock* locks;
   
   // Root class, everything inherits from it
   ObjClass* klass;
@@ -150,6 +159,8 @@ typedef struct {
   ObjClass* metaSystemClass;
   // - Where Object static methods are defined
   ObjClass* metaObjectClass;
+   // - Where Parallelism static utils methods are defined
+  ObjClass* metaParallelismClass;
 
   // Data Type Classes are superclasses of all data types
   // - Where nil literal inherits from
@@ -177,6 +188,8 @@ typedef struct {
   // - Placeholder System object (used to access superclass)
   // This class is not part of objectInstance inherintance chain
   ObjClass* objectClass;
+  // - Placeholder Parallelism utility object (used to access superclass)
+  ObjClass* parallelismClass;
   // Default name for lambda functions
   ObjString* lambdaFunctionName;
 
@@ -246,6 +259,8 @@ void initVM();
 ActiveThread* spawnThread();
 ActiveThread* getThread(uint32_t threadId);
 void killThread(uint32_t threadId);
+void lockSection(ObjString* lockId);
+void unlockSection(Thread* program, ObjString* lockId);
 void freeProgram(Thread* program);
 void freeVM();
 InterpretResult interpret(const char* source, char* absPath);

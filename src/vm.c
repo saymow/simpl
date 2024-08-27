@@ -21,6 +21,7 @@ VM vm;
 static void closeUpValue(ObjUpValue* upvalue);
 static void closeUpValues(Thread* program, Value* last);
 static bool callValue(Thread* program, Value callee, uint8_t argCount);
+static void recoverableRuntimeError(Thread* program, const char* format, ...);
 void push(Thread* program, Value value);
 Value pop(Thread* program);
 
@@ -100,6 +101,42 @@ void killThread(uint32_t threadId) {
   pthread_mutex_unlock(&vm.memoryAllocationMutex);
 }
 
+void lockSection(ObjString* lockId) {
+  ThreadLock* tmp = vm.locks;
+
+  while (tmp != NULL && tmp->id != lockId) {
+    tmp = tmp->next;
+  }
+
+  if (tmp == NULL) {
+    pthread_mutex_lock(&vm.memoryAllocationMutex);
+    tmp = ALLOCATE(ThreadLock, 1);
+
+    tmp->id = lockId;
+    pthread_mutex_init(&tmp->mutex, NULL);
+    
+    tmp->next = vm.locks;
+    vm.locks = tmp;
+    pthread_mutex_unlock(&vm.memoryAllocationMutex);
+  }  
+  
+  pthread_mutex_lock(&tmp->mutex);
+}
+
+void unlockSection(Thread* program, ObjString* lockId) {
+  ThreadLock* tmp = vm.locks;
+
+  while (tmp != NULL && tmp->id != lockId) {
+    tmp = tmp->next;
+  }
+
+  if (tmp == NULL) {
+    return recoverableRuntimeError(program, "Unable to unlock undefined lock %s", lockId->chars);
+  }
+  
+  pthread_mutex_unlock(&tmp->mutex);
+}
+
 void freeProgram(Thread* program) {
   freeTable(&program->global);
 }
@@ -109,6 +146,7 @@ void initVM() {
   
   initTable(&vm.strings);
   vm.threads = NULL;
+  vm.locks = NULL;
   vm.threadsCount = 0;
   vm.objects = NULL;
   vm.grayCount = 0;
@@ -124,7 +162,7 @@ void initVM() {
 
   initProgram(&vm.program);
   initCore(&vm);
-  attachCore(&vm, &vm.program);
+  attachCore(&vm, NULL);
 
   vm.lambdaFunctionName = CONSTANT_STRING("lambda function");
 

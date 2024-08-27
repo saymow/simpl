@@ -838,6 +838,18 @@ static inline bool __nativeStaticErrorNew(void* thread, int argCount, Value* arg
   NATIVE_RETURN(thread, OBJ_VAL(instance));
 }
 
+static inline bool __nativeStaticParallelismLock(void* thread, int argCount, Value* args) {
+  ObjString* lockId = SAFE_CONSUME_STRING(args, "argument");
+  lockSection(lockId);
+  NATIVE_RETURN(thread, NIL_VAL);
+}
+
+static inline bool __nativeStaticParallelismUnlock(void* thread, int argCount, Value* args) {
+  ObjString* lockId = SAFE_CONSUME_STRING(args, "argument");
+  unlockSection(thread, lockId);
+  NATIVE_RETURN(thread, NIL_VAL);
+}
+
 static inline bool __nativeStaticObjectKeys(void* thread, int argCount, Value* args) {
   ObjInstance* instance = (ObjInstance*) GCWhiteList((Obj*) SAFE_CONSUME_OBJECT_INSTANCE(args, "argument"));
   ObjArray* arr = (ObjArray*) GCWhiteList((Obj*) newArray());
@@ -958,6 +970,7 @@ void initCore(VM* vm) {
   vm->metaErrorClass = NULL;
   vm->metaSystemClass = NULL;
   vm->metaObjectClass = NULL;
+  vm->metaParallelismClass = NULL;
   vm->nilClass = NULL;
   vm->boolClass = NULL;
   vm->numberClass = NULL;
@@ -970,6 +983,7 @@ void initCore(VM* vm) {
   vm->moduleExportsClass = NULL;
   vm->systemClass = NULL;
   vm->objectClass = NULL;
+  vm->parallelismClass = NULL;
 
   vm->klass = defineNewClass("Class");
   vm->metaStringClass = defineNewClass("MetaString");
@@ -1056,14 +1070,6 @@ void initCore(VM* vm) {
   defineNativeFunction(&vm->metaArrayClass->methods, "Array", __nativeStaticArrayNew, ARGS_ARITY_0);
   defineNativeFunction(&vm->metaArrayClass->methods, "Array", __nativeStaticArrayNew, ARGS_ARITY_1);
 
-  vm->metaObjectClass = defineNewClass("MetaObject");
-  inherit((Obj *) vm->metaObjectClass, vm->klass);
-
-  // Object static methods 
-  defineNativeFunction(&vm->metaObjectClass->methods, "keys", __nativeStaticObjectKeys, ARGS_ARITY_1);
-  defineNativeFunction(&vm->metaObjectClass->methods, "values", __nativeStaticObjectValues, ARGS_ARITY_1);
-  defineNativeFunction(&vm->metaObjectClass->methods, "entries", __nativeStaticObjectEntries, ARGS_ARITY_1);
-
   vm->arrayClass = defineNewClass("Array");
   inherit((Obj *)vm->arrayClass, vm->metaArrayClass);
 
@@ -1105,6 +1111,16 @@ void initCore(VM* vm) {
   vm->errorClass = defineNewClass("Error");
   inherit((Obj *)vm->errorClass, vm->metaErrorClass);
 
+  vm->metaParallelismClass = defineNewClass("MetaParallelism");
+  inherit((Obj *) vm->metaParallelismClass, vm->klass);
+
+  // Parallelism static methods 
+  defineNativeFunction(&vm->metaParallelismClass->methods, "lock", __nativeStaticParallelismLock, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaParallelismClass->methods, "unlock", __nativeStaticParallelismUnlock, ARGS_ARITY_1);
+
+  vm->parallelismClass = defineNewClass("Parallelism");
+  inherit((Obj *)vm->parallelismClass, vm->metaParallelismClass);
+
   vm->moduleExportsClass = defineNewClass("Exports");
   inherit((Obj *)vm->moduleExportsClass, vm->klass);
 
@@ -1120,6 +1136,14 @@ void initCore(VM* vm) {
   vm->systemClass = defineNewClass("System");
   inherit((Obj *)vm->systemClass, vm->metaSystemClass);
 
+  vm->metaObjectClass = defineNewClass("MetaObject");
+  inherit((Obj *) vm->metaObjectClass, vm->klass);
+
+  // Object static methods 
+  defineNativeFunction(&vm->metaObjectClass->methods, "keys", __nativeStaticObjectKeys, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaObjectClass->methods, "values", __nativeStaticObjectValues, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaObjectClass->methods, "entries", __nativeStaticObjectEntries, ARGS_ARITY_1);
+
   vm->objectClass = defineNewClass("Object");
   inherit((Obj *) vm->objectClass, vm->metaObjectClass);
 
@@ -1128,7 +1152,11 @@ void initCore(VM* vm) {
   interpret(coreExtension, NULL);
 }
 
-void attachCore(VM* vm, Thread* thread) {
+// The namespace for the main thread and for worker threads is a bit different,
+// e.g, Parallelism class is only defined for worker threads
+void attachCore(VM* vm, Thread* workerThread) {
+  Thread* thread = workerThread == NULL ? &vm->program : workerThread; 
+
   tableSet(&thread->global, vm->errorClass->name, OBJ_VAL(vm->errorClass));
   tableSet(&thread->global, vm->stringClass->name, OBJ_VAL(vm->stringClass));
   tableSet(&thread->global, vm->numberClass->name, OBJ_VAL(vm->numberClass));
@@ -1136,4 +1164,8 @@ void attachCore(VM* vm, Thread* thread) {
   tableSet(&thread->global, vm->arrayClass->name, OBJ_VAL(vm->arrayClass));
   tableSet(&thread->global, vm->systemClass->name, OBJ_VAL(vm->systemClass));
   tableSet(&thread->global, vm->objectClass->name, OBJ_VAL(vm->objectClass));
+  
+  if (workerThread != NULL) {
+    tableSet(&thread->global, vm->parallelismClass->name, OBJ_VAL(vm->parallelismClass));
+  }
 }
