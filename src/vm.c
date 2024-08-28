@@ -46,7 +46,8 @@ ActiveThread* spawnThread() {
   Thread* programThread = ALLOCATE(Thread, 1);
 
   initProgram(programThread);
-  attachCore(&vm, programThread);
+  tableAddAll(&vm.program.global, &programThread->global);
+  tableSet(&programThread->global, vm.parallelismClass->name, OBJ_VAL(vm.parallelismClass));
 
   thread->id = vm.threadsCount++;
   thread->program = programThread;
@@ -162,7 +163,6 @@ void initVM() {
 
   initProgram(&vm.program);
   initCore(&vm);
-  attachCore(&vm, NULL);
 
   vm.lambdaFunctionName = CONSTANT_STRING("lambda function");
 

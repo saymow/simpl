@@ -4,6 +4,5 @@
 #include "vm.h"
 
 void initCore(VM* vm);
-void attachCore(VM* vm, Thread* thread);
 
 #endif

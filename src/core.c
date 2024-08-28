@@ -1150,22 +1150,12 @@ void initCore(VM* vm) {
   vm->state = EXTENDING;
   
   interpret(coreExtension, NULL);
-}
-
-// The namespace for the main thread and for worker threads is a bit different,
-// e.g, Parallelism class is only defined for worker threads
-void attachCore(VM* vm, Thread* workerThread) {
-  Thread* thread = workerThread == NULL ? &vm->program : workerThread; 
-
-  tableSet(&thread->global, vm->errorClass->name, OBJ_VAL(vm->errorClass));
-  tableSet(&thread->global, vm->stringClass->name, OBJ_VAL(vm->stringClass));
-  tableSet(&thread->global, vm->numberClass->name, OBJ_VAL(vm->numberClass));
-  tableSet(&thread->global, vm->mathClass->name, OBJ_VAL(vm->mathClass));
-  tableSet(&thread->global, vm->arrayClass->name, OBJ_VAL(vm->arrayClass));
-  tableSet(&thread->global, vm->systemClass->name, OBJ_VAL(vm->systemClass));
-  tableSet(&thread->global, vm->objectClass->name, OBJ_VAL(vm->objectClass));
   
-  if (workerThread != NULL) {
-    tableSet(&thread->global, vm->parallelismClass->name, OBJ_VAL(vm->parallelismClass));
-  }
+  tableSet(&vm->program.global, vm->errorClass->name, OBJ_VAL(vm->errorClass));
+  tableSet(&vm->program.global, vm->stringClass->name, OBJ_VAL(vm->stringClass));
+  tableSet(&vm->program.global, vm->numberClass->name, OBJ_VAL(vm->numberClass));
+  tableSet(&vm->program.global, vm->mathClass->name, OBJ_VAL(vm->mathClass));
+  tableSet(&vm->program.global, vm->arrayClass->name, OBJ_VAL(vm->arrayClass));
+  tableSet(&vm->program.global, vm->systemClass->name, OBJ_VAL(vm->systemClass));
+  tableSet(&vm->program.global, vm->objectClass->name, OBJ_VAL(vm->objectClass));
 }
