@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <pthread.h>
+#include <semaphore.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,26 +39,25 @@ void initProgram(Thread* program) {
   program->switchStackCount = 0;
 }
 
-ActiveThread* spawnThread() {
+ActiveThread* spawnThread(Thread* program) {
   // Lock memory allocation area
   pthread_mutex_lock(&vm.memoryAllocationMutex);
 
-  ActiveThread* thread = ALLOCATE(ActiveThread, 1);
-  Thread* programThread = ALLOCATE(Thread, 1);
+  ActiveThread* activeThread = ALLOCATE(ActiveThread, 1);
+  Thread* workerThread = ALLOCATE(Thread, 1);
 
-  initProgram(programThread);
-  tableAddAll(&vm.program.global, &programThread->global);
-  tableSet(&programThread->global, vm.parallelismClass->name, OBJ_VAL(vm.parallelismClass));
+  initProgram(workerThread);
+  tableAddAll(&program->frame->namespace, &workerThread->global);
 
-  thread->id = vm.threadsCount++;
-  thread->program = programThread;
+  activeThread->id = vm.threadsCount++;
+  activeThread->program = workerThread;
   
-  thread->next = vm.threads;
-  vm.threads = thread;
+  activeThread->next = vm.threads;
+  vm.threads = activeThread;
 
   // Unlock memory allocation area
   pthread_mutex_unlock(&vm.memoryAllocationMutex);
-  return thread;
+  return activeThread;
 }
 
 ActiveThread* getThread(uint32_t threadId) {
@@ -138,6 +138,54 @@ void unlockSection(Thread* program, ObjString* lockId) {
   pthread_mutex_unlock(&tmp->mutex);
 }
 
+void initSemaphore(Thread* program, ObjString* semaphoreId, int value) {
+  ThreadSemaphore* tmp = vm.semaphores;
+
+  while (tmp != NULL && tmp->id != semaphoreId) {
+    tmp = tmp->next;
+  }
+
+  if (tmp != NULL) {
+    recoverableRuntimeError(program, "Semaphore %s is already initialized.", semaphoreId->chars);
+  }
+
+  tmp = ALLOCATE(ThreadSemaphore, 1);
+
+  tmp->id = semaphoreId;
+  sem_init(&tmp->semaphore, 0, value);
+
+  tmp->next = vm.semaphores;
+  vm.semaphores = tmp;
+}
+
+void postSemaphore(Thread* program, ObjString* semaphoreId) {
+  ThreadSemaphore* tmp = vm.semaphores;
+
+  while (tmp != NULL && tmp->id != semaphoreId) {
+    tmp = tmp->next;
+  }
+
+  if (tmp == NULL) {
+    recoverableRuntimeError(program, "Semaphore %s not found.", semaphoreId->chars);
+  }
+
+  sem_post(&tmp->semaphore);
+}
+
+void waitSemaphore(Thread* program, ObjString* semaphoreId) {
+  ThreadSemaphore* tmp = vm.semaphores;
+
+  while (tmp != NULL && tmp->id != semaphoreId) {
+    tmp = tmp->next;
+  }
+
+  if (tmp == NULL) {
+    recoverableRuntimeError(program, "Semaphore %s not found.", semaphoreId->chars);
+  }
+
+  sem_wait(&tmp->semaphore);
+}
+
 void freeProgram(Thread* program) {
   freeTable(&program->global);
 }
@@ -148,6 +196,7 @@ void initVM() {
   initTable(&vm.strings);
   vm.threads = NULL;
   vm.locks = NULL;
+  vm.semaphores = NULL;
   vm.threadsCount = 0;
   vm.objects = NULL;
   vm.grayCount = 0;
@@ -190,7 +239,6 @@ void GCPopWhiteList() {
   // Unlock memory allocation area
   pthread_mutex_unlock(&vm.memoryAllocationMutex);
 }
-
 
 ObjString* stackTrace(Thread* program) {
   char buffer[1024];

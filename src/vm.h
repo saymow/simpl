@@ -2,6 +2,7 @@
 #define vm_h
 
 #include <pthread.h>
+#include <semaphore.h>
 
 #include "chunk.h"
 #include "object.h"
@@ -124,6 +125,15 @@ typedef struct ThreadLock {
   struct ThreadLock* next; 
 } ThreadLock;
 
+typedef struct ThreadSemaphore {
+  // id
+  ObjString* id;
+  // pthreads mutex
+  sem_t semaphore;
+  // Pointer to next active thread
+  struct ThreadSemaphore* next; 
+} ThreadSemaphore;
+
 typedef struct {
   // String interning table.
   // For performance sake, strings are interned and reused in case it appears
@@ -140,6 +150,8 @@ typedef struct {
 
   // Process critical sections locks linked list 
   ThreadLock* locks;
+  // Process semaphores linked list 
+  ThreadSemaphore* semaphores;
   
   // Root class, everything inherits from it
   ObjClass* klass;
@@ -256,11 +268,14 @@ extern VM vm;
 #define FRAME_AS_CLOSURE(frame) ((frame)->as.closure)
 
 void initVM();
-ActiveThread* spawnThread();
+ActiveThread* spawnThread(Thread* program);
 ActiveThread* getThread(uint32_t threadId);
 void killThread(uint32_t threadId);
 void lockSection(ObjString* lockId);
 void unlockSection(Thread* program, ObjString* lockId);
+void initSemaphore(Thread* program, ObjString* semaphoreId, int value);
+void postSemaphore(Thread* program, ObjString* semaphoreId);
+void waitSemaphore(Thread* program, ObjString* semaphoreId);
 void freeProgram(Thread* program);
 void freeVM();
 InterpretResult interpret(const char* source, char* absPath);

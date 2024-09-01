@@ -456,7 +456,7 @@ void *runThread(void* ctx) {
 
 static inline bool __nativeSystemThread(void* currentThread, int argCount, Value* args) {
   ObjClosure* function = SAFE_CONSUME_FUNCTION(args, "argument");
-  ActiveThread* thread = spawnThread();
+  ActiveThread* thread = spawnThread((Thread*) currentThread);
 
   push(thread->program, OBJ_VAL(function));
   callEntry(thread->program, function);
@@ -839,14 +839,33 @@ static inline bool __nativeStaticErrorNew(void* thread, int argCount, Value* arg
 }
 
 static inline bool __nativeStaticParallelismLock(void* thread, int argCount, Value* args) {
-  ObjString* lockId = SAFE_CONSUME_STRING(args, "argument");
+  ObjString* lockId = SAFE_CONSUME_STRING(args, "lock id");
   lockSection(lockId);
   NATIVE_RETURN(thread, NIL_VAL);
 }
 
 static inline bool __nativeStaticParallelismUnlock(void* thread, int argCount, Value* args) {
-  ObjString* lockId = SAFE_CONSUME_STRING(args, "argument");
+  ObjString* lockId = SAFE_CONSUME_STRING(args, "lock id");
   unlockSection(thread, lockId);
+  NATIVE_RETURN(thread, NIL_VAL);
+}
+
+static inline bool __nativeStaticParallelismSemaphoreInit(void* thread, int argCount, Value* args) {
+  ObjString* semaphoreId = SAFE_CONSUME_STRING(args, "semaphore id");
+  int value = (int) SAFE_CONSUME_NUMBER(args, "semaphore initial value");
+  initSemaphore(thread, semaphoreId, value);
+  NATIVE_RETURN(thread, NIL_VAL);
+}
+
+static inline bool __nativeStaticParallelismSemaphorePost(void* thread, int argCount, Value* args) {
+  ObjString* semaphoreId = SAFE_CONSUME_STRING(args, "semaphore id");
+  postSemaphore(thread, semaphoreId);
+  NATIVE_RETURN(thread, NIL_VAL);
+}
+
+static inline bool __nativeStaticParallelismSemaphoreWait(void* thread, int argCount, Value* args) {
+  ObjString* semaphoreId = SAFE_CONSUME_STRING(args, "semaphore id");
+  waitSemaphore(thread, semaphoreId);
   NATIVE_RETURN(thread, NIL_VAL);
 }
 
@@ -1117,6 +1136,9 @@ void initCore(VM* vm) {
   // Parallelism static methods 
   defineNativeFunction(&vm->metaParallelismClass->methods, "lock", __nativeStaticParallelismLock, ARGS_ARITY_1);
   defineNativeFunction(&vm->metaParallelismClass->methods, "unlock", __nativeStaticParallelismUnlock, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaParallelismClass->methods, "semInit", __nativeStaticParallelismSemaphoreInit, ARGS_ARITY_2);
+  defineNativeFunction(&vm->metaParallelismClass->methods, "semPost", __nativeStaticParallelismSemaphorePost, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaParallelismClass->methods, "semWait", __nativeStaticParallelismSemaphoreWait, ARGS_ARITY_1);
 
   vm->parallelismClass = defineNewClass("Parallelism");
   inherit((Obj *)vm->parallelismClass, vm->metaParallelismClass);
@@ -1158,4 +1180,5 @@ void initCore(VM* vm) {
   tableSet(&vm->program.global, vm->arrayClass->name, OBJ_VAL(vm->arrayClass));
   tableSet(&vm->program.global, vm->systemClass->name, OBJ_VAL(vm->systemClass));
   tableSet(&vm->program.global, vm->objectClass->name, OBJ_VAL(vm->objectClass));
+  tableSet(&vm->program.global, vm->parallelismClass->name, OBJ_VAL(vm->parallelismClass));
 }
