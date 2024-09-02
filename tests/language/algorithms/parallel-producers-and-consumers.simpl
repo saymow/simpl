@@ -1,0 +1,60 @@
+// !skip
+// Parallel producers and consumers
+
+var N = 100;
+var buffer = [];
+var count = 0;
+System.Sync.lockInit("critical-zone");
+System.Sync.semInit("full", 0);
+System.Sync.semInit("empty", N);
+
+fun produceItem() {
+    System.log("Item $(count += 1) produced.");
+    return count;
+}
+
+fun insertItem(item) {
+    System.log("Item $(item) inserted. Buffer $(buffer.length())/$(N).");
+    buffer.push(item);
+}
+
+fun removeItem() {
+    System.log("Item $(buffer[0]) removed. Buffer $(buffer.length())/$(N).");
+    return buffer.shift();
+}
+
+fun consumeItem(item) {
+    System.log("Item $(item) consumed.");
+}
+
+fun producer() {
+    var item;
+
+    while(true) {
+        item = produceItem();
+        System.Sync.semWait("empty");
+        System.Sync.lock("critical-zone");
+        insertItem(item);
+        System.Sync.unlock("critical-zone");
+        System.Sync.semPost("full");
+    }
+}
+
+fun consumer() {
+    var item;
+
+    while(true) {
+        System.Sync.semWait("full");
+        System.Sync.lock("critical-zone");
+        item = removeItem();
+        System.Sync.unlock("critical-zone");
+        System.Sync.semPost("empty");
+        consumeItem(item);
+    }
+}
+
+var producers = Array(10).map(() -> System.Threading.start(producer));
+var consumers = Array(10).map(() -> System.Threading.start(consumer));
+
+for producer of producers System.Threading.join(producer);
+for consumer of consumers System.Threading.join(consumer);
