@@ -6,7 +6,7 @@
 
 <p><b>Simpl</b> has a <a href="https://github.com/saymow/simpl/tree/master/tests-runner/src" target="_blank">test runner</a>, hundreds of <a href="https://github.com/saymow/simpl/blob/master/tests/language/ternary-operator.simpl" target="_blank">test files</a> and few scripts to run <a href="https://github.com/saymow/simpl/blob/master/tests/benchmark/lexer.simpl" target="_blank">benchmarks</a>.</p>
 
-<p>You can get a feel for <b>Simpl</b> syntax by looking at this implementation: </p>
+<p>You can get a feel for <b>Simpl</b> syntax by looking at this <b>parallel sum</b> implementation: </p>
 
 ```
 fun program(ctx) {
