@@ -989,7 +989,7 @@ void initCore(VM* vm) {
   vm->metaErrorClass = NULL;
   vm->metaSystemClass = NULL;
   vm->metaObjectClass = NULL;
-  vm->metaParallelismClass = NULL;
+  vm->metaSystemSyncClass = NULL;
   vm->nilClass = NULL;
   vm->boolClass = NULL;
   vm->numberClass = NULL;
@@ -1002,7 +1002,7 @@ void initCore(VM* vm) {
   vm->moduleExportsClass = NULL;
   vm->systemClass = NULL;
   vm->objectClass = NULL;
-  vm->parallelismClass = NULL;
+  vm->syncClass = NULL;
 
   vm->klass = defineNewClass("Class");
   vm->metaStringClass = defineNewClass("MetaString");
@@ -1130,18 +1130,18 @@ void initCore(VM* vm) {
   vm->errorClass = defineNewClass("Error");
   inherit((Obj *)vm->errorClass, vm->metaErrorClass);
 
-  vm->metaParallelismClass = defineNewClass("MetaParallelism");
-  inherit((Obj *) vm->metaParallelismClass, vm->klass);
+  vm->metaSystemSyncClass = defineNewClass("MetaSync");
+  inherit((Obj *) vm->metaSystemSyncClass, vm->klass);
 
   // Parallelism static methods 
-  defineNativeFunction(&vm->metaParallelismClass->methods, "lock", __nativeStaticParallelismLock, ARGS_ARITY_1);
-  defineNativeFunction(&vm->metaParallelismClass->methods, "unlock", __nativeStaticParallelismUnlock, ARGS_ARITY_1);
-  defineNativeFunction(&vm->metaParallelismClass->methods, "semInit", __nativeStaticParallelismSemaphoreInit, ARGS_ARITY_2);
-  defineNativeFunction(&vm->metaParallelismClass->methods, "semPost", __nativeStaticParallelismSemaphorePost, ARGS_ARITY_1);
-  defineNativeFunction(&vm->metaParallelismClass->methods, "semWait", __nativeStaticParallelismSemaphoreWait, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaSystemSyncClass->methods, "lock", __nativeStaticParallelismLock, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaSystemSyncClass->methods, "unlock", __nativeStaticParallelismUnlock, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaSystemSyncClass->methods, "semInit", __nativeStaticParallelismSemaphoreInit, ARGS_ARITY_2);
+  defineNativeFunction(&vm->metaSystemSyncClass->methods, "semPost", __nativeStaticParallelismSemaphorePost, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaSystemSyncClass->methods, "semWait", __nativeStaticParallelismSemaphoreWait, ARGS_ARITY_1);
 
-  vm->parallelismClass = defineNewClass("Parallelism");
-  inherit((Obj *)vm->parallelismClass, vm->metaParallelismClass);
+  vm->syncClass = defineNewClass("Sync");
+  inherit((Obj *)vm->syncClass, vm->metaSystemSyncClass);
 
   vm->moduleExportsClass = defineNewClass("Exports");
   inherit((Obj *)vm->moduleExportsClass, vm->klass);
@@ -1149,6 +1149,7 @@ void initCore(VM* vm) {
   vm->metaSystemClass = defineNewClass("MetaSystem");
   inherit((Obj *)vm->metaSystemClass, vm->klass);
 
+  tableSet(&vm->metaSystemClass->methods, vm->syncClass->name, OBJ_VAL(vm->syncClass));
   defineNativeFunction(&vm->metaSystemClass->methods, "clock", __nativeSystemClock, ARGS_ARITY_0);
   defineNativeFunction(&vm->metaSystemClass->methods, "log", __nativeSystemLog, ARGS_ARITY_1);
   defineNativeFunction(&vm->metaSystemClass->methods, "scan", __nativeSystemScan, ARGS_ARITY_0);
@@ -1180,5 +1181,4 @@ void initCore(VM* vm) {
   tableSet(&vm->program.global, vm->arrayClass->name, OBJ_VAL(vm->arrayClass));
   tableSet(&vm->program.global, vm->systemClass->name, OBJ_VAL(vm->systemClass));
   tableSet(&vm->program.global, vm->objectClass->name, OBJ_VAL(vm->objectClass));
-  tableSet(&vm->program.global, vm->parallelismClass->name, OBJ_VAL(vm->parallelismClass));
 }
