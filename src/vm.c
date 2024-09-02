@@ -102,7 +102,29 @@ void killThread(uint32_t threadId) {
   pthread_mutex_unlock(&vm.memoryAllocationMutex);
 }
 
-void lockSection(ObjString* lockId) {
+void initLock(Thread* program, ObjString* lockId) {
+  ThreadLock* tmp = vm.locks;
+
+  while (tmp != NULL && tmp->id != lockId) {
+    tmp = tmp->next;
+  }
+
+  if (tmp != NULL) {
+    return recoverableRuntimeError(program, "Lock %s is already defined.", lockId->chars);
+  }
+
+  pthread_mutex_lock(&vm.memoryAllocationMutex);
+  tmp = ALLOCATE(ThreadLock, 1);
+
+  tmp->id = lockId;
+  pthread_mutex_init(&tmp->mutex, NULL);
+  
+  tmp->next = vm.locks;
+  vm.locks = tmp;
+  pthread_mutex_unlock(&vm.memoryAllocationMutex);
+}
+
+void lockSection(Thread* program, ObjString* lockId) {
   ThreadLock* tmp = vm.locks;
 
   while (tmp != NULL && tmp->id != lockId) {
@@ -110,15 +132,7 @@ void lockSection(ObjString* lockId) {
   }
 
   if (tmp == NULL) {
-    pthread_mutex_lock(&vm.memoryAllocationMutex);
-    tmp = ALLOCATE(ThreadLock, 1);
-
-    tmp->id = lockId;
-    pthread_mutex_init(&tmp->mutex, NULL);
-    
-    tmp->next = vm.locks;
-    vm.locks = tmp;
-    pthread_mutex_unlock(&vm.memoryAllocationMutex);
+    return recoverableRuntimeError(program, "Unable to unlock undefined %s lock", lockId->chars);
   }  
   
   pthread_mutex_lock(&tmp->mutex);
@@ -132,7 +146,7 @@ void unlockSection(Thread* program, ObjString* lockId) {
   }
 
   if (tmp == NULL) {
-    return recoverableRuntimeError(program, "Unable to unlock undefined lock %s", lockId->chars);
+    return recoverableRuntimeError(program, "Unable to unlock undefined %s lock", lockId->chars);
   }
   
   pthread_mutex_unlock(&tmp->mutex);

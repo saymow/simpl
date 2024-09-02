@@ -838,32 +838,38 @@ static inline bool __nativeStaticErrorNew(void* thread, int argCount, Value* arg
   NATIVE_RETURN(thread, OBJ_VAL(instance));
 }
 
-static inline bool __nativeStaticParallelismLock(void* thread, int argCount, Value* args) {
+static inline bool __nativeStaticSystemSyncLockInit(void* thread, int argCount, Value* args) {
   ObjString* lockId = SAFE_CONSUME_STRING(args, "lock id");
-  lockSection(lockId);
+  initLock(thread, lockId);
   NATIVE_RETURN(thread, NIL_VAL);
 }
 
-static inline bool __nativeStaticParallelismUnlock(void* thread, int argCount, Value* args) {
+static inline bool __nativeStaticSystemSyncLock(void* thread, int argCount, Value* args) {
+  ObjString* lockId = SAFE_CONSUME_STRING(args, "lock id");
+  lockSection(thread, lockId);
+  NATIVE_RETURN(thread, NIL_VAL);
+}
+
+static inline bool __nativeStaticSystemSyncUnlock(void* thread, int argCount, Value* args) {
   ObjString* lockId = SAFE_CONSUME_STRING(args, "lock id");
   unlockSection(thread, lockId);
   NATIVE_RETURN(thread, NIL_VAL);
 }
 
-static inline bool __nativeStaticParallelismSemaphoreInit(void* thread, int argCount, Value* args) {
+static inline bool __nativeStaticSystemSyncSemaphoreInit(void* thread, int argCount, Value* args) {
   ObjString* semaphoreId = SAFE_CONSUME_STRING(args, "semaphore id");
   int value = (int) SAFE_CONSUME_NUMBER(args, "semaphore initial value");
   initSemaphore(thread, semaphoreId, value);
   NATIVE_RETURN(thread, NIL_VAL);
 }
 
-static inline bool __nativeStaticParallelismSemaphorePost(void* thread, int argCount, Value* args) {
+static inline bool __nativeStaticSystemSyncSemaphorePost(void* thread, int argCount, Value* args) {
   ObjString* semaphoreId = SAFE_CONSUME_STRING(args, "semaphore id");
   postSemaphore(thread, semaphoreId);
   NATIVE_RETURN(thread, NIL_VAL);
 }
 
-static inline bool __nativeStaticParallelismSemaphoreWait(void* thread, int argCount, Value* args) {
+static inline bool __nativeStaticSystemSyncSemaphoreWait(void* thread, int argCount, Value* args) {
   ObjString* semaphoreId = SAFE_CONSUME_STRING(args, "semaphore id");
   waitSemaphore(thread, semaphoreId);
   NATIVE_RETURN(thread, NIL_VAL);
@@ -1134,11 +1140,12 @@ void initCore(VM* vm) {
   inherit((Obj *) vm->metaSystemSyncClass, vm->klass);
 
   // Parallelism static methods 
-  defineNativeFunction(&vm->metaSystemSyncClass->methods, "lock", __nativeStaticParallelismLock, ARGS_ARITY_1);
-  defineNativeFunction(&vm->metaSystemSyncClass->methods, "unlock", __nativeStaticParallelismUnlock, ARGS_ARITY_1);
-  defineNativeFunction(&vm->metaSystemSyncClass->methods, "semInit", __nativeStaticParallelismSemaphoreInit, ARGS_ARITY_2);
-  defineNativeFunction(&vm->metaSystemSyncClass->methods, "semPost", __nativeStaticParallelismSemaphorePost, ARGS_ARITY_1);
-  defineNativeFunction(&vm->metaSystemSyncClass->methods, "semWait", __nativeStaticParallelismSemaphoreWait, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaSystemSyncClass->methods, "lockInit", __nativeStaticSystemSyncLockInit, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaSystemSyncClass->methods, "lock", __nativeStaticSystemSyncLock, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaSystemSyncClass->methods, "unlock", __nativeStaticSystemSyncUnlock, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaSystemSyncClass->methods, "semInit", __nativeStaticSystemSyncSemaphoreInit, ARGS_ARITY_2);
+  defineNativeFunction(&vm->metaSystemSyncClass->methods, "semPost", __nativeStaticSystemSyncSemaphorePost, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaSystemSyncClass->methods, "semWait", __nativeStaticSystemSyncSemaphoreWait, ARGS_ARITY_1);
 
   vm->syncClass = defineNewClass("Sync");
   inherit((Obj *)vm->syncClass, vm->metaSystemSyncClass);
