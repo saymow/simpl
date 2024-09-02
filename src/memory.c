@@ -216,6 +216,7 @@ static void markRoots() {
   markObject((Obj*)vm.metaSystemClass);
   markObject((Obj*)vm.metaObjectClass);
   markObject((Obj*)vm.metaSystemSyncClass);
+  markObject((Obj*)vm.metaSystemThreadingClass);
   markObject((Obj*)vm.nilClass);
   markObject((Obj*)vm.boolClass);
   markObject((Obj*)vm.numberClass);
@@ -229,6 +230,7 @@ static void markRoots() {
   markObject((Obj*)vm.systemClass);
   markObject((Obj*)vm.objectClass);
   markObject((Obj*)vm.syncClass);
+  markObject((Obj*)vm.threadingClass);
 }
 
 static void blackenObject(Obj* obj) {

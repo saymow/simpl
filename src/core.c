@@ -454,7 +454,7 @@ void *runThread(void* ctx) {
   return NULL;
 } 
 
-static inline bool __nativeSystemThread(void* currentThread, int argCount, Value* args) {
+static inline bool __nativeSystemThreadingStart(void* currentThread, int argCount, Value* args) {
   ObjClosure* function = SAFE_CONSUME_FUNCTION(args, "argument");
   ActiveThread* thread = spawnThread((Thread*) currentThread);
 
@@ -473,7 +473,7 @@ static inline bool __nativeSystemThread(void* currentThread, int argCount, Value
   NATIVE_RETURN(currentThread, NUMBER_VAL((double) thread->id));
 }
 
-static inline bool __nativeSystemThreadJoin(void* currentThread, int argCount, Value* args) {
+static inline bool __nativeSystemThreadingJoin(void* currentThread, int argCount, Value* args) {
   int threadId = (int) SAFE_CONSUME_NUMBER(args, "thread id");
   ActiveThread* thread = getThread(threadId);
   void* res;
@@ -996,6 +996,7 @@ void initCore(VM* vm) {
   vm->metaSystemClass = NULL;
   vm->metaObjectClass = NULL;
   vm->metaSystemSyncClass = NULL;
+  vm->metaSystemThreadingClass = NULL;
   vm->nilClass = NULL;
   vm->boolClass = NULL;
   vm->numberClass = NULL;
@@ -1009,6 +1010,7 @@ void initCore(VM* vm) {
   vm->systemClass = NULL;
   vm->objectClass = NULL;
   vm->syncClass = NULL;
+  vm->threadingClass = NULL;
 
   vm->klass = defineNewClass("Class");
   vm->metaStringClass = defineNewClass("MetaString");
@@ -1139,7 +1141,6 @@ void initCore(VM* vm) {
   vm->metaSystemSyncClass = defineNewClass("MetaSync");
   inherit((Obj *) vm->metaSystemSyncClass, vm->klass);
 
-  // Parallelism static methods 
   defineNativeFunction(&vm->metaSystemSyncClass->methods, "lockInit", __nativeStaticSystemSyncLockInit, ARGS_ARITY_1);
   defineNativeFunction(&vm->metaSystemSyncClass->methods, "lock", __nativeStaticSystemSyncLock, ARGS_ARITY_1);
   defineNativeFunction(&vm->metaSystemSyncClass->methods, "unlock", __nativeStaticSystemSyncUnlock, ARGS_ARITY_1);
@@ -1150,6 +1151,15 @@ void initCore(VM* vm) {
   vm->syncClass = defineNewClass("Sync");
   inherit((Obj *)vm->syncClass, vm->metaSystemSyncClass);
 
+  vm->metaSystemThreadingClass = defineNewClass("MetaThreading");
+  inherit((Obj *) vm->metaSystemThreadingClass, vm->klass);
+
+  defineNativeFunction(&vm->metaSystemThreadingClass->methods, "start", __nativeSystemThreadingStart, ARGS_ARITY_1);
+  defineNativeFunction(&vm->metaSystemThreadingClass->methods, "join", __nativeSystemThreadingJoin, ARGS_ARITY_1);
+
+  vm->threadingClass = defineNewClass("Threading");
+  inherit((Obj *)vm->threadingClass, vm->metaSystemThreadingClass);
+
   vm->moduleExportsClass = defineNewClass("Exports");
   inherit((Obj *)vm->moduleExportsClass, vm->klass);
 
@@ -1157,11 +1167,10 @@ void initCore(VM* vm) {
   inherit((Obj *)vm->metaSystemClass, vm->klass);
 
   tableSet(&vm->metaSystemClass->methods, vm->syncClass->name, OBJ_VAL(vm->syncClass));
+  tableSet(&vm->metaSystemClass->methods, vm->threadingClass->name, OBJ_VAL(vm->threadingClass));
   defineNativeFunction(&vm->metaSystemClass->methods, "clock", __nativeSystemClock, ARGS_ARITY_0);
   defineNativeFunction(&vm->metaSystemClass->methods, "log", __nativeSystemLog, ARGS_ARITY_1);
   defineNativeFunction(&vm->metaSystemClass->methods, "scan", __nativeSystemScan, ARGS_ARITY_0);
-  defineNativeFunction(&vm->metaSystemClass->methods, "Thread", __nativeSystemThread, ARGS_ARITY_1);
-  defineNativeFunction(&vm->metaSystemClass->methods, "threadJoin", __nativeSystemThreadJoin, ARGS_ARITY_1);
 
   vm->systemClass = defineNewClass("System");
   inherit((Obj *)vm->systemClass, vm->metaSystemClass);

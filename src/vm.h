@@ -171,8 +171,10 @@ typedef struct {
   ObjClass* metaSystemClass;
   // - Where Object static methods are defined
   ObjClass* metaObjectClass;
-   // - Where System.Sync static utils methods are defined
+  // - Where System.Sync static utils methods are defined
   ObjClass* metaSystemSyncClass;
+  // - Where System.Threading static utils methods are defined
+  ObjClass* metaSystemThreadingClass;
 
   // Data Type Classes are superclasses of all data types
   // - Where nil literal inherits from
@@ -202,6 +204,9 @@ typedef struct {
   ObjClass* objectClass;
   // - Placeholder System.Sync utility object (used to access superclass)
   ObjClass* syncClass;
+  // - Placeholder System.Threading utility object (used to access superclass)
+  ObjClass* threadingClass;
+
   // Default name for lambda functions
   ObjString* lambdaFunctionName;
 
