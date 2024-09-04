@@ -1,11 +1,11 @@
 #include "memory.h"
 
-#include <stdlib.h>
 #include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "compiler.h"
 #include "vm.h"
-#include <stdio.h>
 
 #ifdef DEBUG_LOG_GC
 #include <stdio.h>
@@ -21,7 +21,7 @@ void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
 
   vm.bytesAllocated += newSize - oldSize;
 
-  if (newSize > oldSize ) {
+  if (newSize > oldSize) {
 #ifdef DEBUG_STRESS_GC
     if (vm.state == INITIALIZED) {
       startGarbageCollector();
@@ -39,7 +39,7 @@ void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
     // Unlock memory allocation area
     pthread_mutex_unlock(&vm.memoryAllocationMutex);
     return NULL;
-  } 
+  }
 
   void* result = realloc(pointer, newSize);
 
@@ -57,7 +57,8 @@ static void freeObject(Obj* object) {
 
   switch (object->type) {
     case OBJ_BOUND_OVERLOADED_METHOD: {
-      ObjBoundOverloadedMethod* boundOverloadedMethod = (ObjBoundOverloadedMethod*)object;
+      ObjBoundOverloadedMethod* boundOverloadedMethod =
+          (ObjBoundOverloadedMethod*)object;
       FREE(ObjBoundOverloadedMethod, boundOverloadedMethod);
       break;
     }
@@ -121,7 +122,7 @@ static void freeObject(Obj* object) {
 
 void freeObjects() {
   Obj* object = vm.objects;
-  
+
   while (object != NULL) {
     Obj* tmp = object->next;
     freeObject(object);
@@ -166,7 +167,7 @@ void markArray(ValueArray* valueArray) {
 
 static void markGCWhiteList() {
   for (int idx = 0; idx < vm.GCWhiteListCount; idx++) {
-    markObject((Obj*) vm.GCWhiteList[idx]);
+    markObject((Obj*)vm.GCWhiteList[idx]);
   }
 }
 
@@ -176,13 +177,13 @@ static void markProgram(Thread* program) {
   for (Value* slot = program->stack; slot < program->stackTop; slot++) {
     markValue(*slot);
   }
-  
+
   for (int idx = 0; idx < program->framesCount; idx++) {
     markTable(&program->frames[idx].namespace);
     if (program->frames[idx].type == FRAME_TYPE_MODULE) {
-      markObject((Obj*) program->frames[idx].as.module);
+      markObject((Obj*)program->frames[idx].as.module);
     } else {
-      markObject((Obj*) program->frames[idx].as.closure);
+      markObject((Obj*)program->frames[idx].as.closure);
     }
   }
 
@@ -198,7 +199,7 @@ static void markThreads() {
   while (thread != NULL) {
     markProgram(thread->program);
     thread = thread->next;
-  } 
+  }
 }
 
 static void markRoots() {
@@ -242,21 +243,22 @@ static void blackenObject(Obj* obj) {
 
   switch (obj->type) {
     case OBJ_BOUND_OVERLOADED_METHOD: {
-      ObjBoundOverloadedMethod* boundOverloadedMethod = (ObjBoundOverloadedMethod*)obj;
+      ObjBoundOverloadedMethod* boundOverloadedMethod =
+          (ObjBoundOverloadedMethod*)obj;
       markValue(boundOverloadedMethod->base);
-      markObject((Obj *) boundOverloadedMethod->overloadedMethod);
+      markObject((Obj*)boundOverloadedMethod->overloadedMethod);
       break;
     }
     case OBJ_OVERLOADED_METHOD: {
       ObjOverloadedMethod* overloadedMethod = (ObjOverloadedMethod*)obj;
-      markObject((Obj *) overloadedMethod->name);
+      markObject((Obj*)overloadedMethod->name);
       if (overloadedMethod->type == USER_METHOD) {
         for (int idx = 0; idx < ARGS_ARITY_MAX; idx++) {
-          markObject((Obj *) overloadedMethod->as.userMethods[idx]);  
+          markObject((Obj*)overloadedMethod->as.userMethods[idx]);
         }
       } else {
         for (int idx = 0; idx < ARGS_ARITY_MAX; idx++) {
-          markObject((Obj *) overloadedMethod->as.nativeMethods[idx]);  
+          markObject((Obj*)overloadedMethod->as.nativeMethods[idx]);
         }
       }
       break;
@@ -269,7 +271,7 @@ static void blackenObject(Obj* obj) {
     case OBJ_MODULE: {
       ObjModule* module = (ObjModule*)obj;
       markTable(&module->exports);
-      markObject((Obj* )module->function);
+      markObject((Obj*)module->function);
       break;
     }
     case OBJ_INSTANCE: {
@@ -304,7 +306,7 @@ static void blackenObject(Obj* obj) {
       break;
     }
     case OBJ_NATIVE_FN: {
-      markObject((Obj*) ((ObjNativeFn* ) obj)->name);
+      markObject((Obj*)((ObjNativeFn*)obj)->name);
       break;
     }
     case OBJ_STRING:

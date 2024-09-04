@@ -17,7 +17,8 @@ static int simpleInstruction(const char* name, int offset) {
   return offset + 1;
 }
 
-static int flaggedSimpleInstruction(const char* name, Chunk* chunk, int offset) {
+static int flaggedSimpleInstruction(const char* name, Chunk* chunk,
+                                    int offset) {
   uint8_t flag = chunk->code[offset + 1];
   printf("%s | %d\n", name, flag);
   return offset + 2;
@@ -38,7 +39,8 @@ static int invokeInstruction(const char* name, Chunk* chunk, int offset) {
   return offset + 3;
 }
 
-static int jumpInstruction(const char* name, int sign, Chunk* chunk, int offset) {
+static int jumpInstruction(const char* name, int sign, Chunk* chunk,
+                           int offset) {
   uint16_t jump = (uint16_t)(chunk->code[offset + 1] << 8);
   jump |= chunk->code[offset + 2];
   printf("%-16s %4d -> %d\n", name, offset, offset + 3 + sign * jump);
@@ -46,11 +48,12 @@ static int jumpInstruction(const char* name, int sign, Chunk* chunk, int offset)
 }
 
 static int loopGuardInstruction(const char* name, Chunk* chunk, int offset) {
-  uint16_t loopStartJump = (uint16_t) (chunk->code[offset + 1] << 8);
+  uint16_t loopStartJump = (uint16_t)(chunk->code[offset + 1] << 8);
   loopStartJump |= chunk->code[offset + 2];
-  uint16_t loopEndJump = (uint16_t) (chunk->code[offset + 3] << 8);
+  uint16_t loopEndJump = (uint16_t)(chunk->code[offset + 3] << 8);
   loopEndJump |= chunk->code[offset + 4];
-  printf("%-16s %4d ->  %d | %d \n", name, offset, offset + loopStartJump + 5, offset + loopEndJump + 5);
+  printf("%-16s %4d ->  %d | %d \n", name, offset, offset + loopStartJump + 5,
+         offset + loopEndJump + 5);
 
   return offset + 5;
 }
@@ -61,7 +64,8 @@ static int tryCatchInstruction(const char* name, Chunk* chunk, int offset) {
   uint16_t outJump = (uint16_t)(chunk->code[offset + 3] << 8);
   outJump |= chunk->code[offset + 4];
   bool hasCatchParameter = chunk->code[offset + 5];
-  printf("%-16s %4d ->  %d | %d | %d \n", name, offset, offset + catchJump + 6, offset + outJump + 6, hasCatchParameter);
+  printf("%-16s %4d ->  %d | %d | %d \n", name, offset, offset + catchJump + 6,
+         offset + outJump + 6, hasCatchParameter);
 
   return offset + 6;
 }
@@ -74,7 +78,8 @@ static int constantInstruction(const char* name, Chunk* chunk, int offset) {
   return offset + 2;
 }
 
-static int flaggedConstantInstruction(const char* name, Chunk* chunk, int offset) {
+static int flaggedConstantInstruction(const char* name, Chunk* chunk,
+                                      int offset) {
   uint8_t constantIdx = chunk->code[offset + 1];
   uint8_t flag = chunk->code[offset + 2];
   printf("%-16s %4d '", name, constantIdx);

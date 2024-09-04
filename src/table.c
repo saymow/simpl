@@ -120,39 +120,41 @@ void tableAddAll(Table* from, Table* to) {
 }
 
 // When inheriting from a class we essentialy want to copy its methods.
-// But a simple copy creates a bug in which a subclass is able to create overloaded
-// methods for its superclass. In order to fix it, we need to create
-// a new instance of ObjOverloadedMethod for the subclass. 
-void tableAddAllInherintance (Table* from, Table* to) {
+// But a simple copy creates a bug in which a subclass is able to create
+// overloaded methods for its superclass. In order to fix it, we need to create
+// a new instance of ObjOverloadedMethod for the subclass.
+void tableAddAllInherintance(Table* from, Table* to) {
   for (int idx = 0; idx <= from->capacity; idx++) {
     Entry* entry = &from->entries[idx];
     if (entry->key != NULL) {
       if (IS_OVERLOADED_METHOD(entry->value)) {
-        ObjOverloadedMethod* overloadedMethod;  
+        ObjOverloadedMethod* overloadedMethod;
 
         if (AS_OVERLOADED_METHOD(entry->value)->type == NATIVE_METHOD) {
-          overloadedMethod = (ObjOverloadedMethod*) GCWhiteList(
-            (Obj*) newNativeOverloadedMethod(AS_OVERLOADED_METHOD(entry->value)->name)
-          );
-        
+          overloadedMethod =
+              (ObjOverloadedMethod*)GCWhiteList((Obj*)newNativeOverloadedMethod(
+                  AS_OVERLOADED_METHOD(entry->value)->name));
+
           for (int idx = 0; idx < ARGS_ARITY_MAX; idx++) {
-            overloadedMethod->as.nativeMethods[idx] = AS_OVERLOADED_METHOD(entry->value)->as.nativeMethods[idx];
+            overloadedMethod->as.nativeMethods[idx] =
+                AS_OVERLOADED_METHOD(entry->value)->as.nativeMethods[idx];
           }
         } else {
-          overloadedMethod = (ObjOverloadedMethod*) GCWhiteList(
-            (Obj*) newOverloadedMethod(AS_OVERLOADED_METHOD(entry->value)->name)
-          );
-        
+          overloadedMethod =
+              (ObjOverloadedMethod*)GCWhiteList((Obj*)newOverloadedMethod(
+                  AS_OVERLOADED_METHOD(entry->value)->name));
+
           for (int idx = 0; idx < ARGS_ARITY_MAX; idx++) {
-            overloadedMethod->as.userMethods[idx] = AS_OVERLOADED_METHOD(entry->value)->as.userMethods[idx];
+            overloadedMethod->as.userMethods[idx] =
+                AS_OVERLOADED_METHOD(entry->value)->as.userMethods[idx];
           }
         }
 
-        tableSet(to, entry->key, OBJ_VAL(overloadedMethod));  
+        tableSet(to, entry->key, OBJ_VAL(overloadedMethod));
         GCPopWhiteList();
         continue;
       }
-      
+
       tableSet(to, entry->key, entry->value);
     }
   }

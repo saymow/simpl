@@ -1,14 +1,14 @@
 #include "object.h"
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "memory.h"
+#include "utils.h"
 #include "value.h"
 #include "vm.h"
-#include "utils.h"
 
 #define ALLOCATE_OBJ(objectType, type) \
   (type *)allocateObj(objectType, sizeof(type))
@@ -34,8 +34,10 @@ Obj *allocateObj(ObjType type, size_t size) {
   return object;
 }
 
-ObjBoundOverloadedMethod* newBoundOverloadedMethod(Value value, ObjOverloadedMethod* overloadedMethod) {
-  ObjBoundOverloadedMethod* boundOverloadedMethod = ALLOCATE_OBJ(OBJ_BOUND_OVERLOADED_METHOD, ObjBoundOverloadedMethod);
+ObjBoundOverloadedMethod *newBoundOverloadedMethod(
+    Value value, ObjOverloadedMethod *overloadedMethod) {
+  ObjBoundOverloadedMethod *boundOverloadedMethod =
+      ALLOCATE_OBJ(OBJ_BOUND_OVERLOADED_METHOD, ObjBoundOverloadedMethod);
   boundOverloadedMethod->obj.klass = overloadedMethod->obj.klass;
   boundOverloadedMethod->overloadedMethod = overloadedMethod;
   boundOverloadedMethod->base = value;
@@ -43,27 +45,29 @@ ObjBoundOverloadedMethod* newBoundOverloadedMethod(Value value, ObjOverloadedMet
   return boundOverloadedMethod;
 }
 
-ObjOverloadedMethod* newNativeOverloadedMethod(ObjString* name) {
-  ObjOverloadedMethod* overloadedMethod = ALLOCATE_OBJ(OBJ_OVERLOADED_METHOD, ObjOverloadedMethod);
+ObjOverloadedMethod *newNativeOverloadedMethod(ObjString *name) {
+  ObjOverloadedMethod *overloadedMethod =
+      ALLOCATE_OBJ(OBJ_OVERLOADED_METHOD, ObjOverloadedMethod);
   overloadedMethod->obj.klass = vm.nativeFunctionClass;
   overloadedMethod->type = NATIVE_METHOD;
   overloadedMethod->name = name;
 
   for (int idx = 0; idx < ARGS_ARITY_MAX; idx++) {
-    overloadedMethod->as.nativeMethods[idx] = NULL;  
+    overloadedMethod->as.nativeMethods[idx] = NULL;
   }
 
   return overloadedMethod;
 }
 
-ObjOverloadedMethod* newOverloadedMethod(ObjString* name) {
-  ObjOverloadedMethod* overloadedMethod = ALLOCATE_OBJ(OBJ_OVERLOADED_METHOD, ObjOverloadedMethod);
+ObjOverloadedMethod *newOverloadedMethod(ObjString *name) {
+  ObjOverloadedMethod *overloadedMethod =
+      ALLOCATE_OBJ(OBJ_OVERLOADED_METHOD, ObjOverloadedMethod);
   overloadedMethod->obj.klass = vm.functionClass;
   overloadedMethod->type = USER_METHOD;
   overloadedMethod->name = name;
-  
+
   for (int idx = 0; idx < ARGS_ARITY_MAX; idx++) {
-    overloadedMethod->as.userMethods[idx] = NULL;  
+    overloadedMethod->as.userMethods[idx] = NULL;
   }
 
   return overloadedMethod;
@@ -95,16 +99,15 @@ ObjInstance *newInstance(ObjClass *klass) {
   return instance;
 }
 
-
 // System Classes are configured in two phases
 //
 // - When the VM is INITIALIZING we are essentialy creating them
 // and adding native functions.
 // - When the VM is EXTENDING, we are extending their methods using
-// Simpl functions. 
+// Simpl functions.
 //
 // During the INITIALIZING phase, all inheritance should be handle
-// manually by the VM. 
+// manually by the VM.
 ObjClass *newSystemClass(ObjString *name) {
   if (vm.state == INITIALIZING) {
     ObjClass *klass = ALLOCATE_OBJ(OBJ_CLASS, ObjClass);
@@ -133,9 +136,10 @@ ObjClass *newClass(ObjString *name) {
   if (vm.state != INITIALIZED) {
     return newSystemClass(name);
   }
-  
-  GCWhiteList((Obj *) name);
-  ObjClass *klass = (ObjClass*) GCWhiteList((Obj*) ALLOCATE_OBJ(OBJ_CLASS, ObjClass));
+
+  GCWhiteList((Obj *)name);
+  ObjClass *klass =
+      (ObjClass *)GCWhiteList((Obj *)ALLOCATE_OBJ(OBJ_CLASS, ObjClass));
   klass->name = name;
   initTable(&klass->methods);
 
@@ -157,10 +161,10 @@ ObjUpValue *newUpValue(Value *value) {
 }
 
 ObjClosure *newClosure(ObjFunction *function) {
-  // Since we are not allocating it using the ALLOCATE_OBJ macro, there is no risk
-  // of the GC running and cleaning this. But, we cannot allocate this after allocating
-  // the ObjClosure, because the ALLOCATE macro, internally, can trigger the GC. 
-  // Garbage Collector 👌
+  // Since we are not allocating it using the ALLOCATE_OBJ macro, there is no
+  // risk of the GC running and cleaning this. But, we cannot allocate this
+  // after allocating the ObjClosure, because the ALLOCATE macro, internally,
+  // can trigger the GC. Garbage Collector 👌
   ObjUpValue **upvalues = ALLOCATE(ObjUpValue *, function->upvalueCount);
   for (int idx = 0; idx < function->upvalueCount; idx++) {
     upvalues[idx] = NULL;
@@ -187,13 +191,14 @@ ObjFunction *newFunction() {
   return function;
 }
 
-ObjNativeFn *newNativeFunction(NativeFn function, ObjString* name, Arity arity) {
+ObjNativeFn *newNativeFunction(NativeFn function, ObjString *name,
+                               Arity arity) {
   ObjNativeFn *nativeFn = ALLOCATE_OBJ(OBJ_NATIVE_FN, ObjNativeFn);
   nativeFn->name = name;
   nativeFn->arity = arity;
   nativeFn->function = function;
   nativeFn->obj.klass = vm.nativeFunctionClass;
-  
+
   return nativeFn;
 }
 
@@ -204,7 +209,7 @@ ObjString *allocateString(char *chars, int length) {
   string->hash = hashString(chars, length);
   string->obj.klass = vm.stringClass;
 
-  GCWhiteList((Obj*) string);
+  GCWhiteList((Obj *)string);
   tableSet(&vm.strings, string, BOOL_VAL(true));
   GCPopWhiteList();
 
@@ -247,23 +252,24 @@ static void printFunction(ObjFunction *function) {
   }
 }
 
-static void printValueArray(ValueArray* array) {
+static void printValueArray(ValueArray *array) {
   printf("[");
-  
+
   for (int idx = 0; idx < array->count; idx++) {
     printValue(array->values[idx]);
     if (idx < array->count - 1) {
       printf(", ");
     }
   }
-  
+
   printf("]");
 }
 
 void printObject(Value value) {
   switch (AS_OBJ(value)->type) {
-    case OBJ_BOUND_OVERLOADED_METHOD: 
-      printf("<%s fn>", AS_BOUND_OVERLOADED_METHOD(value)->overloadedMethod->name->chars);
+    case OBJ_BOUND_OVERLOADED_METHOD:
+      printf("<%s fn>",
+             AS_BOUND_OVERLOADED_METHOD(value)->overloadedMethod->name->chars);
       break;
     case OBJ_OVERLOADED_METHOD:
       printf("<%s fn>", AS_OVERLOADED_METHOD(value)->name->chars);
@@ -298,7 +304,7 @@ void printObject(Value value) {
   }
 }
 
-ObjString* numberToString(double value) {
+ObjString *numberToString(double value) {
   if (isnan(value)) {
     return CONSTANT_STRING("NaN");
   }
@@ -311,42 +317,49 @@ ObjString* numberToString(double value) {
   }
 
   /*
-  * The %g format specifier chooses the "best" representation between %e (Decimal scientifier notation) and %f (Decimal floating point number)
-  * The longest string generated for 12 points of precision would be in %e, something like this:
-  * 
-  *   -1.xxxxxxxxxxxxe+yyyy\0
-  *  
-  * +  1 digit for '-'
-  * +  1 digit for '1' digit before decimal point
-  * +  1 digit for '.' decimal point 
-  * + 12 digits for 'x' mantissa defined in the precision = 12
-  * +  1 digit for 'e' expoent char
-  * +  1 digit for '+' or '-' expoent char signal
-  * +  4 digits for 'y' expoent (the IEE 754 defines 3 digits, but we are arbitraly considering at most 4)
-  * +  1 digit for '\0' null terminator
-  * = 22 digits
-  */
+   * The %g format specifier chooses the "best" representation between %e
+   * (Decimal scientifier notation) and %f (Decimal floating point number) The
+   * longest string generated for 12 points of precision would be in %e,
+   * something like this:
+   *
+   *   -1.xxxxxxxxxxxxe+yyyy\0
+   *
+   * +  1 digit for '-'
+   * +  1 digit for '1' digit before decimal point
+   * +  1 digit for '.' decimal point
+   * + 12 digits for 'x' mantissa defined in the precision = 12
+   * +  1 digit for 'e' expoent char
+   * +  1 digit for '+' or '-' expoent char signal
+   * +  4 digits for 'y' expoent (the IEE 754 defines 3 digits, but we are
+   * arbitraly considering at most 4)
+   * +  1 digit for '\0' null terminator
+   * = 22 digits
+   */
   char buffer[22];
   int len = sprintf(buffer, "%.12g", value);
   return copyString(buffer, len);
 }
 
-static ObjString* functionToString(ObjFunction *function) {
+static ObjString *functionToString(ObjFunction *function) {
   if (function->name == NULL) {
     return CONSTANT_STRING("<script>");
   }
-  
+
   return copyString(function->name->chars, function->name->length);
 }
 
-ObjString* objToString(Value value) {
-   switch (AS_OBJ(value)->type) {
-    case OBJ_BOUND_OVERLOADED_METHOD: 
-      return copyString(AS_BOUND_OVERLOADED_METHOD(value)->overloadedMethod->name->chars, AS_BOUND_OVERLOADED_METHOD(value)->overloadedMethod->name->length);
-    case OBJ_OVERLOADED_METHOD: 
-      return copyString(AS_OVERLOADED_METHOD(value)->name->chars, AS_OVERLOADED_METHOD(value)->name->length);
+ObjString *objToString(Value value) {
+  switch (AS_OBJ(value)->type) {
+    case OBJ_BOUND_OVERLOADED_METHOD:
+      return copyString(
+          AS_BOUND_OVERLOADED_METHOD(value)->overloadedMethod->name->chars,
+          AS_BOUND_OVERLOADED_METHOD(value)->overloadedMethod->name->length);
+    case OBJ_OVERLOADED_METHOD:
+      return copyString(AS_OVERLOADED_METHOD(value)->name->chars,
+                        AS_OVERLOADED_METHOD(value)->name->length);
     case OBJ_CLASS:
-      return copyString(AS_CLASS(value)->name->chars, AS_CLASS(value)->name->length);
+      return copyString(AS_CLASS(value)->name->chars,
+                        AS_CLASS(value)->name->length);
     case OBJ_STRING:
       return copyString(AS_CSTRING(value), AS_STRING(value)->length);
     case OBJ_FUNCTION:
@@ -356,13 +369,15 @@ ObjString* objToString(Value value) {
     case OBJ_UPVALUE:
       return toString(*AS_UP_VALUE(value)->location);
     case OBJ_NATIVE_FN:
-      return copyString(AS_NATIVE(value)->name->chars, AS_NATIVE(value)->name->length);
+      return copyString(AS_NATIVE(value)->name->chars,
+                        AS_NATIVE(value)->name->length);
     case OBJ_ARRAY:
     case OBJ_MODULE:
     case OBJ_INSTANCE: {
-      // + 13 comes from template length + '\0' char 
+      // + 13 comes from template length + '\0' char
       char buffer[AS_OBJ(value)->klass->name->length + 13];
-      int len = sprintf(buffer, "instance of %s", AS_OBJ(value)->klass->name->chars);
+      int len =
+          sprintf(buffer, "instance of %s", AS_OBJ(value)->klass->name->chars);
       return copyString(buffer, len);
     }
   }
@@ -371,29 +386,29 @@ ObjString* objToString(Value value) {
   exit(1);
 }
 
-ObjString* toString(Value value) {
-  #ifdef NAN_BOXING 
-    if (IS_BOOL(value)) {
+ObjString *toString(Value value) {
+#ifdef NAN_BOXING
+  if (IS_BOOL(value)) {
+    return CONSTANT_STRING(AS_BOOL(value) ? "true" : "false");
+  } else if (IS_NIL(value)) {
+    return CONSTANT_STRING("nil");
+  } else if (IS_NUMBER(value)) {
+    return numberToString(AS_NUMBER(value));
+  } else if (IS_OBJ(value)) {
+    return objToString(value);
+  }
+#else
+  switch (value.type) {
+    case VAL_BOOL:
       return CONSTANT_STRING(AS_BOOL(value) ? "true" : "false");
-    } else if (IS_NIL(value)) {
-      return CONSTANT_STRING("nil");
-    } else if (IS_NUMBER(value)) {
+    case VAL_NUMBER:
       return numberToString(AS_NUMBER(value));
-    } else if (IS_OBJ(value)) {
+    case VAL_NIL:
+      return CONSTANT_STRING("nil");
+    case VAL_OBJ:
       return objToString(value);
-    }
-  #else
-    switch (value.type) {
-      case VAL_BOOL:
-        return CONSTANT_STRING(AS_BOOL(value) ? "true" : "false");
-      case VAL_NUMBER:
-        return numberToString(AS_NUMBER(value));
-      case VAL_NIL:
-        return CONSTANT_STRING("nil");
-      case VAL_OBJ:
-        return objToString(value);
-    }
-  #endif
+  }
+#endif
 
   printf("todo: UNREACHABLE.");
   exit(1);

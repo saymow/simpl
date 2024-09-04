@@ -7,11 +7,10 @@
 #include "common.h"
 #include "lexer.h"
 #include "memory.h"
+#include "modules.h"
 #include "object.h"
 #include "utils.h"
 #include "vm.h"
-#include "modules.h"
-#include "utils.h"
 
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
@@ -66,7 +65,9 @@ typedef struct {
 
 typedef enum { SWITCH_BLOCK, LOOP_BLOCK } BlockType;
 
-typedef struct { BlockType type; } Block;
+typedef struct {
+  BlockType type;
+} Block;
 
 typedef struct Compiler {
   char* absPath;
@@ -127,12 +128,12 @@ static void initCompiler(Compiler* compiler, char* absPath, FunctionType type) {
 
   current = compiler;
 
-  switch(type) {
+  switch (type) {
     case TYPE_CONSTRUCTOR:
     case TYPE_FUNCTION:
     case TYPE_METHOD: {
       compiler->function->name =
-        copyString(parser.previous.start, parser.previous.length);
+          copyString(parser.previous.start, parser.previous.length);
       break;
     }
     case TYPE_MODULE: {
@@ -306,9 +307,7 @@ static void addLocal(Token name) {
   local->isCaptured = false;
 }
 
-static void removeLastLocal() {
-  current->localCount--;
-}
+static void removeLastLocal() { current->localCount--; }
 
 static void markLocalInitialized() {
   if (GLOBAL_VARIABLES()) return;
@@ -523,7 +522,7 @@ static void classDeclaration() {
     namedVariable(name, false);
     emitByte(OP_INHERIT);
 
-    currentClass->hasSuperclass = true; 
+    currentClass->hasSuperclass = true;
   }
 
   namedVariable(name, false);
@@ -569,25 +568,25 @@ static int emitJump(OpCode instruction) {
 }
 
 /*
-* The majority of jumps are like this:
-* "
-* OP_CODE
-* 0xff      
-* 0xff  
-* "
-* That is, the instruction and two bytes of offset which means padding = 2.
-* Instructions like OP_TRY_CATCH are like:
-* "
-* OP_CODE
-* 0xff      
-* 0xff
-* 0xff      
-* 0xff
-* 0xff  
-* "
-* That is, after the OP_CODE, there are 5 bytes of padding.
-* In order to correctly calculate the offset we need the padding = 5.
-*/
+ * The majority of jumps are like this:
+ * "
+ * OP_CODE
+ * 0xff
+ * 0xff
+ * "
+ * That is, the instruction and two bytes of offset which means padding = 2.
+ * Instructions like OP_TRY_CATCH are like:
+ * "
+ * OP_CODE
+ * 0xff
+ * 0xff
+ * 0xff
+ * 0xff
+ * 0xff
+ * "
+ * That is, after the OP_CODE, there are 5 bytes of padding.
+ * In order to correctly calculate the offset we need the padding = 5.
+ */
 static int patchJump(int jmp, uint8_t instructionPadding) {
   int offset = currentChunk()->count - jmp - instructionPadding;
   if (offset > UINT16_MAX) {
@@ -635,32 +634,31 @@ static void beginLoop() {
   current->blockStack[current->blockStackCount++].type = LOOP_BLOCK;
 }
 
-static void endLoop() {
-  current->blockStackCount--;
-}
+static void endLoop() { current->blockStackCount--; }
 
 static void beginSwitch() {
   current->blockStack[current->blockStackCount++].type = SWITCH_BLOCK;
 }
 
-static void endSwitch() {
-  current->blockStackCount--;
-}
+static void endSwitch() { current->blockStackCount--; }
 
 static int emitLoopGuard() {
   emitByte(OP_LOOP_GUARD);
-  
+
   // - Loop start address offset
-  // When we have an incrementer, the start of the loop is the incrementer and the loop jumps are like this: 
-  // 
+  // When we have an incrementer, the start of the loop is the incrementer and
+  // the loop jumps are like this:
+  //
   // 1) incrementer -> comparison -> body -> (incrementer | end)
-  // 
-  // Otherwise, the start of the loop is the comparison and the loop jumps are like this: 
-  // 
+  //
+  // Otherwise, the start of the loop is the comparison and the loop jumps are
+  // like this:
+  //
   // 2) comparison -> body -> (comparison | end)
-  // 
-  // The 2° scenario is handled by default, since the OP_LOOP_GUARD instruction is emitted right before the comparison.
-  // For the 1° scenario, we need to patch this offset, to start just before the incrementer.  
+  //
+  // The 2° scenario is handled by default, since the OP_LOOP_GUARD instruction
+  // is emitted right before the comparison. For the 1° scenario, we need to
+  // patch this offset, to start just before the incrementer.
   writeChunk(currentChunk(), 0x00, parser.previous.line);
   writeChunk(currentChunk(), 0x00, parser.previous.line);
 
@@ -672,7 +670,7 @@ static int emitLoopGuard() {
 
 static void whileStatement() {
   beginLoop();
-  
+
   int loopGuard = emitLoopGuard() + 2;
   int loopStart = currentChunk()->count;
 
@@ -684,7 +682,7 @@ static void whileStatement() {
   emitByte(OP_POP);
 
   statement();
-  
+
   emitLoop(loopStart);
   patchJump(loopGuard, 2);
   patchJump(exitLoop, 2);
@@ -702,7 +700,8 @@ static void addSystemLocalVariable() {
   }
 
   Local* local = &current->locals[current->localCount++];
-  local->name = syntheticToken(TOKEN_IDENTIFIER, "");;
+  local->name = syntheticToken(TOKEN_IDENTIFIER, "");
+  ;
   local->depth = current->scopeDepth;
   local->isCaptured = false;
 }
@@ -714,22 +713,22 @@ static void forInRangeStatement(int iterationVariableConstant) {
     removeLastLocal();
   } else {
     Token rangeSyntheticToken = syntheticToken(TOKEN_IDENTIFIER, "range");
- 
+
     consume(TOKEN_IDENTIFIER, "Expect 'range' for range-based for.");
     if (!identifiersEqual(&rangeSyntheticToken, &parser.previous)) {
       error("Expect 'range' for range-based for.");
     }
-    
+
     defineVariable(iterationVariableConstant);
   }
 
   consume(TOKEN_LEFT_PAREN, "Expect '(' after 'range'.");
-  
+
   expression();
 
   if (match(TOKEN_COMMA)) {
     expression();
-    
+
     if (match(TOKEN_COMMA)) {
       expression();
     } else {
@@ -745,16 +744,16 @@ static void forInRangeStatement(int iterationVariableConstant) {
   // manually declaring ranged-base for variables.
   // We keep the expression results variable on the stack
   // until we reach the end of the scope.
-  // 
+  //
   // track "start" variable conditionaly.
-  // if "for range(...)", then "start" is a system variable and 
-  // must be tracked. Otherwise, it is a user defined variable.  
+  // if "for range(...)", then "start" is a system variable and
+  // must be tracked. Otherwise, it is a user defined variable.
   if (iterationVariableConstant < 0) addSystemLocalVariable();
   // track "end" variable
   addSystemLocalVariable();
   // track "step" variable
   addSystemLocalVariable();
-  
+
   emitByte(OP_RANGED_LOOP_SETUP);
   int loopGuard = emitLoopGuard() + 2;
   int loopStart = currentChunk()->count;
@@ -767,7 +766,7 @@ static void forInRangeStatement(int iterationVariableConstant) {
   emitByte(OP_LOOP_GUARD_END);
 
   // Normal loops are usualy compiled like this:
-  //  
+  //
   //  <START>
   //  <EXPRESSION>
   //  OP_JUMP_IF_FALSE     => <END>
@@ -777,15 +776,17 @@ static void forInRangeStatement(int iterationVariableConstant) {
   //  <END>
   //  OP_POP
   //
-  // The last OP_POP is used to remove the OP_JUMP_IF_FALSE <EXPRESSION> from the stack.
+  // The last OP_POP is used to remove the OP_JUMP_IF_FALSE <EXPRESSION> from
+  // the stack.
   //
-  // The LOOP_GUARD implementation is built on top of this concept and whenever it faces
-  // a "break" statement, it adds a dummy value to be consumed by the OP_POP after <END>. 
+  // The LOOP_GUARD implementation is built on top of this concept and whenever
+  // it faces a "break" statement, it adds a dummy value to be consumed by the
+  // OP_POP after <END>.
   //
-  // Although we dont have any explict expression in this for-each, in order to comply with
-  // the LOOP_GUARD implementation, we will be popping the dummy value it adds. We will also
-  // be adding this dummy value where needed.
-  // pop dummy value 
+  // Although we dont have any explict expression in this for-each, in order to
+  // comply with the LOOP_GUARD implementation, we will be popping the dummy
+  // value it adds. We will also be adding this dummy value where needed. pop
+  // dummy value
   emitByte(OP_POP);
 
   endScope();
@@ -793,7 +794,8 @@ static void forInRangeStatement(int iterationVariableConstant) {
 }
 
 static void sugaredForStatement() {
-  uint8_t iterationVariableConstant = parseVariable("Expect for each iteration variable identifier.");
+  uint8_t iterationVariableConstant =
+      parseVariable("Expect for each iteration variable identifier.");
   Token rangeSyntheticToken = syntheticToken(TOKEN_IDENTIFIER, "range");
 
   if (identifiersEqual(&parser.previous, &rangeSyntheticToken)) {
@@ -807,13 +809,13 @@ static void sugaredForStatement() {
 
     consume(TOKEN_OF, "Expect 'of' after for each iteration variable.");
 
-    // manually declaring user iteration name variable 
+    // manually declaring user iteration name variable
     defineVariable(iterationVariableConstant);
     uint8_t iterationName = makeConstant(NIL_VAL);
     emitBytes(OP_CONSTANT, iterationName);
 
     // Below we declare auxiliary variables for the OP_NAMED_LOOP
-    // These variables are cleared once the scope is closed 
+    // These variables are cleared once the scope is closed
 
     // manually declaring system iteration index variable
     emitBytes(OP_CONSTANT, makeConstant(NUMBER_VAL(-1)));
@@ -829,16 +831,16 @@ static void sugaredForStatement() {
     int loopStart = currentChunk()->count;
 
     emitByte(OP_NAMED_LOOP);
-    
+
     statement();
 
     emitLoop(loopStart);
-    
+
     patchJump(loopGuard, 2);
     emitByte(OP_LOOP_GUARD_END);
-    
+
     // Normal loops are usualy compiled like this:
-    //  
+    //
     //  <START>
     //  <EXPRESSION>
     //  OP_JUMP_IF_FALSE     => <END>
@@ -848,18 +850,21 @@ static void sugaredForStatement() {
     //  <END>
     //  OP_POP
     //
-    // The last OP_POP is used to remove the OP_JUMP_IF_FALSE <EXPRESSION> from the stack.
+    // The last OP_POP is used to remove the OP_JUMP_IF_FALSE <EXPRESSION> from
+    // the stack.
     //
-    // The LOOP_GUARD implementation is built on top of this concept and whenever it faces
-    // a "break" statement, it adds a dummy value to be consumed by the OP_POP after <END>. 
+    // The LOOP_GUARD implementation is built on top of this concept and
+    // whenever it faces a "break" statement, it adds a dummy value to be
+    // consumed by the OP_POP after <END>.
     //
-    // Although we dont have any explict expression in this for-each, in order to comply with
-    // the LOOP_GUARD implementation, we will be popping the dummy value it adds. We will also
-    // be adding this dummy value where needed.
-    // pop dummy value 
+    // Although we dont have any explict expression in this for-each, in order
+    // to comply with the LOOP_GUARD implementation, we will be popping the
+    // dummy value it adds. We will also be adding this dummy value where
+    // needed. pop dummy value
     emitByte(OP_POP);
 
-    // The manually declared iteration name is popped from the stack as soon as the block is closed
+    // The manually declared iteration name is popped from the stack as soon as
+    // the block is closed
     endScope();
     endLoop();
   }
@@ -942,7 +947,7 @@ static void returnStatement() {
   }
 }
 
-ObjModule* compileModule(ModuleNode* node, char *absPath, const char* source) {
+ObjModule* compileModule(ModuleNode* node, char* absPath, const char* source) {
   Compiler compiler;
   Lexer moduleLexer;
   Parser moduleParser;
@@ -964,10 +969,10 @@ ObjModule* compileModule(ModuleNode* node, char *absPath, const char* source) {
     declaration();
   }
 
-  ObjFunction* function = (ObjFunction*) GCWhiteList((Obj*) endCompiler());
+  ObjFunction* function = (ObjFunction*)GCWhiteList((Obj*)endCompiler());
   ObjModule* module = newModule(function);
   GCPopWhiteList();
-  
+
   ObjModule* returnValue = parser.hadError ? NULL : module;
 
   if (parser.hadError) {
@@ -976,7 +981,7 @@ ObjModule* compileModule(ModuleNode* node, char *absPath, const char* source) {
 
   parser = previousParser;
   popLexer();
-  
+
   return returnValue;
 }
 
@@ -1007,7 +1012,8 @@ static void importStatement() {
   }
   consume(TOKEN_STRING, "Expect import path.");
 
-  ObjString* importPath = copyString(parser.previous.start + 1, parser.previous.length - 2);
+  ObjString* importPath =
+      copyString(parser.previous.start + 1, parser.previous.length - 2);
   char* absPath = resolvePath(basePath, current->absPath, importPath->chars);
   char* source = readFile(absPath);
   ObjModule* module = resolveModule(absPath, source);
@@ -1021,7 +1027,7 @@ static void importStatement() {
 
   free(source);
   free(absPath);
-  
+
   emitBytes(OP_IMPORT, moduleConstant);
   if (constant != -1) {
     defineVariable(constant);
@@ -1046,19 +1052,19 @@ static void exportStatement() {
 
 static int emitTryCatch() {
   writeChunk(currentChunk(), OP_TRY_CATCH, parser.previous.line);
-  // catch offset 
+  // catch offset
   writeChunk(currentChunk(), 0xff, parser.previous.line);
   writeChunk(currentChunk(), 0xff, parser.previous.line);
   // outside block offset
   writeChunk(currentChunk(), 0xff, parser.previous.line);
   writeChunk(currentChunk(), 0xff, parser.previous.line);
-  // bool that indicates if catch expects to receive a parameter 
+  // bool that indicates if catch expects to receive a parameter
   writeChunk(currentChunk(), 0xff, parser.previous.line);
   return currentChunk()->count - 5;
 }
 
 static void patchTryCatchParameter(int parameter, bool shouldReceive) {
-  // patch bool that indicates if catch expects to receive a parameter 
+  // patch bool that indicates if catch expects to receive a parameter
   currentChunk()->code[parameter] = shouldReceive;
 }
 
@@ -1124,7 +1130,7 @@ static void continueStatement() {
 
   emitByte(OP_LOOP_CONTINUE);
   consume(TOKEN_SEMICOLON, "Expect ';' after continue statement.");
-} 
+}
 
 static void switchStatement() {
   consume(TOKEN_LEFT_PAREN, "Expect '(' before switch expression.");
@@ -1139,9 +1145,10 @@ static void switchStatement() {
   consume(TOKEN_RIGHT_PAREN, "Expect ')' after switch expression.");
   consume(TOKEN_LEFT_BRACE, "Expect '{' before switch body.");
 
-  while(match(TOKEN_CASE) || match(TOKEN_DEFAULT)) {
-    OpCode instruction = parser.previous.type == TOKEN_CASE ? OP_SWITCH_CASE : OP_SWITCH_DEFAULT; 
-    
+  while (match(TOKEN_CASE) || match(TOKEN_DEFAULT)) {
+    OpCode instruction =
+        parser.previous.type == TOKEN_CASE ? OP_SWITCH_CASE : OP_SWITCH_DEFAULT;
+
     if (instruction == OP_SWITCH_CASE) {
       expression();
 
@@ -1156,26 +1163,26 @@ static void switchStatement() {
       patchJump(caseJump, 2);
     } else {
       if (defaultStart != -1) {
-        errorAt(&parser.previous, "Expect 'default' to appear just once in switch body.");
+        errorAt(&parser.previous,
+                "Expect 'default' to appear just once in switch body.");
       }
 
       consume(TOKEN_COLON, "Expect ':' after case expression.");
 
-      // Emit jump to skip default statement during the switch case execution 
+      // Emit jump to skip default statement during the switch case execution
       int jump = emitJump(OP_JUMP);
-      // Save start of default statement so that we can LOOP back if no case is met
+      // Save start of default statement so that we can LOOP back if no case is
+      // met
       defaultStart = currentChunk()->count;
       statement();
       // Patch jump to skip default statement during the switch case execution
       patchJump(jump, 2);
     }
-
   }
 
   patchJump(switchJump, 2);
-  int defaultOffset = defaultStart != -1 ? 
-    currentChunk()->count - defaultStart + 3: 
-    0;
+  int defaultOffset =
+      defaultStart != -1 ? currentChunk()->count - defaultStart + 3 : 0;
 
   if (defaultOffset > UINT16_MAX) {
     error("To much code to jump over.");
@@ -1198,12 +1205,12 @@ static void statement() {
   } else if (match(TOKEN_THROW)) {
     throwStatement();
   } else if (match(TOKEN_TRY)) {
-    tryStatement();  
+    tryStatement();
   } else if (match(TOKEN_IMPORT)) {
     importStatement();
   } else if (match(TOKEN_EXPORT)) {
     exportStatement();
-  }  else if (match(TOKEN_IF)) {
+  } else if (match(TOKEN_IF)) {
     ifStatement();
   } else if (match(TOKEN_WHILE)) {
     whileStatement();
@@ -1222,13 +1229,13 @@ static void statement() {
   }
 }
 
-static void expression() { 
+static void expression() {
   parsePrecedence(PREC_ASSIGNMENT);
 
   // Compile ternary operator
   if (match(TOKEN_QUESTION_MARK)) {
     int elseJump = emitJump(OP_JUMP_IF_FALSE);
-    
+
     emitByte(OP_POP);
     expression();
     int thenJump = emitJump(OP_JUMP);
@@ -1261,12 +1268,12 @@ ObjFunction* compile(const char* source, char* absPath) {
     declaration();
   }
 
-  ObjFunction* function = (ObjFunction*) GCWhiteList((Obj *) endCompiler());
+  ObjFunction* function = (ObjFunction*)GCWhiteList((Obj*)endCompiler());
   freeModules(&modules);
   GCPopWhiteList();
 
   if (parser.hadError) {
-    fprintf(stderr,"at file: %s\n", basePath);
+    fprintf(stderr, "at file: %s\n", basePath);
     return NULL;
   }
 
@@ -1282,14 +1289,14 @@ void markCompilerRoots() {
 }
 
 static void grouping(bool canAssign) {
-  // Parse () -> {}  
+  // Parse () -> {}
   if (match(TOKEN_RIGHT_PAREN)) {
     Compiler compiler;
     initCompiler(&compiler, current->absPath, TYPE_LAMBDA_FUNCTION);
 
     consume(TOKEN_MINUS, "Expect '-' for anonymous function.");
     consume(TOKEN_GREATER, "Expect '>' for anonymous function.");
-    
+
     if (match(TOKEN_LEFT_BRACE)) {
       beginScope();
       block();
@@ -1298,7 +1305,7 @@ static void grouping(bool canAssign) {
       emitByte(OP_RETURN);
     }
 
-    ObjFunction* function =  endCompiler();
+    ObjFunction* function = endCompiler();
     emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(function)));
     for (int idx = 0; idx < function->upvalueCount; idx++) {
       emitByte(compiler.upvalues[idx].index);
@@ -1308,7 +1315,7 @@ static void grouping(bool canAssign) {
     Token name = parser.previous;
 
     if (check(TOKEN_COMMA)) {
-      // Parse (a, b, ...) -> {} 
+      // Parse (a, b, ...) -> {}
       Compiler compiler;
       initCompiler(&compiler, current->absPath, TYPE_LAMBDA_FUNCTION);
       beginScope();
@@ -1321,19 +1328,19 @@ static void grouping(bool canAssign) {
       match(TOKEN_COMMA);
 
       if (!check(TOKEN_RIGHT_PAREN)) {
-        do {  
+        do {
           current->function->arity++;
           if (current->function->arity > 255) {
             errorAtCurrent("Can't haave more than 255 parameters.");
-          }    
+          }
           defineVariable(parseVariable("Expect parameter name."));
-        } while(match(TOKEN_COMMA));
+        } while (match(TOKEN_COMMA));
       }
 
       consume(TOKEN_RIGHT_PAREN, "Expect ')' after arguments list.");
       consume(TOKEN_MINUS, "Expect '-' for anonymous function.");
       consume(TOKEN_GREATER, "Expect '>' for anonymous function.");
-      
+
       if (match(TOKEN_LEFT_BRACE)) {
         beginScope();
         block();
@@ -1342,45 +1349,44 @@ static void grouping(bool canAssign) {
         emitByte(OP_RETURN);
       }
 
-      ObjFunction* function =  endCompiler();
+      ObjFunction* function = endCompiler();
       emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(function)));
       for (int idx = 0; idx < function->upvalueCount; idx++) {
         emitByte(compiler.upvalues[idx].index);
         emitByte(compiler.upvalues[idx].isLocal);
       }
-    } 
-    else if (match(TOKEN_RIGHT_PAREN)) {
-        if (match(TOKEN_MINUS)) {
-          // Parse (a) -> {}  
-          Compiler compiler;
-          initCompiler(&compiler, current->absPath, TYPE_LAMBDA_FUNCTION);
+    } else if (match(TOKEN_RIGHT_PAREN)) {
+      if (match(TOKEN_MINUS)) {
+        // Parse (a) -> {}
+        Compiler compiler;
+        initCompiler(&compiler, current->absPath, TYPE_LAMBDA_FUNCTION);
+        beginScope();
+        // parse TOKEN_IDENTIFIER
+        declareVariableUsingToken(&name);
+        markLocalInitialized();
+
+        compiler.function->arity = 1;
+
+        consume(TOKEN_GREATER, "Expect '>' for anonymous function.");
+
+        if (match(TOKEN_LEFT_BRACE)) {
           beginScope();
-          // parse TOKEN_IDENTIFIER
-          declareVariableUsingToken(&name);
-          markLocalInitialized();
-
-          compiler.function->arity = 1;
-
-          consume(TOKEN_GREATER, "Expect '>' for anonymous function.");
-          
-          if (match(TOKEN_LEFT_BRACE)) {
-            beginScope();
-            block();
-          } else {
-            expression();
-            emitByte(OP_RETURN);
-          }
-
-          ObjFunction* function =  endCompiler();
-          emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(function)));
-          for (int idx = 0; idx < function->upvalueCount; idx++) {
-            emitByte(compiler.upvalues[idx].index);
-            emitByte(compiler.upvalues[idx].isLocal);
-          }
+          block();
         } else {
-          // Parse (a)
-          namedVariable(name, canAssign);    
+          expression();
+          emitByte(OP_RETURN);
         }
+
+        ObjFunction* function = endCompiler();
+        emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(function)));
+        for (int idx = 0; idx < function->upvalueCount; idx++) {
+          emitByte(compiler.upvalues[idx].index);
+          emitByte(compiler.upvalues[idx].isLocal);
+        }
+      } else {
+        // Parse (a)
+        namedVariable(name, canAssign);
+      }
     } else {
       // Parse (a (op b)*)
       namedVariable(parser.previous, canAssign);
@@ -1396,7 +1402,7 @@ static void grouping(bool canAssign) {
       }
 
       consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
-    } 
+    }
   } else {
     expression();
     consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
@@ -1494,7 +1500,7 @@ static ObjString* escapeString() {
         scapedLength++;
         idx++;
       }
-      
+
       continue;
     }
     scapedLength++;
@@ -1510,25 +1516,25 @@ static ObjString* escapeString() {
     }
 
     switch (str[++idx]) {
-      case 'n': 
+      case 'n':
         buffer[count++] = '\n';
         break;
-      case 't': 
+      case 't':
         buffer[count++] = '\t';
         break;
-      case 'b': 
+      case 'b':
         buffer[count++] = '\b';
         break;
-      case 'r': 
+      case 'r':
         buffer[count++] = '\r';
         break;
-      case 'f': 
+      case 'f':
         buffer[count++] = '\f';
         break;
-      case 'v': 
+      case 'v':
         buffer[count++] = '\v';
         break;
-      case '0': 
+      case '0':
         buffer[count++] = '\0';
         break;
       default:
@@ -1536,46 +1542,44 @@ static ObjString* escapeString() {
     }
   }
 
-  return copyString(buffer, scapedLength); 
+  return copyString(buffer, scapedLength);
 }
 
 static void stringInterpolation(bool canAssign) {
-  ObjString* template = (ObjString*) GCWhiteList((Obj*)escapeString());
-  uint8_t placeholdersCount = 0; 
+  ObjString* template = (ObjString*)GCWhiteList((Obj*)escapeString());
+  uint8_t placeholdersCount = 0;
 
-  // Iterate through string template and scan/compile every placeholder expression.
+  // Iterate through string template and scan/compile every placeholder
+  // expression.
   for (int idx = 0; idx < template->length; idx++) {
     // template placeholder slot found
-    if (
-      template->chars[idx] == '$' &&
-      idx + 1 < template->length &&
-      template->chars[idx + 1] == '(' 
-    ) {
+    if (template->chars[idx] == '$' && idx + 1 < template->length &&
+        template->chars[idx + 1] == '(') {
       placeholdersCount++;
 
       if (placeholdersCount > UINT8_MAX) {
         error("Can't have more than 255 string interpolation placeholders.");
       }
-      
-      // skip "$(" chars 
+
+      // skip "$(" chars
       idx += 2;
       int interpolationStart = idx;
       int isPlaceholderOpen = 1;
 
-      // consume placeholder character until slot end 
+      // consume placeholder character until slot end
       while (isPlaceholderOpen > 0) {
         if (template->chars[idx] == '(') isPlaceholderOpen++;
         if (template->chars[idx] == ')') isPlaceholderOpen--;
         idx++;
       }
       idx--;
-      
+
       // setup lexer and parser
       Lexer interpolationLexer;
       Parser interpolationParser;
       Parser previousParser = parser;
-      int sourceLength = idx - interpolationStart; 
-      char source[sourceLength + 1]; 
+      int sourceLength = idx - interpolationStart;
+      char source[sourceLength + 1];
 
       interpolationParser.module = parser.module;
       interpolationParser.hadError = parser.hadError;
@@ -1607,13 +1611,10 @@ static void stringInterpolation(bool canAssign) {
   }
 
   GCPopWhiteList();
-  emitBytes(OP_STRING_INTERPOLATION,  makeConstant(OBJ_VAL(template)));
+  emitBytes(OP_STRING_INTERPOLATION, makeConstant(OBJ_VAL(template)));
 }
 
-static void string(bool canAssign) {
-  emitConstant(OBJ_VAL(
-      escapeString()));
-}
+static void string(bool canAssign) { emitConstant(OBJ_VAL(escapeString())); }
 
 static int resolveLocal(Compiler* compiler, Token* name) {
   for (int idx = compiler->localCount - 1; idx >= 0; idx--) {
@@ -1821,13 +1822,13 @@ static void array(bool canAssign) {
   if (!check(TOKEN_RIGHT_BRACKET)) {
     do {
       expression();
-      
+
       if (length > 255) {
         error("Can't initialize array with more than 255 elements.");
       }
 
       length++;
-    } while(match(TOKEN_COMMA));
+    } while (match(TOKEN_COMMA));
   }
 
   emitBytes(OP_ARRAY, length);
@@ -1838,7 +1839,7 @@ static void arrayGetOrSet(bool canAssign) {
   expression();
   consume(TOKEN_RIGHT_BRACKET, "Expect ']' at end of array access.");
 
-  // Should array item invocation be optimized? 
+  // Should array item invocation be optimized?
   if (canAssign && match(TOKEN_EQUAL)) {
     expression();
     emitByte(OP_SET_ITEM);
@@ -1863,8 +1864,8 @@ static void arrayGetOrSet(bool canAssign) {
     emitByte(OP_DIVIDE);
     emitByte(OP_SET_ITEM);
   } else {
-    // When assign operators other than '=' are used, we need to keep the base + identifier in the stack.
-    // The bool is intended to handle that.
+    // When assign operators other than '=' are used, we need to keep the base +
+    // identifier in the stack. The bool is intended to handle that.
     emitBytes(OP_GET_ITEM, (uint8_t) false);
   }
 }
@@ -1878,21 +1879,19 @@ static void _super(bool canAssign) {
 
   consume(TOKEN_DOT, "Expect '.' after super.");
   consume(TOKEN_IDENTIFIER, "Expect superclass method name after '.'.");
-  uint8_t name = identifierConstant(&parser.previous);  
-  
+  uint8_t name = identifierConstant(&parser.previous);
+
   // Should this be optmized for calls?
   namedVariable(syntheticToken(TOKEN_IDENTIFIER, "this"), false);
   namedVariable(syntheticToken(TOKEN_IDENTIFIER, "super"), false);
   emitBytes(OP_SUPER, name);
 }
 
-bool isValidIdentifier(Token* token) {
-  return isAlpha(*token->start);
-}
+bool isValidIdentifier(Token* token) { return isAlpha(*token->start); }
 
 void object(bool canAssign) {
   int count = 0;
-  
+
   if (!check(TOKEN_RIGHT_BRACE)) {
     do {
       if (!isValidIdentifier(&parser.current)) {
@@ -1900,23 +1899,24 @@ void object(bool canAssign) {
       }
 
       advance();
-      
+
       uint8_t name = identifierConstant(&parser.previous);
       consume(TOKEN_COLON, "Expect ':' after object property identifier.");
-      
+
       emitBytes(OP_CONSTANT, name);
       expression();
       count++;
 
       if (count > 255) {
-        error("Can't initialize more than 255 properties in an object literal.");
+        error(
+            "Can't initialize more than 255 properties in an object literal.");
       }
     } while (match(TOKEN_COMMA));
   }
 
   consume(TOKEN_RIGHT_BRACE, "Expect '}' at the end of the object.");
 
-  emitBytes(OP_OBJECT, (uint8_t) count);
+  emitBytes(OP_OBJECT, (uint8_t)count);
 }
 
 ParseRule rules[] = {

@@ -114,7 +114,8 @@ static Token stringInterpolation() {
     advance();
   }
 
-  if (isPlaceholderOpen > 0) return errorToken("Unterminated string interpolation.");
+  if (isPlaceholderOpen > 0)
+    return errorToken("Unterminated string interpolation.");
   if (isAtEnd()) return errorToken("Unterminated string.");
 
   advance();
@@ -127,7 +128,7 @@ static Token string() {
     if (peek() == '$' && peekNext() == '(') {
       advance();
       advance();
-      return stringInterpolation();  
+      return stringInterpolation();
     }
 
     if (peek() == '\n') lexer->line++;
@@ -174,10 +175,10 @@ static TokenType identifierType() {
                 case 't':
                   return checkKeyword(3, 2, "ch", TOKEN_CATCH);
                 case 's':
-                  return checkKeyword(3, 1, "e", TOKEN_CASE); 
+                  return checkKeyword(3, 1, "e", TOKEN_CASE);
               }
               break;
-            } 
+            }
             break;
           case 'l':
             return checkKeyword(2, 3, "ass", TOKEN_CLASS);
@@ -187,7 +188,7 @@ static TokenType identifierType() {
         break;
       }
       break;
-    case 'd': 
+    case 'd':
       return checkKeyword(1, 6, "efault", TOKEN_DEFAULT);
     case 'e':
       if (lexer->current - lexer->start > 1) {
@@ -203,7 +204,7 @@ static TokenType identifierType() {
                   return checkKeyword(3, 4, "ends", TOKEN_EXTENDS);
               }
             }
-          break;
+            break;
         }
         break;
       }
@@ -258,22 +259,22 @@ static TokenType identifierType() {
         switch (lexer->start[1]) {
           case 'r':
             if (lexer->current - lexer->start > 2) {
-              switch(lexer->start[2]) {
+              switch (lexer->start[2]) {
                 case 'y':
                   return checkKeyword(3, 0, "", TOKEN_TRY);
                 case 'u':
-                  return checkKeyword(3, 1, "e", TOKEN_TRUE); 
+                  return checkKeyword(3, 1, "e", TOKEN_TRUE);
               }
               break;
             }
-          break;
+            break;
           case 'h':
             if (lexer->current - lexer->start > 2) {
-              switch(lexer->start[2]) {
+              switch (lexer->start[2]) {
                 case 'i':
                   return checkKeyword(3, 0, "s", TOKEN_THIS);
                 case 'r':
-                  return checkKeyword(3, 2, "ow", TOKEN_THROW); 
+                  return checkKeyword(3, 2, "ow", TOKEN_THROW);
               }
               break;
             }
@@ -356,9 +357,13 @@ Token scanToken() {
     case '?':
       return makeToken(TOKEN_QUESTION_MARK);
     case '-':
-      return makeToken(match('=') ? TOKEN_MINUS_EQUAL : match('-') ? TOKEN_MINUS_MINUS : TOKEN_MINUS);
+      return makeToken(match('=')   ? TOKEN_MINUS_EQUAL
+                       : match('-') ? TOKEN_MINUS_MINUS
+                                    : TOKEN_MINUS);
     case '+':
-      return makeToken(match('=') ? TOKEN_PLUS_EQUAL : match('+') ? TOKEN_PLUS_PLUS : TOKEN_PLUS);
+      return makeToken(match('=')   ? TOKEN_PLUS_EQUAL
+                       : match('+') ? TOKEN_PLUS_PLUS
+                                    : TOKEN_PLUS);
     case '/':
       return makeToken(match('=') ? TOKEN_SLASH_EQUAL : TOKEN_SLASH);
     case '*':

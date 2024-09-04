@@ -12,9 +12,11 @@
 
 #define FREE(type, pointer) reallocate(pointer, sizeof(type), 0);
 
-#define GROW_CAPACITY(capacity) (capacity < ARRAY_INITIAL_CAPACITY ? ARRAY_INITIAL_CAPACITY : (capacity) * 2)
+#define GROW_CAPACITY(capacity) \
+  (capacity < ARRAY_INITIAL_CAPACITY ? ARRAY_INITIAL_CAPACITY : (capacity) * 2)
 
-#define SHRINK_CAPACITY(capacity) (capacity < ARRAY_INITIAL_CAPACITY ? ARRAY_INITIAL_CAPACITY : (capacity) / 4)
+#define SHRINK_CAPACITY(capacity) \
+  (capacity < ARRAY_INITIAL_CAPACITY ? ARRAY_INITIAL_CAPACITY : (capacity) / 4)
 
 #define GROW_ARRAY(type, pointer, oldCount, newCount) \
   (type*)reallocate(pointer, sizeof(type) * oldCount, sizeof(type) * newCount)

@@ -48,7 +48,7 @@ typedef struct ObjClass ObjClass;
 struct Obj {
   ObjType type;
   bool isMarked;
-  ObjClass* klass;
+  ObjClass *klass;
   struct Obj *next;
 };
 
@@ -81,29 +81,29 @@ typedef struct ObjClosure {
   ObjFunction *function;
 } ObjClosure;
 
-typedef bool (*NativeFn)(void* thread, int argCount, Value *args);
+typedef bool (*NativeFn)(void *thread, int argCount, Value *args);
 
 typedef struct {
   Obj obj;
-  ObjString* name;
+  ObjString *name;
   Arity arity;
   NativeFn function;
 } ObjNativeFn;
 
 typedef struct ObjOverloadedMethod {
   Obj obj;
-  ObjString* name;
+  ObjString *name;
   MethodType type;
   union {
-    ObjClosure* userMethods[ARGS_ARITY_MAX];
-    ObjNativeFn* nativeMethods[ARGS_ARITY_MAX];
+    ObjClosure *userMethods[ARGS_ARITY_MAX];
+    ObjNativeFn *nativeMethods[ARGS_ARITY_MAX];
   } as;
 } ObjOverloadedMethod;
 
 typedef struct ObjBoundOverloadedMethod {
   Obj obj;
   Value base;
-  ObjOverloadedMethod* overloadedMethod;
+  ObjOverloadedMethod *overloadedMethod;
 } ObjBoundOverloadedMethod;
 
 struct ObjClass {
@@ -129,10 +129,10 @@ typedef struct ObjArray {
   ValueArray list;
 } ObjArray;
 
-
 #define OBJ_TYPE(value) (AS_OBJ(value)->type)
 
-#define IS_BOUND_OVERLOADED_METHOD(value) (isObjType(value, OBJ_BOUND_OVERLOADED_METHOD))
+#define IS_BOUND_OVERLOADED_METHOD(value) \
+  (isObjType(value, OBJ_BOUND_OVERLOADED_METHOD))
 #define IS_OVERLOADED_METHOD(value) (isObjType(value, OBJ_OVERLOADED_METHOD))
 #define IS_CLOSURE(value) (isObjType(value, OBJ_CLOSURE))
 #define IS_ARRAY(value) (isObjType(value, OBJ_ARRAY))
@@ -143,11 +143,16 @@ typedef struct ObjArray {
 #define IS_FUNCTION(value) (isObjType(value, OBJ_FUNCTION))
 #define IS_NATIVE_FUNCTION(value) (isObjType(value, OBJ_NATIVE_FN))
 
-#define AS_USER_BOUND_OVERLOADED_METHOD(value, arity) (((ObjBoundOverloadedMethod *)AS_OBJ(value))->overloadedMethod->as.userMethods[arity])
-#define AS_NATIVE_BOUND_OVERLOADED_METHOD(value, arity) (((ObjBoundOverloadedMethod *)AS_OBJ(value))->overloadedMethod->as.nativeMethods[arity])
-#define AS_BOUND_OVERLOADED_METHOD(value) ((ObjBoundOverloadedMethod *)AS_OBJ(value))
+#define AS_USER_BOUND_OVERLOADED_METHOD(value, arity) \
+  (((ObjBoundOverloadedMethod *)AS_OBJ(value))        \
+       ->overloadedMethod->as.userMethods[arity])
+#define AS_NATIVE_BOUND_OVERLOADED_METHOD(value, arity) \
+  (((ObjBoundOverloadedMethod *)AS_OBJ(value))          \
+       ->overloadedMethod->as.nativeMethods[arity])
+#define AS_BOUND_OVERLOADED_METHOD(value) \
+  ((ObjBoundOverloadedMethod *)AS_OBJ(value))
 #define AS_OVERLOADED_METHOD(value) ((ObjOverloadedMethod *)AS_OBJ(value))
-#define AS_UP_VALUE(value) ((ObjUpValue*)AS_OBJ(value))
+#define AS_UP_VALUE(value) ((ObjUpValue *)AS_OBJ(value))
 #define AS_ARRAY_LIST(value) (((ObjArray *)AS_OBJ(value))->list)
 #define AS_ARRAY(value) ((ObjArray *)AS_OBJ(value))
 #define AS_MODULE(value) ((ObjModule *)AS_OBJ(value))
@@ -160,15 +165,16 @@ typedef struct ObjArray {
 #define AS_NATIVE(value) (((ObjNativeFn *)AS_OBJ(value)))
 #define AS_NATIVE_FN(value) (((ObjNativeFn *)AS_OBJ(value))->function)
 
-
-//Expands to copyString in compilation time with the correct string literal length.
+// Expands to copyString in compilation time with the correct string literal
+// length.
 //"- 1" is used to remove null terminator char '\0'.
-#define CONSTANT_STRING(str) copyString((str), sizeof(str) - 1) 
+#define CONSTANT_STRING(str) copyString((str), sizeof(str) - 1)
 
-ObjBoundOverloadedMethod* newBoundOverloadedMethod(Value base, ObjOverloadedMethod* overloadedMethod);
-ObjOverloadedMethod* newNativeOverloadedMethod(ObjString* name);
-ObjOverloadedMethod* newOverloadedMethod(ObjString* name);
-ObjString* toString(Value value);
+ObjBoundOverloadedMethod *newBoundOverloadedMethod(
+    Value base, ObjOverloadedMethod *overloadedMethod);
+ObjOverloadedMethod *newNativeOverloadedMethod(ObjString *name);
+ObjOverloadedMethod *newOverloadedMethod(ObjString *name);
+ObjString *toString(Value value);
 ObjArray *newArray();
 ObjModule *newModule(ObjFunction *function);
 ObjInstance *newInstance(ObjClass *klass);
@@ -176,7 +182,7 @@ ObjClass *newClass(ObjString *name);
 ObjClosure *newClosure(ObjFunction *function);
 ObjUpValue *newUpValue(Value *value);
 ObjFunction *newFunction();
-ObjNativeFn *newNativeFunction(NativeFn function, ObjString* name, Arity arity);
+ObjNativeFn *newNativeFunction(NativeFn function, ObjString *name, Arity arity);
 ObjString *copyString(const char *chars, int length);
 ObjString *takeString(char *chars, int length);
 void printObject(Value value);
