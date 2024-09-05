@@ -3,7 +3,7 @@
 try {
     [1, 2, 3].slice("a");
 } catch(err) {
-    System.log(err.message);                                                                // expect Expected start to be a number.
+    System.log(err.message);                                                                // expect Expected start index to be a number.
 }
 
 try {
