@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include "common.h"
 #include "core-inc.h"
 #include "memory.h"
 #include "multithreading.h"
@@ -13,40 +14,56 @@
 #include "utils.h"
 #include "value.h"
 
-#define ASCII_UPPERCASE_TO_LOWERCASE_OFFSET 32
+// Return from native function
+#define NATIVE_RETURN(thread, value) \
+  do {                               \
+    push(thread, value);             \
+    return true;                     \
+  } while (false)
 
-#define SAFE_CONSUME_NUMBER(args, name)                                \
+// Throw error from native function
+#define NATIVE_ERROR(thread, value)                \
+  do {                                             \
+    push(thread, OBJ_VAL(CONSTANT_STRING(value))); \
+    return false;                                  \
+  } while (false)
+
+// Safely consume next argument as number, otherwise throw error
+#define SAFE_CONSUME_NUMBER(thread, args, name)                        \
   (double)(IS_NUMBER(*(++args)) ? AS_NUMBER(*args) : ({                \
     char *buffer = ALLOCATE(char, 64);                                 \
     int length = sprintf(buffer, "Expected %s to be a number.", name); \
-    push(&vm.program, OBJ_VAL(takeString(buffer, length)));            \
+    push(thread, OBJ_VAL(takeString(buffer, length)));                 \
     return false;                                                      \
     0.0;                                                               \
   }))
 
-#define SAFE_CONSUME_STRING(args, name)                                \
+// Safely consume next argument as string, otherwise throw error
+#define SAFE_CONSUME_STRING(thread, args, name)                        \
   (ObjString *)(IS_STRING(*(++args)) ? AS_STRING(*args) : ({           \
     char *buffer = ALLOCATE(char, 64);                                 \
     int length = sprintf(buffer, "Expected %s to be a string.", name); \
-    push(&vm.program, OBJ_VAL(takeString(buffer, length)));            \
+    push(thread, OBJ_VAL(takeString(buffer, length)));                 \
     return false;                                                      \
     NULL;                                                              \
   }))
 
-#define SAFE_CONSUME_OBJECT_INSTANCE(args, name)                        \
+// Safely consume next argument as object instance, otherwise throw error
+#define SAFE_CONSUME_OBJECT_INSTANCE(thread, args, name)                \
   (ObjInstance *)(IS_INSTANCE(*(++args)) ? AS_INSTANCE(*args) : ({      \
     char *buffer = ALLOCATE(char, 64);                                  \
     int length = sprintf(buffer, "Expected %s to be an object.", name); \
-    push(&vm.program, OBJ_VAL(takeString(buffer, length)));             \
+    push(thread, OBJ_VAL(takeString(buffer, length)));                  \
     return false;                                                       \
     NULL;                                                               \
   }))
 
-#define SAFE_CONSUME_FUNCTION(args, name)                               \
+// Safely consume next argument as function, otherwise throw error
+#define SAFE_CONSUME_FUNCTION(thread, args, name)                       \
   (ObjClosure *)(IS_CLOSURE(*(++args)) ? AS_CLOSURE(*args) : ({         \
     char *buffer = ALLOCATE(char, 64);                                  \
     int length = sprintf(buffer, "Expected %s to be a funcion.", name); \
-    push(&vm.program, OBJ_VAL(takeString(buffer, length)));             \
+    push(thread, OBJ_VAL(takeString(buffer, length)));                  \
     return false;                                                       \
     NULL;                                                               \
   }))
@@ -85,18 +102,6 @@
 // 4°) Otherwise returns 0.
 #define SAFE_NEGATIVE_CIRCULAR_INDEX(idx, length) \
   ((idx) >= 0 ? (idx) : (-(idx) <= (length) ? (length) + (idx) : 0))
-
-#define NATIVE_RETURN(thread, value) \
-  do {                               \
-    push(thread, value);             \
-    return true;                     \
-  } while (false)
-
-#define NATIVE_ERROR(thread, value)                \
-  do {                                             \
-    push(thread, OBJ_VAL(CONSTANT_STRING(value))); \
-    return false;                                  \
-  } while (false)
 
 static inline bool __nativeClassToString(void *thread, int argCount,
                                          Value *args) {
@@ -206,11 +211,11 @@ static inline bool __nativeArraySlice(void *thread, int argCount, Value *args) {
   int end = array->list.count;
 
   if (argCount >= 1) {
-    start = SAFE_CONSUME_NUMBER(args, "start");
+    start = SAFE_CONSUME_NUMBER(thread, args, "start index");
     // start is inclusive
     start = SAFE_NEGATIVE_CIRCULAR_INDEX(start, array->list.count);
     if (argCount == 2) {
-      end = SAFE_CONSUME_NUMBER(args, "end");
+      end = SAFE_CONSUME_NUMBER(thread, args, "end index");
       // end is exclusive, so we need to be able to access the length-ith
       // positon.
       end = SAFE_INDEX_INCLUSIVE(end, array->list.count);
@@ -248,7 +253,7 @@ static inline bool __nativeArrayInsert(void *thread, int argCount,
                                        Value *args) {
   ObjArray *array = AS_ARRAY(*args);
   int valuesToInsert = argCount - 1;
-  int insertIndex = SAFE_CONSUME_NUMBER(args, "index");
+  int insertIndex = SAFE_CONSUME_NUMBER(thread, args, "index");
   int arrInitialLen = array->list.count;
 
   insertIndex = SAFE_INDEX_INCLUSIVE(insertIndex, array->list.count);
@@ -276,8 +281,8 @@ static inline bool __nativeArrayInsert(void *thread, int argCount,
 static inline bool __nativeArrayRemove(void *thread, int argCount,
                                        Value *args) {
   ObjArray *array = AS_ARRAY(*args);
-  int removeIdx = SAFE_CONSUME_NUMBER(args, "index");
-  int valuesToRemove = SAFE_CONSUME_NUMBER(args, "count");
+  int removeIdx = SAFE_CONSUME_NUMBER(thread, args, "index");
+  int valuesToRemove = SAFE_CONSUME_NUMBER(thread, args, "count");
   int removedValues = 0;
 
   removeIdx = UNCAPPED_NEGATIVE_CIRCULAR_INDEX(removeIdx, array->list.count);
@@ -305,7 +310,7 @@ static inline bool __nativeArrayJoin(void *thread, int argCount, Value *args) {
     NATIVE_RETURN(thread, OBJ_VAL(CONSTANT_STRING("")));
   }
 
-  ObjString *separator = SAFE_CONSUME_STRING(args, "separator");
+  ObjString *separator = SAFE_CONSUME_STRING(thread, args, "separator");
   ObjArray *tmpArray = (ObjArray *)GCWhiteList((Obj *)newArray());
   // initialize with separators length
   int length = (array->list.count - 1) * separator->length;
@@ -369,7 +374,7 @@ static inline bool __nativeArrayReverse(void *thread, int argCount,
 
 static inline bool __nativeArrayTake(void *thread, int argCount, Value *args) {
   ObjArray *array = AS_ARRAY(*args);
-  int count = SAFE_CONSUME_NUMBER(args, "argument");
+  int count = SAFE_CONSUME_NUMBER(thread, args, "argument");
   ObjArray *responseArray = newArray();
   count = count > array->list.count ? array->list.count : count;
 
@@ -393,7 +398,7 @@ static inline bool __nativeStaticArrayIsArray(void *thread, int argCount,
 static inline bool __nativeStaticArrayNew(void *thread, int argCount,
                                           Value *args) {
   ObjArray *array = newArray();
-  int length = argCount == 1 ? SAFE_CONSUME_NUMBER(args, "length") : 0;
+  int length = argCount == 1 ? SAFE_CONSUME_NUMBER(thread, args, "length") : 0;
 
   // push beforehand to the stack to protect from the GC
   push(thread, OBJ_VAL(array));
@@ -458,7 +463,7 @@ void *runThread(void *ctx) {
 
 static inline bool __nativeSystemThreadingStart(void *currentThread,
                                                 int argCount, Value *args) {
-  ObjClosure *function = SAFE_CONSUME_FUNCTION(args, "argument");
+  ObjClosure *function = SAFE_CONSUME_FUNCTION(currentThread, args, "argument");
   ActiveThread *thread = spawnThread((Thread *)currentThread);
 
   push(thread->program, OBJ_VAL(function));
@@ -480,7 +485,7 @@ static inline bool __nativeSystemThreadingStart(void *currentThread,
 
 static inline bool __nativeSystemThreadingJoin(void *currentThread,
                                                int argCount, Value *args) {
-  int threadId = (int)SAFE_CONSUME_NUMBER(args, "thread id");
+  int threadId = (int)SAFE_CONSUME_NUMBER(currentThread, args, "thread id");
   ActiveThread *thread = getThread(threadId);
   void *res;
 
@@ -537,11 +542,11 @@ static inline bool __nativeStringToLowerCase(void *thread, int argCount,
 static inline bool __nativeStringIncludes(void *thread, int argCount,
                                           Value *args) {
   ObjString *string = AS_STRING(*args);
-  ObjString *searchString = SAFE_CONSUME_STRING(args, "searchString");
+  ObjString *searchString = SAFE_CONSUME_STRING(thread, args, "searchString");
   int start = 0;
 
   if (argCount > 1) {
-    start = (int)SAFE_CONSUME_NUMBER(args, "start");
+    start = (int)SAFE_CONSUME_NUMBER(thread, args, "start");
     start = SAFE_NEGATIVE_CIRCULAR_INDEX(start, string->length);
   }
 
@@ -567,7 +572,7 @@ static inline bool __nativeStringIncludes(void *thread, int argCount,
 static inline bool __nativeStringSplit(void *thread, int argCount,
                                        Value *args) {
   ObjString *string = AS_STRING(*args);
-  ObjString *separator = SAFE_CONSUME_STRING(args, "separator");
+  ObjString *separator = SAFE_CONSUME_STRING(thread, args, "separator");
   ObjArray *response = newArray();
 
   // push beforehand to the stack to protect from the GC
@@ -607,11 +612,11 @@ static inline bool __nativeStringSubstr(void *thread, int argCount,
   int start = 0;
   int end = string->length;
 
-  start = SAFE_CONSUME_NUMBER(args, "startIdx");
+  start = SAFE_CONSUME_NUMBER(thread, args, "start index");
   start = SAFE_NEGATIVE_CIRCULAR_INDEX(start, string->length);
 
   if (argCount > 1) {
-    end = SAFE_CONSUME_NUMBER(args, "endIdx");
+    end = SAFE_CONSUME_NUMBER(thread, args, "end index");
     end = SAFE_INDEX_INCLUSIVE(end, string->length);
   }
 
@@ -634,7 +639,7 @@ static inline bool __nativeStringLength(void *thread, int argCount,
 static inline bool __nativeStringEndsWith(void *thread, int argCount,
                                           Value *args) {
   ObjString *string = AS_STRING(*args);
-  ObjString *searchString = SAFE_CONSUME_STRING(args, "searchString");
+  ObjString *searchString = SAFE_CONSUME_STRING(thread, args, "searchString");
   int start = string->length - searchString->length;
 
   // searchString length is greater than string length
@@ -654,7 +659,7 @@ static inline bool __nativeStringEndsWith(void *thread, int argCount,
 static inline bool __nativeStringStarsWith(void *thread, int argCount,
                                            Value *args) {
   ObjString *string = AS_STRING(*args);
-  ObjString *searchString = SAFE_CONSUME_STRING(args, "searchString");
+  ObjString *searchString = SAFE_CONSUME_STRING(thread, args, "searchString");
 
   if (searchString->length > string->length) {
     NATIVE_RETURN(thread, FALSE_VAL);
@@ -686,7 +691,7 @@ static inline bool __nativeStringTrimEnd(void *thread, int argCount,
 static inline bool __nativeStringCharCodeAt(void *thread, int argCount,
                                             Value *args) {
   ObjString *string = AS_STRING(*args);
-  int index = SAFE_CONSUME_NUMBER(args, "index");
+  int index = SAFE_CONSUME_NUMBER(thread, args, "index");
 
   if (index < 0 || index >= string->length) {
     NATIVE_RETURN(thread, NIL_VAL);
@@ -722,7 +727,7 @@ static inline bool __nativeStringIsEmpty(void *thread, int argCount,
 static inline bool __nativeStringCompare(void *thread, int argCount,
                                          Value *args) {
   ObjString *strA = AS_STRING(*args);
-  ObjString *strB = SAFE_CONSUME_STRING(args, "comparisson string");
+  ObjString *strB = SAFE_CONSUME_STRING(thread, args, "comparisson string");
   int length = strA->length > strB->length ? strA->length : strB->length;
 
   for (int idx = 0; idx < length; idx++) {
@@ -763,7 +768,7 @@ static inline bool __nativeStaticNumberIsNumber(void *thread, int argCount,
 
 static inline bool __nativeStaticNumberToNumber(void *thread, int argCount,
                                                 Value *args) {
-  ObjString *string = SAFE_CONSUME_STRING(args, "argument");
+  ObjString *string = SAFE_CONSUME_STRING(thread, args, "argument");
   char *end_ptr;
   double number = strtod(string->chars, &end_ptr);
 
@@ -800,29 +805,29 @@ static inline bool __nativeStaticNumberToInteger(void *thread, int argCount,
 
 static inline bool __nativeStaticMathAbs(void *thread, int argCount,
                                          Value *args) {
-  double num = SAFE_CONSUME_NUMBER(args, "argument");
+  double num = SAFE_CONSUME_NUMBER(thread, args, "argument");
   NATIVE_RETURN(thread, NUMBER_VAL(num < 0 ? -num : num));
 }
 
 static inline bool __nativeStaticMathMin(void *thread, int argCount,
                                          Value *args) {
-  double num = SAFE_CONSUME_NUMBER(args, "first argument");
-  double num2 = SAFE_CONSUME_NUMBER(args, "second argument");
+  double num = SAFE_CONSUME_NUMBER(thread, args, "first argument");
+  double num2 = SAFE_CONSUME_NUMBER(thread, args, "second argument");
   NATIVE_RETURN(thread, NUMBER_VAL(num < num2 ? num : num2));
 }
 
 static inline bool __nativeStaticMathMax(void *thread, int argCount,
                                          Value *args) {
-  double num = SAFE_CONSUME_NUMBER(args, "first argument");
-  double num2 = SAFE_CONSUME_NUMBER(args, "second argument");
+  double num = SAFE_CONSUME_NUMBER(thread, args, "first argument");
+  double num2 = SAFE_CONSUME_NUMBER(thread, args, "second argument");
   NATIVE_RETURN(thread, NUMBER_VAL(num > num2 ? num : num2));
 }
 
 static inline bool __nativeStaticMathClamp(void *thread, int argCount,
                                            Value *args) {
-  double bound = SAFE_CONSUME_NUMBER(args, "lower bound");
-  double num = SAFE_CONSUME_NUMBER(args, "argument");
-  double bound1 = SAFE_CONSUME_NUMBER(args, "high bound");
+  double bound = SAFE_CONSUME_NUMBER(thread, args, "lower bound");
+  double num = SAFE_CONSUME_NUMBER(thread, args, "argument");
+  double bound1 = SAFE_CONSUME_NUMBER(thread, args, "high bound");
 
   double min = bound < bound1 ? bound : bound1;
   double max = bound > bound1 ? bound : bound1;
@@ -835,7 +840,7 @@ static inline bool __nativeStaticErrorNew(void *thread, int argCount,
   ObjInstance *instance =
       (ObjInstance *)GCWhiteList((Obj *)newInstance(vm.errorClass));
   ObjString *message = (ObjString *)GCWhiteList(
-      (Obj *)SAFE_CONSUME_STRING(args, "error message"));
+      (Obj *)SAFE_CONSUME_STRING(thread, args, "error message"));
   ObjString *stack = (ObjString *)GCWhiteList((Obj *)stackTrace(thread));
 
   tableSet(&instance->properties,
@@ -860,21 +865,21 @@ static inline bool __nativeStaticErrorNew(void *thread, int argCount,
 
 static inline bool __nativeStaticSystemSyncLockInit(void *thread, int argCount,
                                                     Value *args) {
-  ObjString *lockId = SAFE_CONSUME_STRING(args, "lock id");
+  ObjString *lockId = SAFE_CONSUME_STRING(thread, args, "lock id");
   initLock(thread, lockId);
   NATIVE_RETURN(thread, NIL_VAL);
 }
 
 static inline bool __nativeStaticSystemSyncLock(void *thread, int argCount,
                                                 Value *args) {
-  ObjString *lockId = SAFE_CONSUME_STRING(args, "lock id");
+  ObjString *lockId = SAFE_CONSUME_STRING(thread, args, "lock id");
   lockSection(thread, lockId);
   NATIVE_RETURN(thread, NIL_VAL);
 }
 
 static inline bool __nativeStaticSystemSyncUnlock(void *thread, int argCount,
                                                   Value *args) {
-  ObjString *lockId = SAFE_CONSUME_STRING(args, "lock id");
+  ObjString *lockId = SAFE_CONSUME_STRING(thread, args, "lock id");
   unlockSection(thread, lockId);
   NATIVE_RETURN(thread, NIL_VAL);
 }
@@ -882,8 +887,8 @@ static inline bool __nativeStaticSystemSyncUnlock(void *thread, int argCount,
 static inline bool __nativeStaticSystemSyncSemaphoreInit(void *thread,
                                                          int argCount,
                                                          Value *args) {
-  ObjString *semaphoreId = SAFE_CONSUME_STRING(args, "semaphore id");
-  int value = (int)SAFE_CONSUME_NUMBER(args, "semaphore initial value");
+  ObjString *semaphoreId = SAFE_CONSUME_STRING(thread, args, "semaphore id");
+  int value = (int)SAFE_CONSUME_NUMBER(thread, args, "semaphore initial value");
   initSemaphore(thread, semaphoreId, value);
   NATIVE_RETURN(thread, NIL_VAL);
 }
@@ -891,7 +896,7 @@ static inline bool __nativeStaticSystemSyncSemaphoreInit(void *thread,
 static inline bool __nativeStaticSystemSyncSemaphorePost(void *thread,
                                                          int argCount,
                                                          Value *args) {
-  ObjString *semaphoreId = SAFE_CONSUME_STRING(args, "semaphore id");
+  ObjString *semaphoreId = SAFE_CONSUME_STRING(thread, args, "semaphore id");
   postSemaphore(thread, semaphoreId);
   NATIVE_RETURN(thread, NIL_VAL);
 }
@@ -899,7 +904,7 @@ static inline bool __nativeStaticSystemSyncSemaphorePost(void *thread,
 static inline bool __nativeStaticSystemSyncSemaphoreWait(void *thread,
                                                          int argCount,
                                                          Value *args) {
-  ObjString *semaphoreId = SAFE_CONSUME_STRING(args, "semaphore id");
+  ObjString *semaphoreId = SAFE_CONSUME_STRING(thread, args, "semaphore id");
   waitSemaphore(thread, semaphoreId);
   NATIVE_RETURN(thread, NIL_VAL);
 }
@@ -907,7 +912,7 @@ static inline bool __nativeStaticSystemSyncSemaphoreWait(void *thread,
 static inline bool __nativeStaticObjectKeys(void *thread, int argCount,
                                             Value *args) {
   ObjInstance *instance = (ObjInstance *)GCWhiteList(
-      (Obj *)SAFE_CONSUME_OBJECT_INSTANCE(args, "argument"));
+      (Obj *)SAFE_CONSUME_OBJECT_INSTANCE(thread, args, "argument"));
   ObjArray *arr = (ObjArray *)GCWhiteList((Obj *)newArray());
 
   for (int idx = 0; idx <= instance->properties.capacity; idx++) {
@@ -931,7 +936,7 @@ static inline bool __nativeStaticObjectKeys(void *thread, int argCount,
 static inline bool __nativeStaticObjectValues(void *thread, int argCount,
                                               Value *args) {
   ObjInstance *instance = (ObjInstance *)GCWhiteList(
-      (Obj *)SAFE_CONSUME_OBJECT_INSTANCE(args, "argument"));
+      (Obj *)SAFE_CONSUME_OBJECT_INSTANCE(thread, args, "argument"));
   ObjArray *arr = (ObjArray *)GCWhiteList((Obj *)newArray());
 
   for (int idx = 0; idx <= instance->properties.capacity; idx++) {
@@ -955,7 +960,7 @@ static inline bool __nativeStaticObjectValues(void *thread, int argCount,
 static inline bool __nativeStaticObjectEntries(void *thread, int argCount,
                                                Value *args) {
   ObjInstance *instance = (ObjInstance *)GCWhiteList(
-      (Obj *)SAFE_CONSUME_OBJECT_INSTANCE(args, "argument"));
+      (Obj *)SAFE_CONSUME_OBJECT_INSTANCE(thread, args, "argument"));
   ObjArray *arr = (ObjArray *)GCWhiteList((Obj *)newArray());
 
   for (int idx = 0; idx <= instance->properties.capacity; idx++) {

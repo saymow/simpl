@@ -7,6 +7,8 @@
 
 #define NAN_BOXING
 
+#define ASCII_UPPERCASE_TO_LOWERCASE_OFFSET 32
+
 #ifdef DEBUG
     #define DEBUG_LOGS
     #define DEBUG_GC
