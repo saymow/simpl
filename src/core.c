@@ -92,11 +92,11 @@
     return true;                     \
   } while (false)
 
-static inline void swap(ValueArray *arr, int i, int j) {
-  Value tmp = arr->values[i];
-  arr->values[i] = arr->values[j];
-  arr->values[j] = tmp;
-}
+#define NATIVE_ERROR(thread, value)                \
+  do {                                             \
+    push(thread, OBJ_VAL(CONSTANT_STRING(value))); \
+    return false;                                  \
+  } while (false)
 
 static inline bool __nativeClassToString(void *thread, int argCount,
                                          Value *args) {
@@ -236,6 +236,12 @@ static inline bool __nativeArrayIndexOf(void *thread, int argCount,
   }
 
   NATIVE_RETURN(thread, NUMBER_VAL(-1));
+}
+
+static inline void swap(ValueArray *arr, int i, int j) {
+  Value tmp = arr->values[i];
+  arr->values[i] = arr->values[j];
+  arr->values[j] = tmp;
 }
 
 static inline bool __nativeArrayInsert(void *thread, int argCount,
@@ -418,8 +424,7 @@ static inline bool __nativeSystemScan(void *thread, int argCount, Value *args) {
 
   if (fgets(buffer, 1024, stdin) == NULL) {
     fflush(stdin);
-    push(thread, OBJ_VAL(CONSTANT_STRING("Unexpected scan error.")));
-    return false;
+    NATIVE_ERROR(thread, "Unexpected scan error.");
   }
   fflush(stdin);
 
@@ -467,8 +472,7 @@ static inline bool __nativeSystemThreadingStart(void *currentThread,
 
   if (pthread_create(&thread->pthreadId, NULL, runThread, thread->program) !=
       0) {
-    push(currentThread, OBJ_VAL(CONSTANT_STRING("Can't spawn new thread.")));
-    return false;
+    NATIVE_ERROR(currentThread, "Can't spawn new thread.");
   }
 
   NATIVE_RETURN(currentThread, NUMBER_VAL((double)thread->id));
@@ -481,16 +485,13 @@ static inline bool __nativeSystemThreadingJoin(void *currentThread,
   void *res;
 
   if (thread == NULL) {
-    push(currentThread, OBJ_VAL(CONSTANT_STRING("Can't find thread.")));
-    return false;
+    NATIVE_ERROR(currentThread, "Can't find thread.");
   }
   if (pthread_join(thread->pthreadId, &res) != 0) {
-    push(currentThread, OBJ_VAL(CONSTANT_STRING("Can't join thread.")));
-    return false;
+    NATIVE_ERROR(currentThread, "Can't join thread.");
   }
   if ((void *)res == NULL) {
-    push(currentThread, OBJ_VAL(CONSTANT_STRING("Joined thread errored.")));
-    return false;
+    NATIVE_ERROR(currentThread, "Joined thread errored.");
   }
 
   Value returnValue = *(Value *)res;
@@ -791,12 +792,9 @@ static inline bool __nativeStaticNumberToInteger(void *thread, int argCount,
     NATIVE_RETURN(thread, NUMBER_VAL(integer));
   } else if (IS_NUMBER(value)) {
     int integer = trunc(AS_NUMBER(value));
-
     NATIVE_RETURN(thread, NUMBER_VAL(integer));
   } else {
-    push(thread, OBJ_VAL(CONSTANT_STRING(
-                     "Expected argument to be a string or a number.")));
-    return false;
+    NATIVE_ERROR(thread, "Expected argument to be a string or a number.");
   }
 }
 
