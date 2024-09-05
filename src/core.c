@@ -721,26 +721,26 @@ static inline bool __nativeStringIsEmpty(void *thread, int argCount,
 }
 
 // Returns:
-// -1: "baseStr" is less than "compareString"
+// -1: "baseStr" is less than "compareStr"
 //  0: strings are equal
-//  1:  "baseStr" is more than "compareString"
+//  1:  "baseStr" is more than "compareStr"
 static inline bool __nativeStringCompare(void *thread, int argCount,
                                          Value *args) {
-  ObjString *strA = AS_STRING(*args);
-  ObjString *strB = SAFE_CONSUME_STRING(thread, args, "comparisson string");
-  int length = strA->length > strB->length ? strA->length : strB->length;
+  ObjString *baseStr = AS_STRING(*args);
+  ObjString *compareStr = SAFE_CONSUME_STRING(thread, args, "comparisson string");
+  int length = baseStr->length > compareStr->length ? compareStr->length : baseStr->length;
 
   for (int idx = 0; idx < length; idx++) {
-    if (strA->chars[idx] < strB->chars[idx]) {
+    if (baseStr->chars[idx] < compareStr->chars[idx]) {
       NATIVE_RETURN(thread, NUMBER_VAL(-1));
-    } else if (strA->chars[idx] > strB->chars[idx]) {
+    } else if (baseStr->chars[idx] > compareStr->chars[idx]) {
       NATIVE_RETURN(thread, NUMBER_VAL(1));
     }
   }
 
-  if (strA->length < strB->length) {
+  if (baseStr->length < compareStr->length) {
     NATIVE_RETURN(thread, NUMBER_VAL(-1));
-  } else if (strA->length > strB->length) {
+  } else if (baseStr->length > compareStr->length) {
     NATIVE_RETURN(thread, NUMBER_VAL(1));
   } else {
     NATIVE_RETURN(thread, NUMBER_VAL(0));
