@@ -47,15 +47,15 @@ typedef struct ClassCompiler {
 
   // Class name token, helpful for compiling the "this" keyword.
   Token name;
-  
+
   // Helpful for compiler the "super" keyword
   bool hasSuperclass;
 } ClassCompiler;
 
 // The parser, just as the Lexer, is updated during two situations:
-// 
+//
 //    1. compiling a module
-//    2. compiling a string interpolation placeholder 
+//    2. compiling a string interpolation placeholder
 typedef struct {
   // Parser's module
   ModuleNode* module;
@@ -68,30 +68,33 @@ typedef struct {
 
   // Error flag set if at least one error occurred during compilation
   bool hadError;
-  
+
   // Panic mode flag used to recover from errors and continue the compilation.
-  // This recovery is only useful for IDE tools used for analysis. 
+  // This recovery is only useful for IDE tools used for analysis.
   // https://stackoverflow.com/questions/66858030/understanding-the-heuristics-in-error-recovery-panic-mode-in-predictive-parsin
   bool panicMode;
 } Parser;
 
-// Helper struct used to handle local variables (are kept on the program stack)  
+// Helper struct used to handle local variables (are kept on the program stack)
 typedef struct {
   // Token name
   Token name;
-  
+
   // Scope depth
   int depth;
 
-  // Flag used to ensure correct implementation of closures and outer scope captured variables. 
+  // Flag used to ensure correct implementation of closures and outer scope
+  // captured variables.
   bool isCaptured;
 } Local;
 
 // Helper struct to ensure propper closure implementation.
-// More on Lua's closure implemention: https://poga.github.io/lua53-notes/function_closure.html
+// More on Lua's closure implemention:
+// https://poga.github.io/lua53-notes/function_closure.html
 typedef struct {
   // Local variables are stored on the program stack.
-  // this index is used to emit the bytecode used to access the enclosured upvalue.   
+  // this index is used to emit the bytecode used to access the enclosured
+  // upvalue.
   uint8_t index;
 
   // Flag used to identify if the upvalue variable is local.
@@ -108,7 +111,7 @@ typedef struct {
 typedef struct Compiler {
   // Source code file (if not in repl mode) absolute to the system path
   char* absPath;
-  
+
   // Program function
   ObjFunction* function;
 
@@ -116,10 +119,10 @@ typedef struct Compiler {
   FunctionType type;
 
   // Track all local variables.
-  // This list mirrors the program stack and is used to get the correct index for accessing
-  // local variables.
-  // UINT8_MAX is a hard limit of all constant instructions. We only use one byte (256 distinct values)
-  // as indexes to map local variables, e.g: 
+  // This list mirrors the program stack and is used to get the correct index
+  // for accessing local variables. UINT8_MAX is a hard limit of all constant
+  // instructions. We only use one byte (256 distinct values) as indexes to map
+  // local variables, e.g:
   Local locals[UINT8_MAX];
   int localCount;
 
@@ -129,24 +132,30 @@ typedef struct Compiler {
   // Track all upvalue variables.
   UpValue upvalues[UINT8_MAX];
 
-  // Pointer the previous function in compilation. 
-  // Compiler structs are chained allocated.  
+  // Pointer the previous function in compilation.
+  // Compiler structs are chained allocated.
   struct Compiler* enclosing;
-  
-  // This chain structure is not only helpful for keeping track of other Compiler structs but for semanthics too.
-  // This parallel chain structure is used mainly for isolating variables between modules, e.g:
-  // 
+
+  // This chain structure is not only helpful for keeping track of other
+  // Compiler structs but for semanthics too. This parallel chain structure is
+  // used mainly for isolating variables between modules, e.g:
+  //
   //    enclosing: Main <- module_A <- module_B <- function_A <- function_B
-  //    semanticallyEnclosing: Main | module_A | module_B <- function_A <- function_B
+  //    semanticallyEnclosing: Main | module_A | module_B <- function_A <-
+  //    function_B
   //
   // This allows for variable-access isolation between modules.
   struct Compiler* semanticallyEnclosing;
-  
-  // This ugly list is used to keep track of whether we are in a switch or loop block, which type of block is, and
-  // how nested we are.
+
+  // This ugly list is used to keep track of whether we are in a switch or loop
+  // block, which type of block is, and how nested we are.
   Block blockStack[LOOP_STACK_MAX + SWITCH_STACK_MAX];
   int blockStackCount;
 } Compiler;
+
+ObjFunction* compile(const char* source, char* absPath);
+
+void markCompilerRoots();
 
 // Get compiler current function chunk
 static Chunk* currentChunk();
@@ -164,7 +173,7 @@ static ObjFunction* endCompiler();
 static void errorAt(Token* token, const char* message);
 
 // Error at previous consumed token
-static void error(const char* message); 
+static void error(const char* message);
 
 // Error at current token
 static void errorAtCurrent(const char* message);
@@ -206,8 +215,8 @@ static uint8_t identifierConstant(Token* name);
 static void addLocal(Token name);
 
 // Remove last added local varible
-// Sometimes, honestly, once on this compiler, a variable in some contexts is considered
-// as a reserved word. 
+// Sometimes, honestly, once on this compiler, a variable in some contexts is
+// considered as a reserved word.
 static void removeLastLocal();
 
 // Mark last local variable as initialized.
@@ -316,17 +325,17 @@ static int emitLoopGuard();
 static void whileStatement();
 
 // Add system local variable
-// System local variables are helper variables used in statements such as 
+// System local variables are helper variables used in statements such as
 // "for element of elements" statement
 static void addSystemLocalVariable();
 
-// Parse ranged for statement  
+// Parse ranged for statement
 static void forInRangeStatement(int iterationVariableConstant);
 
-// Parse for each statement or call forInRangeStatement 
+// Parse for each statement or call forInRangeStatement
 static void sugaredForStatement();
 
-// Parse plain for statements or call sugaredForStatement 
+// Parse plain for statements or call sugaredForStatement
 static void forStatement();
 
 // Parse return statement
@@ -368,10 +377,6 @@ static void statement();
 // Parse any expression
 static void expression();
 
-ObjFunction* compile(const char* source, char* absPath);
-
-void markCompilerRoots();
-
 // Parse grouping expression or lambda functions
 static void grouping(bool canAssign);
 
@@ -387,7 +392,7 @@ static void number(bool canAssign);
 // Parse true, false and nil literals
 static void literal(bool canAssign);
 
-// Escape previous string token literal 
+// Escape previous string token literal
 static ObjString* escapeString();
 
 // Parse string interpoltion
@@ -441,7 +446,7 @@ bool isValidIdentifier(Token* token);
 // Parse object literal
 void object(bool canAssign);
 
-// Resolved modules tree 
+// Modules graph
 Modules modules;
 
 // Compiler current parser
@@ -1312,16 +1317,24 @@ ObjModule* compileModule(ModuleNode* node, char* absPath, const char* source) {
 ObjModule* resolveModule(char* absPath, const char* source) {
   ModuleNode* node = NULL;
 
-  if (addDependency(&modules, parser.module, &node, absPath)) {
+  if (findModuleNode(&modules, parser.module, &node, absPath)) {
+    // create dependecy between modules
+    createDependency(parser.module, node);
+
     // module already compiled and can be reused
     return node->module;
   } else {
-    // create a module in COMPILING_STATE
-    createModuleNode(parser.module, &node, absPath, source);
+    // create a module node in COMPILING_STATE
+    createModuleNode(&node, absPath);
+
+    // create dependecy between modules
+    createDependency(parser.module, node);
+
     // compile source code
     ObjModule* module = compileModule(node, absPath, source);
-    // resolve module to COMPILED_STATE
-    resolveDependency(node, module);
+
+    // resolve module node to COMPILED_STATE
+    resolveModuleNode(node, module);
 
     return module;
   }
@@ -1576,10 +1589,12 @@ static void expression() {
 }
 
 ObjFunction* compile(const char* source, char* absPath) {
+  bool hasModulesSupport = absPath != NULL;
+
   Compiler compiler;
   initLexer(source);
   initCompiler(&compiler, absPath, TYPE_SCRIPT);
-  initModules(&modules, source);
+  if (hasModulesSupport) initModules(&modules, absPath);
 
   basePath = absPath;
   parser.module = modules.root;
@@ -1593,8 +1608,8 @@ ObjFunction* compile(const char* source, char* absPath) {
   }
 
   ObjFunction* function = (ObjFunction*)GCWhiteList((Obj*)endCompiler());
-  freeModules(&modules);
   GCPopWhiteList();
+  if (hasModulesSupport) freeModules(&modules);
 
   if (parser.hadError) {
     fprintf(stderr, "at file: %s\n", basePath);

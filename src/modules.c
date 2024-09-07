@@ -8,18 +8,66 @@
 #include "memory.h"
 #include "utils.h"
 
+// Auxilliary struct for graph traversal
 // todo: implement hashset for O(1) lookup perfomance
 typedef struct {
+  ModuleNode** list;
   int count;
   int capacity;
-  ModuleNode** list;
 } SeenNodes;
 
+// Auxilliary struct for graph traversal
 typedef struct {
   int count;
   int capacity;
   ModuleNode** list;
 } NodesStack;
+
+void initModules(Modules* modules, const char* absPath);
+
+bool findModuleNode(Modules* modules, ModuleNode* origin, ModuleNode** node,
+                    const char* absPath);
+
+void createModuleNode(ModuleNode** node, const char* absPath);
+
+void createDependency(ModuleNode* origin, ModuleNode* target);
+
+void resolveModuleNode(ModuleNode* node, ObjModule* module);
+
+static bool searchNode(Modules* modules, module_id_t moduleId,
+                       ModuleNode** responseNode);
+
+void freeModules(Modules* modules);
+
+// Initialize node stack structure
+static void initNodesStack(NodesStack* nodesStack);
+
+// Push node to stack
+static void pushNodesStack(NodesStack* nodesStack, ModuleNode* moduleNode);
+
+// Push node to from stack
+static ModuleNode* popNodesStack(NodesStack* nodesStack);
+
+// Free node stack structure
+static void freeNodesStack(NodesStack* nodesStack);
+
+// Initialize node stack structure
+static void initSeenNodes(SeenNodes* seenNodes);
+
+// Insert node to seen nodes
+static void insertSeenNodes(SeenNodes* seenNodes, ModuleNode* moduleNode);
+
+// Check if node exists on seen nodes
+static bool hasSeenNode(SeenNodes* seenNodes, ModuleNode* moduleNode);
+
+// Free seen nodes
+static void freeSeenNodes(SeenNodes* seenNodes);
+
+// Allocate module node
+static ModuleNode* allocateNode(module_id_t id);
+
+// Free module node
+static void freeNode(ModuleNode* node);
 
 static void initNodesStack(NodesStack* nodesStack) {
   nodesStack->count = 0;
@@ -90,8 +138,8 @@ static ModuleNode* allocateNode(module_id_t id) {
   return node;
 }
 
-void initModules(Modules* modules, const char* source) {
-  modules->root = allocateNode(hashString(source, strlen(source)));
+void initModules(Modules* modules, const char* absPath) {
+  modules->root = allocateNode(hashString(absPath, strlen(absPath)));
 }
 
 static bool searchNode(Modules* modules, module_id_t moduleId,
@@ -129,8 +177,8 @@ static bool searchNode(Modules* modules, module_id_t moduleId,
   return false;
 }
 
-bool addDependency(Modules* modules, ModuleNode* origin, ModuleNode** node,
-                   const char* absPath) {
+bool findModuleNode(Modules* modules, ModuleNode* origin, ModuleNode** node,
+                    const char* absPath) {
   module_id_t targetId = hashString(absPath, strlen(absPath));
   ModuleNode* target = NULL;
 
@@ -147,6 +195,14 @@ bool addDependency(Modules* modules, ModuleNode* origin, ModuleNode** node,
 
   *node = target;
 
+  return true;
+}
+
+void createModuleNode(ModuleNode** node, const char* absPath) {
+  *node = allocateNode(hashString(absPath, strlen(absPath)));
+}
+
+void createDependency(ModuleNode* origin, ModuleNode* target) {
   if (origin->importsCapacity < origin->importsCount + 1) {
     int oldCapacity = origin->importsCapacity;
     origin->importsCapacity = GROW_CAPACITY(oldCapacity);
@@ -155,27 +211,9 @@ bool addDependency(Modules* modules, ModuleNode* origin, ModuleNode** node,
   }
 
   origin->imports[origin->importsCount++] = target;
-
-  return true;
 }
 
-void createModuleNode(ModuleNode* origin, ModuleNode** moduleNode,
-                      const char* absPath, const char* source) {
-  ModuleNode* node = allocateNode(hashString(absPath, strlen(absPath)));
-
-  if (origin->importsCapacity < origin->importsCount + 1) {
-    int oldCapacity = origin->importsCapacity;
-    origin->importsCapacity = GROW_CAPACITY(oldCapacity);
-    origin->imports = GROW_ARRAY(ModuleNode*, origin->imports, oldCapacity,
-                                 origin->importsCapacity);
-  }
-
-  origin->imports[origin->importsCount++] = node;
-
-  *moduleNode = node;
-}
-
-void resolveDependency(ModuleNode* node, ObjModule* module) {
+void resolveModuleNode(ModuleNode* node, ObjModule* module) {
   node->module = module;
   node->state = COMPILED_STATE;
 }
