@@ -26,6 +26,7 @@ void stackLexer(Lexer* nextLexer, const char* source) {
 
 void popLexer() { lexer = lexer->enclosing; }
 
+// Create a token of give TokenType based on the current lexer
 static Token makeToken(TokenType type) {
   Token token;
   token.type = type;
@@ -36,6 +37,7 @@ static Token makeToken(TokenType type) {
   return token;
 }
 
+// Create an error token that should be handled by the compiler
 static Token errorToken(const char* message) {
   Token token;
   token.type = TOKEN_ERROR;
@@ -46,20 +48,25 @@ static Token errorToken(const char* message) {
   return token;
 }
 
-static bool isAtEnd() { return *lexer->current == '\0'; }
+bool isAtEnd() { return *lexer->current == '\0'; }
 
+// Peek current character from current lexer
 static char peek() { return *lexer->current; }
 
+// Peek next character from current lexer
 static char peekNext() {
   if (isAtEnd()) return '\0';
   return lexer->current[1];
 }
 
+// Return current token from current lexer and advance
 static char advance() {
   lexer->current++;
   return lexer->current[-1];
 }
 
+// Advance if current token from current lexer match character and return true.
+// otherwise return false.
 static bool match(char c) {
   if (isAtEnd()) return false;
   if (peek() != c) return false;
@@ -68,6 +75,7 @@ static bool match(char c) {
   return true;
 }
 
+// Skip spaces and special characters
 static void skipWhitespace() {
   for (;;) {
     char c = peek();
@@ -94,6 +102,10 @@ static void skipWhitespace() {
   }
 }
 
+// The lexer role on string interpolation is to ensure the lexical grammar, 
+// e.g, ensuring placeholders parenthesis are correctly placed and terminated.
+// Other than that, it correctly skips special characters that should be 
+// handled by the compiler.
 static Token stringInterpolation() {
   int isPlaceholderOpen = 1;
 
@@ -123,6 +135,7 @@ static Token stringInterpolation() {
   return makeToken(TOKEN_STRING_INTERPOLATION);
 }
 
+// Consume string and ensure it is correctly terminated and special characters are skipped
 static Token string() {
   while (!isAtEnd() && peek() != '"') {
     if (peek() == '$' && peekNext() == '(') {
@@ -144,12 +157,14 @@ static Token string() {
   return makeToken(TOKEN_STRING);
 }
 
+// check if char is digit
 static bool isDigit(char c) { return c >= '0' && c <= '9'; }
 
 bool isAlpha(char c) {
   return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 }
 
+// helper used to check keyword against current lexer token literal
 static TokenType checkKeyword(int start, int length, char* rest,
                               TokenType type) {
   if (lexer->current - lexer->start == start + length &&
@@ -160,6 +175,7 @@ static TokenType checkKeyword(int start, int length, char* rest,
   return TOKEN_IDENTIFIER;
 }
 
+// Trie used to improve perfomance in matching keywords
 static TokenType identifierType() {
   switch (lexer->start[0]) {
     case 'a':
@@ -301,11 +317,13 @@ static TokenType identifierType() {
   return TOKEN_IDENTIFIER;
 }
 
+// Consume user-defined and create a identifier token
 static Token identifier() {
   while (isAlpha(peek()) || isDigit(peek())) advance();
   return makeToken(identifierType());
 }
 
+// Consume number
 static Token number() {
   while (isDigit(peek()) && !isAtEnd()) {
     advance();
@@ -321,6 +339,7 @@ static Token number() {
   return makeToken(TOKEN_NUMBER);
 }
 
+// Scan current token from current lexer.
 Token scanToken() {
   skipWhitespace();
 

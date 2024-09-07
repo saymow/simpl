@@ -76,25 +76,53 @@ typedef enum {
 } TokenType;
 
 typedef struct Token {
+  // Token type
   TokenType type;
+  
+  // Pointer to the start of the token literal on the source code
   const char* start;
+  
+  // Length of the token literal
   int length;
+
+  // Source code line
   int line;
 } Token;
 
 typedef struct Lexer {
+  // Sometimes we may need to start a new lexer for compiling modules or string interpolation expression.
+  // This field is used to keep track of the previous lexer struct.
   struct Lexer* enclosing;
+
+  // Start of the current token literal 
   const char* start;
+
+  // Current of the current token literal
   const char* current;
+
+  // Current source code line 
   int line;
 } Lexer;
 
+// The current lexer is "exported" to the compiler 
 extern Lexer* lexer;
 
+// Initialize a lexer from a source code
 void initLexer(const char* source);
+
+// Scan token based on the current lexer start field 
 Token scanToken();
+
+// Update the current lexer  
 void stackLexer(Lexer* nextLexer, const char* source);
+
+// Pop current lexer and return to the enclosing lexer
 void popLexer();
+
+// Check if a char is alpha
 bool isAlpha(char c);
+
+// Check if reached the end of the lexer source code
+bool isAtEnd();
 
 #endif
