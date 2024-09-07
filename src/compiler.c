@@ -16,6 +16,8 @@
 #include "debug.h"
 #endif
 
+// Helper types used to run the Pratt Parser algorithm.
+// https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html
 typedef enum {
   PREC_NONE,
   PREC_ASSIGNMENT,
@@ -30,12 +32,6 @@ typedef enum {
   PREC_PRIMARY,
 } Precedence;
 
-typedef struct ClassCompiler {
-  struct ClassCompiler* enclosing;
-  Token name;
-  bool hasSuperclass;
-} ClassCompiler;
-
 typedef void (*ParseFn)(bool canAssign);
 
 typedef struct {
@@ -44,66 +40,420 @@ typedef struct {
   Precedence precedence;
 } ParseRule;
 
+// Helper struct to provide information if we are compiling a class
+typedef struct ClassCompiler {
+  // Enclosing class compiler - in case we compile a class inside another class
+  struct ClassCompiler* enclosing;
+
+  // Class name token, helpful for compiling the "this" keyword.
+  Token name;
+  
+  // Helpful for compiler the "super" keyword
+  bool hasSuperclass;
+} ClassCompiler;
+
+// The parser, just as the Lexer, is updated during two situations:
+// 
+//    1. compiling a module
+//    2. compiling a string interpolation placeholder 
 typedef struct {
+  // Parser's module
   ModuleNode* module;
+
+  // Current token
   Token current;
+
+  // Previous token
   Token previous;
+
+  // Error flag set if at least one error occurred during compilation
   bool hadError;
+  
+  // Panic mode flag used to recover from errors and continue the compilation.
+  // This recovery is only useful for IDE tools used for analysis. 
+  // https://stackoverflow.com/questions/66858030/understanding-the-heuristics-in-error-recovery-panic-mode-in-predictive-parsin
   bool panicMode;
 } Parser;
 
+// Helper struct used to handle local variables (are kept on the program stack)  
 typedef struct {
+  // Token name
   Token name;
+  
+  // Scope depth
   int depth;
+
+  // Flag used to ensure correct implementation of closures and outer scope captured variables. 
   bool isCaptured;
 } Local;
 
+// Helper struct to ensure propper closure implementation.
+// More on Lua's closure implemention: https://poga.github.io/lua53-notes/function_closure.html
 typedef struct {
+  // Local variables are stored on the program stack.
+  // this index is used to emit the bytecode used to access the enclosured upvalue.   
   uint8_t index;
+
+  // Flag used to identify if the upvalue variable is local.
   bool isLocal;
 } UpValue;
 
+// Helper block type structure
 typedef enum { SWITCH_BLOCK, LOOP_BLOCK } BlockType;
-
 typedef struct {
   BlockType type;
 } Block;
 
+// Helper Compiler structure
 typedef struct Compiler {
+  // Source code file (if not in repl mode) absolute to the system path
   char* absPath;
+  
+  // Program function
   ObjFunction* function;
+
+  // Compiler behavior may chaange based on the compiler type.
   FunctionType type;
 
+  // Track all local variables.
+  // This list mirrors the program stack and is used to get the correct index for accessing
+  // local variables.
+  // UINT8_MAX is a hard limit of all constant instructions. We only use one byte (256 distinct values)
+  // as indexes to map local variables, e.g: 
   Local locals[UINT8_MAX];
   int localCount;
+
+  // Block depth of the code the in compilation
   int scopeDepth;
+
+  // Track all upvalue variables.
   UpValue upvalues[UINT8_MAX];
 
+  // Pointer the previous function in compilation. 
+  // Compiler structs are chained allocated.  
   struct Compiler* enclosing;
+  
+  // This chain structure is not only helpful for keeping track of other Compiler structs but for semanthics too.
+  // This parallel chain structure is used mainly for isolating variables between modules, e.g:
+  // 
+  //    enclosing: Main <- module_A <- module_B <- function_A <- function_B
+  //    semanticallyEnclosing: Main | module_A | module_B <- function_A <- function_B
+  //
+  // This allows for variable-access isolation between modules.
   struct Compiler* semanticallyEnclosing;
-  FunctionType topLevelType;
-
+  
+  // This ugly list is used to keep track of whether we are in a switch or loop block, which type of block is, and
+  // how nested we are.
   Block blockStack[LOOP_STACK_MAX + SWITCH_STACK_MAX];
   int blockStackCount;
 } Compiler;
 
-static void emitByte(uint8_t byte);
-static void emitBytes(uint8_t byte1, uint8_t byte2);
-static void declaration();
-static void statement();
-static void expression();
-static void emitByte(uint8_t byte);
+// Get compiler current function chunk
+static Chunk* currentChunk();
+
+// Init a new compiler struct
+static void initCompiler(Compiler* compiler, char* absPath, FunctionType type);
+
+// Emit chunk RETURN. All chunks are terminated like this
+static void emitReturn();
+
+// End current compiler and get back to enclosing compiler
+static ObjFunction* endCompiler();
+
+// Error at a given token
+static void errorAt(Token* token, const char* message);
+
+// Error at previous consumed token
+static void error(const char* message); 
+
+// Error at current token
+static void errorAtCurrent(const char* message);
+
+// Advance to the next token
+static void advance();
+
+// Check if current token is of given type
+static bool check(TokenType tokenType);
+
+// Check if current token is of given type. If so, consume
+static bool match(TokenType type);
+
+// Consume current token
+static void consume(TokenType type, const char* message);
+
+// Pratts parser helper function
 static ParseRule* getRule(TokenType type);
+
+// Pratts parser helper function
 static void parsePrecedence(Precedence precedence);
-static void namedVariable(Token token, bool canAssign);
+
+// Emit one byte
+static void emitByte(uint8_t byte);
+
+// Emit two bytes. Most of the instructions is 2-bytes-instruction
+static void emitBytes(uint8_t byte1, uint8_t byte2);
+
+// Create a constant using a given literal value
+static uint8_t makeConstant(Value value);
+
+// Emit constant instruction
+static void emitConstant(Value value);
+
+// Emit a constant for a given name
+static uint8_t identifierConstant(Token* name);
+
+// Add local variable
+static void addLocal(Token name);
+
+// Remove last added local varible
+// Sometimes, honestly, once on this compiler, a variable in some contexts is considered
+// as a reserved word. 
+static void removeLastLocal();
+
+// Mark last local variable as initialized.
+// This prevent ambiguous code like this:
+//    var test = test + 1;
+static void markLocalInitialized();
+
+// Check if two identifiers tokens literals are the same.
+static bool identifiersEqual(Token* a, Token* b);
+
+// Declare a variable using previous consumed token.
+static void declareVariable();
+
+// Declare a variable using any token.
+static void declareVariableUsingToken(Token* name);
+
+// Parse a variable declaration.
+static uint8_t parseVariable(const char* message);
+
+// Define a variable
+static void defineVariable(uint8_t global);
+
+// Parse variable declaration
+static void varDeclaration();
+
+// Handle panic mode synchronization
+static void synchronize();
+
+// Begin a new block scope
+static void beginScope();
+
+// End current block scope
+static void endScope();
+
+// Parse a block of code
+static void block();
+
+// Parse any function
+static void function(FunctionType type);
+
+// Parse function declaration
+static void funDeclaration();
+
+// Parse method
+static void method(Token* className);
+
+// Synthetically create a token of a given type
+static Token syntheticToken(TokenType type, const char* str);
+
+// Parse class declaration
+static void classDeclaration();
+
+// Parse any declaration
+static void declaration();
+
+// Parse expression statement
+static void expressionStatement();
+
+// Emit any Jump instruction + 2-bytes bytecode padding
+static int emitJump(OpCode instruction);
+
+// Patch any jump instruction of any padding
+//
+// The majority of jumps are like this:
+// "
+//  OP_CODE
+//  0xff
+//  0xff
+// "
+// That is, the instruction and two bytes of offset which means padding = 2.
+// Instructions like OP_TRY_CATCH are like:
+// "
+//  OP_CODE
+//  0xff
+//  0xff
+//  0xff
+//  0xff
+//  0xff
+// "
+// That is, after the OP_CODE, there are 5 bytes of padding.
+// In order to correctly calculate the offset we need the padding = 5.
+static int patchJump(int jmp, uint8_t instructionPadding);
+
+// Parse if statement
+static void ifStatement();
+
+// Emit loop instruction
+static void emitLoop(int beforeLoop);
+
+// Begin loop block
+static void beginLoop();
+
+// End loop block
+static void endLoop();
+
+// Begin switch block
+static void beginSwitch();
+
+// End switch block
+static void endSwitch();
+
+// Emit loop guard instruction
+static int emitLoopGuard();
+
+// Parse while statement
+static void whileStatement();
+
+// Add system local variable
+// System local variables are helper variables used in statements such as 
+// "for element of elements" statement
+static void addSystemLocalVariable();
+
+// Parse ranged for statement  
+static void forInRangeStatement(int iterationVariableConstant);
+
+// Parse for each statement or call forInRangeStatement 
+static void sugaredForStatement();
+
+// Parse plain for statements or call sugaredForStatement 
+static void forStatement();
+
+// Parse return statement
+static void returnStatement();
+
+// Compile an imported module
+ObjModule* compileModule(ModuleNode* node, char* absPath, const char* source);
+
+// Resolve an imported module using "modules", or compile it
+ObjModule* resolveModule(char* absPath, const char* source);
+
+// Parse import statement
+static void importStatement();
+
+// Parse export statement
+static void exportStatement();
+
+// Emit try-catch instruction
+static int emitTryCatch();
+
+// Patch try-catch instruction parameter flag
+static void patchTryCatchParameter(int parameter, bool shouldReceive);
+
+// Parse try-catch statement
+static void tryStatement();
+
+// Parse throw statement
+static void throwStatement();
+
+// Parse break statement
+static void breakStatement();
+
+// Parse switch statement
+static void switchStatement();
+
+// Parse any statements
+static void statement();
+
+// Parse any expression
+static void expression();
+
+ObjFunction* compile(const char* source, char* absPath);
+
+void markCompilerRoots();
+
+// Parse grouping expression or lambda functions
+static void grouping(bool canAssign);
+
+// Parse unary operators
+static void unary(bool canAssign);
+
+// Parse binary operators
+static void binary(bool canAssign);
+
+// Parse number literal
+static void number(bool canAssign);
+
+// Parse true, false and nil literals
+static void literal(bool canAssign);
+
+// Escape previous string token literal 
+static ObjString* escapeString();
+
+// Parse string interpoltion
+static void stringInterpolation(bool canAssign);
+
+// Parse plain string or call stringInterpolation
 static void string(bool canAssign);
+
+// Resolve local variable
+static int resolveLocal(Compiler* compiler, Token* name);
+
+// Add upvalue to current compiler
+static int addUpValue(Compiler* compiler, uint8_t index, bool isLocal);
+
+// Resolve variable identifier lookup
+static void namedVariable(Token token, bool canAssign);
+
+// Parse variable identifier
 static void variable(bool canAssign);
+
+// Parse logical "and" operator
+static void _and(bool canAssign);
+
+// Parse logical "or" operator
 static void _or(bool canAssign);
 
+// Parse call arguments list
+static uint8_t argumentsList();
+
+// Parse call
+static void call(bool canAssign);
+
+// Parse function expression
+static void functionExpression(bool canAssign);
+
+// Parse property access or property update
+static void propertyGetOrSet(bool canAssign);
+
+// Parse "this" expression
+static void _this(bool canAssign);
+
+// Parse array expression
+static void array(bool canAssign);
+
+// Parse "super" expression
+static void _super(bool canAssign);
+
+// Check if token literal is a valid identifier
+bool isValidIdentifier(Token* token);
+
+// Parse object literal
+void object(bool canAssign);
+
+// Resolved modules tree 
 Modules modules;
+
+// Compiler current parser
 Parser parser;
+
+// Current compiler
 Compiler* current;
+
+// Current class, if defined, compiler helper
 ClassCompiler* currentClass;
+
+// Entry file absolute path
 char* basePath;
 
 #define GLOBAL_VARIABLES() (current->scopeDepth == 0)
@@ -119,12 +469,6 @@ static void initCompiler(Compiler* compiler, char* absPath, FunctionType type) {
   compiler->localCount = 0;
   compiler->scopeDepth = 0;
   compiler->blockStackCount = 0;
-
-  if (type == TYPE_SCRIPT || type == TYPE_MODULE) {
-    compiler->topLevelType = type;
-  } else {
-    compiler->topLevelType = current->topLevelType;
-  }
 
   current = compiler;
 
@@ -567,26 +911,6 @@ static int emitJump(OpCode instruction) {
   return currentChunk()->count - 2;
 }
 
-/*
- * The majority of jumps are like this:
- * "
- * OP_CODE
- * 0xff
- * 0xff
- * "
- * That is, the instruction and two bytes of offset which means padding = 2.
- * Instructions like OP_TRY_CATCH are like:
- * "
- * OP_CODE
- * 0xff
- * 0xff
- * 0xff
- * 0xff
- * 0xff
- * "
- * That is, after the OP_CODE, there are 5 bytes of padding.
- * In order to correctly calculate the offset we need the padding = 5.
- */
 static int patchJump(int jmp, uint8_t instructionPadding) {
   int offset = currentChunk()->count - jmp - instructionPadding;
   if (offset > UINT16_MAX) {
@@ -1578,8 +1902,6 @@ static void stringInterpolation(bool canAssign) {
       Lexer interpolationLexer;
       Parser interpolationParser;
       Parser previousParser = parser;
-      int sourceLength = idx - interpolationStart;
-      char source[sourceLength + 1];
 
       interpolationParser.module = parser.module;
       interpolationParser.hadError = parser.hadError;
@@ -1587,6 +1909,9 @@ static void stringInterpolation(bool canAssign) {
       parser = interpolationParser;
 
       // setup source code (placeholder literal)
+      int sourceLength = idx - interpolationStart;
+      char source[sourceLength + 1];
+
       for (int i = 0; i < sourceLength; i++) {
         source[i] = template->chars[interpolationStart + i];
       }
@@ -1600,7 +1925,7 @@ static void stringInterpolation(bool canAssign) {
       expression();
 
       // if there are more than one expression, throw error
-      if (*lexer->current != '\0') {
+      if (!isAtEnd()) {
         error("Invalid string interpolation expression.");
       }
 
@@ -1919,6 +2244,7 @@ void object(bool canAssign) {
   emitBytes(OP_OBJECT, (uint8_t)count);
 }
 
+// Pratts parser helper parsing table
 ParseRule rules[] = {
     [TOKEN_LEFT_PAREN] = {grouping, call, PREC_CALL},
     [TOKEN_RIGHT_PAREN] = {NULL, NULL, PREC_NONE},
