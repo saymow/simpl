@@ -42,6 +42,9 @@ const parseSettings = (): Settings => {
       case "run":
         args.mode = Mode.Run;
         break;
+      case "integration":
+          args.mode = Mode.Integration;
+          break;
       default: {
         displayHelp();
         process.exit(1);
@@ -57,6 +60,8 @@ const makeTestRunnerController = (settings: Settings): TestRunnerController => {
     return new BenchmarkTestRunnerController(settings);
   } else if (settings.mode === Mode.Run) {
     return new StandardTestRunnerController(settings, true);
+  } else if (settings.mode == Mode.Integration) {
+    return new StandardTestRunnerController(settings, false, false);
   }
 
   return new StandardTestRunnerController(settings, false);

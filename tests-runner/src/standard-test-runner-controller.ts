@@ -6,10 +6,16 @@ class StandardTestRunnerController extends TestRunnerController {
   private is_running = false;
   private failedTestSuites: StandardTestSuite[] = [];
   private skipAssertions: boolean;
+  private watchMode: boolean;
 
-  constructor(settings: Settings, skipAssertions: boolean) {
+  constructor(
+    settings: Settings,
+    skipAssertions: boolean,
+    watchMode: boolean = true
+  ) {
     super(settings);
     this.skipAssertions = skipAssertions;
+    this.watchMode = watchMode;
   }
 
   private async run() {
@@ -24,8 +30,10 @@ class StandardTestRunnerController extends TestRunnerController {
     this.failedTestSuites =
       (await testsRunner.execute()) ?? this.failedTestSuites;
 
-    this.displayCommands();
     this.is_running = false;
+    if (this.watchMode) {
+      this.displayCommands();
+    }
   }
 
   private async runFailed() {
@@ -48,6 +56,10 @@ class StandardTestRunnerController extends TestRunnerController {
 
   async execute() {
     await this.run();
+
+    if (!this.watchMode) {
+      process.exit(this.failedTestSuites.length ? 1 : 0);
+    }
 
     process.stdin.on("keypress", async (_, key) => {
       if (key.name === "a") {
