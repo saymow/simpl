@@ -2,16 +2,17 @@ name: C/C++ CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
 
 jobs:
   build-windows:
     runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: src
     steps:
-    - uses: actions/checkout@v4
-    - name: update dir
-      run: cd ./src
-    - name: compile
-      run: make compile-optimized
+      - uses: actions/checkout@v4
+      - name: compile
+        run: make compile-optimized
