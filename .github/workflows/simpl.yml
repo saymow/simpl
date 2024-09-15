@@ -1,4 +1,4 @@
-name: C/C++ CI
+name: Simpl CI
 
 on:
   push:
