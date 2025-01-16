@@ -4,12 +4,12 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "dev": "tsnd src/index.ts --vm=\"C:/Users/gustavo/Desktop/projects/simplc/build/simpl.exe\" --tests=\"C:/Users/gustavo/Desktop/projects/simplc/tests/language\"",
-    "dev:benchmark": "tsnd src/index.ts --vm=\"C:/Users/gustavo/Desktop/projects/simplc/build/simpl.exe\" --tests=\"C:/Users/gustavo/Desktop/projects/simplc/tests/benchmark\" --mode=benchmark",
-    "start": "node dist/index.js --vm=\"C:/Users/gustavo/Desktop/projects/simplc/build/simpl.exe\" --tests=\"C:/Users/gustavo/Desktop/projects/simplc/tests/language\"",
-    "start:stress-gc": "node dist/index.js --vm=\"C:/Users/gustavo/Desktop/projects/simplc/build/simpl-stress-gc.exe\" --tests=\"C:/Users/gustavo/Desktop/projects/simplc/tests/language\" --mode=run",
-    "start:benchmark": "node dist/index.js --vm=\"C:/Users/gustavo/Desktop/projects/simplc/build/simpl.exe\" --tests=\"C:/Users/gustavo/Desktop/projects/simplc/tests/benchmark\" --mode=benchmark",
-    "start:ci": "node dist/index.js --vm=\"C:/Users/gustavo/Desktop/projects/simplc/build/simpl.exe\" --tests=\"C:/Users/gustavo/Desktop/projects/simplc/tests/language\" --mode=integration"
+    "dev": "tsnd src/index.ts --vm=\"/home/gustavo/Desktop/projects/simpl/build/simpl.exe\" --tests=\"/home/gustavo/Desktop/projects/simpl/tests/language\"",
+    "dev:benchmark": "tsnd src/index.ts --vm=\"/home/gustavo/Desktop/projects/simpl/build/simpl.exe\" --tests=\"/home/gustavo/Desktop/projects/simpl/tests/benchmark\" --mode=benchmark",
+    "start": "node dist/index.js --vm=\"/home/gustavo/Desktop/projects/simpl/build/simpl.exe\" --tests=\"/home/gustavo/Desktop/projects/simpl/tests/language\"",
+    "start:stress-gc": "node dist/index.js --vm=\"/home/gustavo/Desktop/projects/simpl/build/simpl-stress-gc.exe\" --tests=\"/home/gustavo/Desktop/projects/simpl/tests/language\" --mode=run",
+    "start:benchmark": "node dist/index.js --vm=\"/home/gustavo/Desktop/projects/simpl/build/simpl.exe\" --tests=\"/home/gustavo/Desktop/projects/simpl/tests/benchmark\" --mode=benchmark",
+    "start:ci": "node dist/index.js --vm=\"/home/gustavo/Desktop/projects/simpl/build/simpl.exe\" --tests=\"/home/gustavo/Desktop/projects/simpl/tests/language\" --mode=integration"
   },
   "keywords": [],
   "author": "",
