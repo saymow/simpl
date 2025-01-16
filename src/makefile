@@ -1,4 +1,5 @@
-FLAGS = -lshlwapi -I .
+FLAGS = -lm 
+WIN_FLAGS = -lshlwapi
 DEV_FLAGS = -Wall
 WARNING_FLAGS = -Wextra -Wpedantic
 PROFILE_FLAGS = -pg -no-pie
@@ -15,6 +16,9 @@ all: compile
 
 compile:
 	@gcc -o main.run *.c $(FLAGS) $(DEV_FLAGS)
+
+compile-win:
+	@gcc -o main.run *.c $(FLAGS) $(WIN_FLAGS) $(DEV_FLAGS)
 
 compile-verbose-warnings:
 	@gcc -o main.run *.c $(FLAGS) $(DEV_FLAGS) $(WARNING_FLAGS)
