@@ -25,7 +25,7 @@ Obj *allocateObj(ObjType type, size_t size) {
   vm.objects = object;
 
 #ifdef DEBUG_LOG_GC
-  printf("%p allocate %lld for %d\n", (void *)object, size, type);
+  printf("%p allocate %ld for %d\n", (void *)object, size, type);
 #endif
 
   // Unlock memory allocation area
@@ -161,9 +161,8 @@ ObjUpValue *newUpValue(Value *value) {
 }
 
 ObjClosure *newClosure(ObjFunction *function) {
-  // Since we are not allocating it using the ALLOCATE_OBJ macro, there is no
-  // risk of the GC running and cleaning this. But, we cannot allocate this
-  // after allocating the ObjClosure, because the ALLOCATE macro, internally,
+  // since this is not tracked by the vm, there is no risk of the GC running and cleaning this. 
+  // But, we cannot allocate this after allocating the ObjClosure, because the ALLOCATE macro, internally,
   // can trigger the GC. Garbage Collector 👌
   ObjUpValue **upvalues = ALLOCATE(ObjUpValue *, function->upvalueCount);
   for (int idx = 0; idx < function->upvalueCount; idx++) {

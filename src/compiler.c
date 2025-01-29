@@ -494,6 +494,7 @@ static void initCompiler(Compiler* compiler, char* absPath, FunctionType type) {
       break;
     }
     case TYPE_SCRIPT:
+      compiler->function->name = CONSTANT_STRING("main");
       break;
   }
 
@@ -1589,6 +1590,8 @@ static void expression() {
 }
 
 ObjFunction* compile(const char* source, char* absPath) {
+  // compile is called with absPath = NULL if vm is in repl mode
+  // or if wer are compiling native modules 
   bool hasModulesSupport = absPath != NULL;
 
   Compiler compiler;
@@ -1608,8 +1611,8 @@ ObjFunction* compile(const char* source, char* absPath) {
   }
 
   ObjFunction* function = (ObjFunction*)GCWhiteList((Obj*)endCompiler());
-  GCPopWhiteList();
   if (hasModulesSupport) freeModules(&modules);
+  GCPopWhiteList();
 
   if (parser.hadError) {
     fprintf(stderr, "at file: %s\n", basePath);

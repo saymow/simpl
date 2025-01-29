@@ -360,7 +360,7 @@ void startGarbageCollector() {
 
 #ifdef DEBUG_LOG_GC
   printf("-- gc end\n");
-  printf(" collected %lld bytes (from %d to %lld) next at %lld\n",
+  printf(" collected %ld bytes (from %d to %ld) next at %ld\n",
          before - vm.bytesAllocated, before, vm.bytesAllocated, vm.GCThreshold);
 #endif
 }
