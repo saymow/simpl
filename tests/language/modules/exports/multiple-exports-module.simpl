@@ -1,0 +1,7 @@
+// !skip
+
+var name = "John";
+var lastName = "Doe";
+
+export name;
+export lastName;

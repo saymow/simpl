@@ -1,0 +1,3 @@
+import module from "./multiple-exports-module.simpl";
+
+// error DATA_ERR [line 7] Error at 'export': Modules can only export once.
