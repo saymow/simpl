@@ -14,4 +14,4 @@ class Person {
     }
 }
 
-export { Person: Person, greetings: greetings };
+export { Person, greetings };

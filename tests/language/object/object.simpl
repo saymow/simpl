@@ -5,6 +5,13 @@ var obj = {};
 obj.name = "John";
 obj.lastName = "Doe";
 
+var name = "Jane";
+var lastName = "Doe";
+
+var person2 = { name, lastName };
+
 System.log(obj);                                                            // expect instance of Class
 System.log(obj.name);                                                       // expect John
 System.log(obj.lastName);                                                   // expect Doe
+System.log(person2.name);                                                   // expect Jane
+System.log(person2.lastName);                                               // expect Doe
