@@ -1,16 +1,17 @@
 // Parallel program with mutexes
 
 import Threads from "threads";
+import Sync from "sync";
 
-System.Sync.lockInit("critical-area");
+Sync.lockInit("critical-area");
 
 fun program(ctx) {
-    System.Sync.lock("critical-area");
+    Sync.lock("critical-area");
     var threadId = ctx.count -= 1;
 
     System.log("Thread $(threadId) entered critical area");
     System.log("Thread $(threadId) is about to leave critical area");
-    System.Sync.unlock("critical-area");
+    Sync.unlock("critical-area");
 }
 
 var state = { count: 10 };
