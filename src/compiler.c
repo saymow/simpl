@@ -2264,10 +2264,14 @@ void object(bool canAssign) {
       advance();
 
       uint8_t name = identifierConstant(&parser.previous);
-      consume(TOKEN_COLON, "Expect ':' after object property identifier.");
-
+      
       emitBytes(OP_CONSTANT, name);
-      expression();
+      if (match(TOKEN_COLON)) {
+        expression();
+      } else {
+        namedVariable(parser.previous, false);
+      }
+      
       count++;
 
       if (count > 255) {
