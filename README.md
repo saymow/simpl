@@ -9,6 +9,8 @@
 <p>You can get a feel for <b>Simpl</b> syntax by looking at this <a href="https://reference.wolfram.com/language/ref/ParallelSum.html" target="_blank">parallel sum</a> implementation: </p>
 
 ```
+import Threads from "threads";
+
 fun program(ctx) {
     var sum = 0;
 
@@ -26,13 +28,13 @@ fun papallelSum(array, threadsCount) {
     for idx in range(threadsCount) {
         var start = count;
         count += array.length() / threadsCount;
-        threads[idx] = System.Threading.start(program, { array: array, start: start, end: count });
+        threads[idx] = Threads.start(program, { array: array, start: start, end: count });
     } 
 
-    return threads.reduce((acc, thread) -> acc + System.Threading.join(thread), 0);
+    return threads.reduce((acc, thread) -> acc + Threads.join(thread), 0);
 }
 
 var array = Array(100000).map(() -> 1);
 
-System.log(papallelSum(array, 5));
+System.log(papallelSum(array, 5));                                         // expect 100000
 ```
