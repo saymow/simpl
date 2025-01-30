@@ -1040,7 +1040,6 @@ void initCore(VM *vm) {
   vm->metaErrorClass = NULL;
   vm->metaSystemClass = NULL;
   vm->metaObjectClass = NULL;
-  vm->metaSystemSyncClass = NULL;
   vm->nilClass = NULL;
   vm->boolClass = NULL;
   vm->numberClass = NULL;
@@ -1053,7 +1052,6 @@ void initCore(VM *vm) {
   vm->moduleExportsClass = NULL;
   vm->systemClass = NULL;
   vm->objectClass = NULL;
-  vm->syncClass = NULL;
 
   // ---------------- Heap alocate structs and bind native native functions ----------------
 
@@ -1245,35 +1243,12 @@ void initCore(VM *vm) {
   vm->errorClass = defineNewClass("Error");
   inherit((Obj *)vm->errorClass, vm->metaErrorClass);
 
-  vm->metaSystemSyncClass = defineNewClass("MetaSync");
-  inherit((Obj *)vm->metaSystemSyncClass, vm->klass);
-
-  bindNativeMethod(&vm->metaSystemSyncClass->methods, "lockInit",
-                       __nativeStaticSystemSyncLockInit, ARGS_ARITY_1);
-  bindNativeMethod(&vm->metaSystemSyncClass->methods, "lock",
-                       __nativeStaticSystemSyncLock, ARGS_ARITY_1);
-  bindNativeMethod(&vm->metaSystemSyncClass->methods, "unlock",
-                       __nativeStaticSystemSyncUnlock, ARGS_ARITY_1);
-  bindNativeMethod(&vm->metaSystemSyncClass->methods, "semInit",
-                       __nativeStaticSystemSyncSemaphoreInit, ARGS_ARITY_2);
-  bindNativeMethod(&vm->metaSystemSyncClass->methods, "semPost",
-                       __nativeStaticSystemSyncSemaphorePost, ARGS_ARITY_1);
-  bindNativeMethod(&vm->metaSystemSyncClass->methods, "semWait",
-                       __nativeStaticSystemSyncSemaphoreWait, ARGS_ARITY_1);
-
-  vm->syncClass = defineNewClass("Sync");
-  inherit((Obj *)vm->syncClass, vm->metaSystemSyncClass);
-
   vm->moduleExportsClass = defineNewClass("Exports");
   inherit((Obj *)vm->moduleExportsClass, vm->klass);
 
   vm->metaSystemClass = defineNewClass("MetaSystem");
   inherit((Obj *)vm->metaSystemClass, vm->klass);
 
-  tableSet(&vm->metaSystemClass->methods, vm->syncClass->name,
-           OBJ_VAL(vm->syncClass));
-  // tableSet(&vm->metaSystemClass->methods, vm->threadingClass->name,
-  //          OBJ_VAL(vm->threadingClass));
   bindNativeMethod(&vm->metaSystemClass->methods, "clock",
                        __nativeSystemClock, ARGS_ARITY_0);
   bindNativeMethod(&vm->metaSystemClass->methods, "log", __nativeSystemLog,
@@ -1305,6 +1280,7 @@ void initCore(VM *vm) {
   // Bind "threads" module
 
   ObjClass* metaThreadsClass = defineNewClass("MetaThreads");
+  inherit((Obj *)metaThreadsClass, vm->klass);
 
   bindNativeMethod(&metaThreadsClass->methods, "start", __nativeSystemThreadingStart, ARGS_ARITY_1);
   bindNativeMethod(&metaThreadsClass->methods, "join", __nativeSystemThreadingJoin, ARGS_ARITY_1);
@@ -1313,6 +1289,29 @@ void initCore(VM *vm) {
   inherit((Obj* ) threadsClass, metaThreadsClass);
 
   tableSet(&vm->nativeModules, CONSTANT_STRING("threads"), OBJ_VAL(threadsClass));
+
+  // Bind "sync" module
+
+  ObjClass* metaSystemSyncClass = defineNewClass("MetaSync");
+  inherit((Obj *)metaSystemSyncClass, vm->klass);
+
+  bindNativeMethod(&metaSystemSyncClass->methods, "lockInit",
+                       __nativeStaticSystemSyncLockInit, ARGS_ARITY_1);
+  bindNativeMethod(&metaSystemSyncClass->methods, "lock",
+                       __nativeStaticSystemSyncLock, ARGS_ARITY_1);
+  bindNativeMethod(&metaSystemSyncClass->methods, "unlock",
+                       __nativeStaticSystemSyncUnlock, ARGS_ARITY_1);
+  bindNativeMethod(&metaSystemSyncClass->methods, "semInit",
+                       __nativeStaticSystemSyncSemaphoreInit, ARGS_ARITY_2);
+  bindNativeMethod(&metaSystemSyncClass->methods, "semPost",
+                       __nativeStaticSystemSyncSemaphorePost, ARGS_ARITY_1);
+  bindNativeMethod(&metaSystemSyncClass->methods, "semWait",
+                       __nativeStaticSystemSyncSemaphoreWait, ARGS_ARITY_1);
+
+  ObjClass* syncClass = defineNewClass("Sync");
+  inherit((Obj *)syncClass, metaSystemSyncClass);
+
+  tableSet(&vm->nativeModules, CONSTANT_STRING("sync"), OBJ_VAL(syncClass));
 
   // -------------------------------- Interpret simpl code --------------------------------
   
