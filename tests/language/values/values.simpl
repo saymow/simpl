@@ -19,7 +19,7 @@ class Person {
 var person = Person("John");
 var arr = [1, 2, 3];
 
-System.log(module);                                                                                       // expect instance of Exports
+System.log(module);                                                                                       // expect nil
 System.log(nil);                                                                                          // expect nil
 System.log(true);                                                                                         // expect true
 System.log(false);                                                                                        // expect false
@@ -34,7 +34,7 @@ System.log(closure()());                                                        
 
 System.log("-");                                                                                          // expect -
 
-System.log(module.toString());                                                                            // expect instance of Exports
+System.log(module.toString());                                                                            // expect nil
 System.log(nil.toString());                                                                               // expect nil
 System.log(true.toString());                                                                              // expect true
 System.log(false.toString());                                                                             // expect false

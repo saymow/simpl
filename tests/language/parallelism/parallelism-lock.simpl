@@ -1,5 +1,7 @@
 // Parallel program with mutexes
 
+import Threads from "threads";
+
 System.Sync.lockInit("critical-area");
 
 fun program(ctx) {
@@ -12,10 +14,10 @@ fun program(ctx) {
 }
 
 var state = { count: 10 };
-var threads = Array(10).map(() -> System.Threading.start(program, state));
+var threads = Array(10).map(() -> Threads.start(program, state));
 
 for thread of threads {
-    System.Threading.join(thread);
+    Threads.join(thread);
 }
 
 // expect Thread 9 entered critical area
