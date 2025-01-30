@@ -14,5 +14,4 @@ class Person {
     }
 }
 
-var todo = { Person: Person, greetings: greetings };
-export todo;
+export { Person: Person, greetings: greetings };
