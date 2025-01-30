@@ -444,69 +444,6 @@ static inline bool __nativeSystemClock(void *thread, int argCount,
   NATIVE_RETURN(thread, NUMBER_VAL(clock() / (double)CLOCKS_PER_SEC));
 }
 
-void *runThread(void *ctx) {
-  Thread *programThread = (Thread *)ctx;
-
-  InterpretResult result = run(programThread);
-
-  if (result == INTERPRET_OK) {
-    Value *returnValue = ALLOCATE(Value, 1);
-    *returnValue = peek(programThread, 0);
-
-    pthread_exit(returnValue);
-  } else {
-    pthread_exit(NULL);
-  }
-
-  return NULL;
-}
-
-static inline bool __nativeSystemThreadingStart(void *currentThread,
-                                                int argCount, Value *args) {
-  ObjClosure *function = SAFE_CONSUME_FUNCTION(currentThread, args, "argument");
-  ActiveThread *thread = spawnThread((Thread *)currentThread);
-
-  push(thread->program, OBJ_VAL(function));
-  callEntry(thread->program, function);
-  if (function->function->arity > 0) {
-    if (argCount > 1)
-      push(thread->program, *(++args));
-    else
-      push(thread->program, NIL_VAL);
-  }
-
-  if (pthread_create(&thread->pthreadId, NULL, runThread, thread->program) !=
-      0) {
-    NATIVE_ERROR(currentThread, "Can't spawn new thread.");
-  }
-
-  NATIVE_RETURN(currentThread, NUMBER_VAL((double)thread->id));
-}
-
-static inline bool __nativeSystemThreadingJoin(void *currentThread,
-                                               int argCount, Value *args) {
-  int threadId = (int)SAFE_CONSUME_NUMBER(currentThread, args, "thread id");
-  ActiveThread *thread = getThread(threadId);
-  void *res;
-
-  if (thread == NULL) {
-    NATIVE_ERROR(currentThread, "Can't find thread.");
-  }
-  if (pthread_join(thread->pthreadId, &res) != 0) {
-    NATIVE_ERROR(currentThread, "Can't join thread.");
-  }
-  if ((void *)res == NULL) {
-    NATIVE_ERROR(currentThread, "Joined thread errored.");
-  }
-
-  Value returnValue = *(Value *)res;
-
-  killThread(threadId);
-  FREE(int *, res);
-
-  NATIVE_RETURN(currentThread, returnValue);
-}
-
 static inline bool __nativeStringToUpperCase(void *thread, int argCount,
                                              Value *args) {
   ObjString *string = AS_STRING(*args);
@@ -863,6 +800,69 @@ static inline bool __nativeStaticErrorNew(void *thread, int argCount,
   NATIVE_RETURN(thread, OBJ_VAL(instance));
 }
 
+void *runThread(void *ctx) {
+  Thread *programThread = (Thread *)ctx;
+
+  InterpretResult result = run(programThread);
+
+  if (result == INTERPRET_OK) {
+    Value *returnValue = ALLOCATE(Value, 1);
+    *returnValue = peek(programThread, 0);
+
+    pthread_exit(returnValue);
+  } else {
+    pthread_exit(NULL);
+  }
+
+  return NULL;
+}
+
+static inline bool __nativeSystemThreadingStart(void *currentThread,
+                                                int argCount, Value *args) {
+  ObjClosure *function = SAFE_CONSUME_FUNCTION(currentThread, args, "argument");
+  ActiveThread *thread = spawnThread((Thread *)currentThread);
+
+  push(thread->program, OBJ_VAL(function));
+  callEntry(thread->program, function);
+  if (function->function->arity > 0) {
+    if (argCount > 1)
+      push(thread->program, *(++args));
+    else
+      push(thread->program, NIL_VAL);
+  }
+
+  if (pthread_create(&thread->pthreadId, NULL, runThread, thread->program) !=
+      0) {
+    NATIVE_ERROR(currentThread, "Can't spawn new thread.");
+  }
+
+  NATIVE_RETURN(currentThread, NUMBER_VAL((double)thread->id));
+}
+
+static inline bool __nativeSystemThreadingJoin(void *currentThread,
+                                               int argCount, Value *args) {
+  int threadId = (int)SAFE_CONSUME_NUMBER(currentThread, args, "thread id");
+  ActiveThread *thread = getThread(threadId);
+  void *res;
+
+  if (thread == NULL) {
+    NATIVE_ERROR(currentThread, "Can't find thread.");
+  }
+  if (pthread_join(thread->pthreadId, &res) != 0) {
+    NATIVE_ERROR(currentThread, "Can't join thread.");
+  }
+  if ((void *)res == NULL) {
+    NATIVE_ERROR(currentThread, "Joined thread errored.");
+  }
+
+  Value returnValue = *(Value *)res;
+
+  killThread(threadId);
+  FREE(int *, res);
+
+  NATIVE_RETURN(currentThread, returnValue);
+}
+
 static inline bool __nativeStaticSystemSyncLockInit(void *thread, int argCount,
                                                     Value *args) {
   ObjString *lockId = SAFE_CONSUME_STRING(thread, args, "lock id");
@@ -993,7 +993,7 @@ static inline bool __nativeStaticObjectEntries(void *thread, int argCount,
   NATIVE_RETURN(thread, OBJ_VAL(arr));
 }
 
-static void defineNativeFunction(Table *methods, const char *string,
+static void bindNativeMethod(Table *methods, const char *string,
                                  NativeFn function, Arity arity) {
   ObjString *name = copyString(string, strlen(string));
   ObjNativeFn *native = newNativeFunction(function, name, arity);
@@ -1041,7 +1041,6 @@ void initCore(VM *vm) {
   vm->metaSystemClass = NULL;
   vm->metaObjectClass = NULL;
   vm->metaSystemSyncClass = NULL;
-  vm->metaSystemThreadingClass = NULL;
   vm->nilClass = NULL;
   vm->boolClass = NULL;
   vm->numberClass = NULL;
@@ -1055,14 +1054,15 @@ void initCore(VM *vm) {
   vm->systemClass = NULL;
   vm->objectClass = NULL;
   vm->syncClass = NULL;
-  vm->threadingClass = NULL;
+
+  // ---------------- Heap alocate structs and bind native native functions ----------------
 
   vm->klass = defineNewClass("Class");
   vm->metaStringClass = defineNewClass("MetaString");
   vm->stringClass = defineNewClass("String");
   vm->nativeFunctionClass = defineNewClass("NativeFunction");
 
-  defineNativeFunction(&vm->klass->methods, "toString", __nativeClassToString,
+  bindNativeMethod(&vm->klass->methods, "toString", __nativeClassToString,
                        ARGS_ARITY_0);
 
   // Class inherits from itself
@@ -1070,48 +1070,48 @@ void initCore(VM *vm) {
 
   inherit((Obj *)vm->metaStringClass, vm->klass);
 
-  defineNativeFunction(&vm->metaStringClass->methods, "isString",
+  bindNativeMethod(&vm->metaStringClass->methods, "isString",
                        __nativeStaticStringIsString, ARGS_ARITY_1);
-  defineNativeFunction(&vm->metaStringClass->methods, "new",
+  bindNativeMethod(&vm->metaStringClass->methods, "new",
                        __nativeStaticStringNew, ARGS_ARITY_0);
-  defineNativeFunction(&vm->metaStringClass->methods, "new",
+  bindNativeMethod(&vm->metaStringClass->methods, "new",
                        __nativeStaticStringNew, ARGS_ARITY_1);
-  defineNativeFunction(&vm->metaStringClass->methods, "String",
+  bindNativeMethod(&vm->metaStringClass->methods, "String",
                        __nativeStaticStringNew, ARGS_ARITY_0);
-  defineNativeFunction(&vm->metaStringClass->methods, "String",
+  bindNativeMethod(&vm->metaStringClass->methods, "String",
                        __nativeStaticStringNew, ARGS_ARITY_1);
 
   inherit((Obj *)vm->stringClass, vm->metaStringClass);
 
-  defineNativeFunction(&vm->stringClass->methods, "toUpperCase",
+  bindNativeMethod(&vm->stringClass->methods, "toUpperCase",
                        __nativeStringToUpperCase, ARGS_ARITY_0);
-  defineNativeFunction(&vm->stringClass->methods, "toLowerCase",
+  bindNativeMethod(&vm->stringClass->methods, "toLowerCase",
                        __nativeStringToLowerCase, ARGS_ARITY_0);
-  defineNativeFunction(&vm->stringClass->methods, "includes",
+  bindNativeMethod(&vm->stringClass->methods, "includes",
                        __nativeStringIncludes, ARGS_ARITY_0);
-  defineNativeFunction(&vm->stringClass->methods, "includes",
+  bindNativeMethod(&vm->stringClass->methods, "includes",
                        __nativeStringIncludes, ARGS_ARITY_1);
-  defineNativeFunction(&vm->stringClass->methods, "split", __nativeStringSplit,
+  bindNativeMethod(&vm->stringClass->methods, "split", __nativeStringSplit,
                        ARGS_ARITY_1);
-  defineNativeFunction(&vm->stringClass->methods, "substr",
+  bindNativeMethod(&vm->stringClass->methods, "substr",
                        __nativeStringSubstr, ARGS_ARITY_1);
-  defineNativeFunction(&vm->stringClass->methods, "substr",
+  bindNativeMethod(&vm->stringClass->methods, "substr",
                        __nativeStringSubstr, ARGS_ARITY_2);
-  defineNativeFunction(&vm->stringClass->methods, "length",
+  bindNativeMethod(&vm->stringClass->methods, "length",
                        __nativeStringLength, ARGS_ARITY_0);
-  defineNativeFunction(&vm->stringClass->methods, "endsWith",
+  bindNativeMethod(&vm->stringClass->methods, "endsWith",
                        __nativeStringEndsWith, ARGS_ARITY_1);
-  defineNativeFunction(&vm->stringClass->methods, "startsWith",
+  bindNativeMethod(&vm->stringClass->methods, "startsWith",
                        __nativeStringStarsWith, ARGS_ARITY_1);
-  defineNativeFunction(&vm->stringClass->methods, "trimEnd",
+  bindNativeMethod(&vm->stringClass->methods, "trimEnd",
                        __nativeStringTrimEnd, ARGS_ARITY_0);
-  defineNativeFunction(&vm->stringClass->methods, "trimStart",
+  bindNativeMethod(&vm->stringClass->methods, "trimStart",
                        __nativeStringTrimStart, ARGS_ARITY_0);
-  defineNativeFunction(&vm->stringClass->methods, "charCodeAt",
+  bindNativeMethod(&vm->stringClass->methods, "charCodeAt",
                        __nativeStringCharCodeAt, ARGS_ARITY_1);
-  defineNativeFunction(&vm->stringClass->methods, "isEmpty",
+  bindNativeMethod(&vm->stringClass->methods, "isEmpty",
                        __nativeStringIsEmpty, ARGS_ARITY_0);
-  defineNativeFunction(&vm->stringClass->methods, "compare",
+  bindNativeMethod(&vm->stringClass->methods, "compare",
                        __nativeStringCompare, ARGS_ARITY_1);
 
   inherit((Obj *)vm->nativeFunctionClass, vm->klass);
@@ -1131,11 +1131,11 @@ void initCore(VM *vm) {
   inherit((Obj *)vm->metaNumberClass, vm->klass);
 
   // Define Number static methods
-  defineNativeFunction(&vm->metaNumberClass->methods, "isNumber",
+  bindNativeMethod(&vm->metaNumberClass->methods, "isNumber",
                        __nativeStaticNumberIsNumber, ARGS_ARITY_1);
-  defineNativeFunction(&vm->metaNumberClass->methods, "toNumber",
+  bindNativeMethod(&vm->metaNumberClass->methods, "toNumber",
                        __nativeStaticNumberToNumber, ARGS_ARITY_1);
-  defineNativeFunction(&vm->metaNumberClass->methods, "toInteger",
+  bindNativeMethod(&vm->metaNumberClass->methods, "toInteger",
                        __nativeStaticNumberToInteger, ARGS_ARITY_1);
 
   vm->numberClass = defineNewClass("Number");
@@ -1145,13 +1145,13 @@ void initCore(VM *vm) {
   inherit((Obj *)vm->metaMathClass, vm->klass);
 
   // Define Math static methods
-  defineNativeFunction(&vm->metaMathClass->methods, "abs",
+  bindNativeMethod(&vm->metaMathClass->methods, "abs",
                        __nativeStaticMathAbs, ARGS_ARITY_1);
-  defineNativeFunction(&vm->metaMathClass->methods, "min",
+  bindNativeMethod(&vm->metaMathClass->methods, "min",
                        __nativeStaticMathMin, ARGS_ARITY_2);
-  defineNativeFunction(&vm->metaMathClass->methods, "max",
+  bindNativeMethod(&vm->metaMathClass->methods, "max",
                        __nativeStaticMathMax, ARGS_ARITY_2);
-  defineNativeFunction(&vm->metaMathClass->methods, "clamp",
+  bindNativeMethod(&vm->metaMathClass->methods, "clamp",
                        __nativeStaticMathClamp, ARGS_ARITY_3);
 
   vm->mathClass = defineNewClass("Math");
@@ -1164,82 +1164,82 @@ void initCore(VM *vm) {
   inherit((Obj *)vm->metaArrayClass, vm->klass);
 
   // Array static methods
-  defineNativeFunction(&vm->metaArrayClass->methods, "isArray",
+  bindNativeMethod(&vm->metaArrayClass->methods, "isArray",
                        __nativeStaticArrayIsArray, ARGS_ARITY_1);
-  defineNativeFunction(&vm->metaArrayClass->methods, "new",
+  bindNativeMethod(&vm->metaArrayClass->methods, "new",
                        __nativeStaticArrayNew, ARGS_ARITY_0);
-  defineNativeFunction(&vm->metaArrayClass->methods, "new",
+  bindNativeMethod(&vm->metaArrayClass->methods, "new",
                        __nativeStaticArrayNew, ARGS_ARITY_1);
-  defineNativeFunction(&vm->metaArrayClass->methods, "Array",
+  bindNativeMethod(&vm->metaArrayClass->methods, "Array",
                        __nativeStaticArrayNew, ARGS_ARITY_0);
-  defineNativeFunction(&vm->metaArrayClass->methods, "Array",
+  bindNativeMethod(&vm->metaArrayClass->methods, "Array",
                        __nativeStaticArrayNew, ARGS_ARITY_1);
 
   vm->arrayClass = defineNewClass("Array");
   inherit((Obj *)vm->arrayClass, vm->metaArrayClass);
 
   // Array methods
-  defineNativeFunction(&vm->arrayClass->methods, "length", __nativeArrayLength,
+  bindNativeMethod(&vm->arrayClass->methods, "length", __nativeArrayLength,
                        ARGS_ARITY_0);
-  defineNativeFunction(&vm->arrayClass->methods, "push", __nativeArrayPush,
+  bindNativeMethod(&vm->arrayClass->methods, "push", __nativeArrayPush,
                        ARGS_ARITY_1);
-  defineNativeFunction(&vm->arrayClass->methods, "pop", __nativeArrayPop,
+  bindNativeMethod(&vm->arrayClass->methods, "pop", __nativeArrayPop,
                        ARGS_ARITY_0);
-  defineNativeFunction(&vm->arrayClass->methods, "unshift",
+  bindNativeMethod(&vm->arrayClass->methods, "unshift",
                        __nativeArrayUnshift, ARGS_ARITY_1);
-  defineNativeFunction(&vm->arrayClass->methods, "shift", __nativeArrayShift,
+  bindNativeMethod(&vm->arrayClass->methods, "shift", __nativeArrayShift,
                        ARGS_ARITY_0);
-  defineNativeFunction(&vm->arrayClass->methods, "slice", __nativeArraySlice,
+  bindNativeMethod(&vm->arrayClass->methods, "slice", __nativeArraySlice,
                        ARGS_ARITY_0);
-  defineNativeFunction(&vm->arrayClass->methods, "slice", __nativeArraySlice,
+  bindNativeMethod(&vm->arrayClass->methods, "slice", __nativeArraySlice,
                        ARGS_ARITY_1);
-  defineNativeFunction(&vm->arrayClass->methods, "slice", __nativeArraySlice,
+  bindNativeMethod(&vm->arrayClass->methods, "slice", __nativeArraySlice,
                        ARGS_ARITY_2);
-  defineNativeFunction(&vm->arrayClass->methods, "indexOf",
+  bindNativeMethod(&vm->arrayClass->methods, "indexOf",
                        __nativeArrayIndexOf, ARGS_ARITY_1);
-  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
+  bindNativeMethod(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
                        ARGS_ARITY_2);
-  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
+  bindNativeMethod(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
                        ARGS_ARITY_3);
-  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
+  bindNativeMethod(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
                        ARGS_ARITY_4);
-  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
+  bindNativeMethod(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
                        ARGS_ARITY_5);
-  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
+  bindNativeMethod(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
                        ARGS_ARITY_6);
-  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
+  bindNativeMethod(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
                        ARGS_ARITY_7);
-  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
+  bindNativeMethod(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
                        ARGS_ARITY_8);
-  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
+  bindNativeMethod(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
                        ARGS_ARITY_9);
-  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
+  bindNativeMethod(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
                        ARGS_ARITY_10);
-  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
+  bindNativeMethod(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
                        ARGS_ARITY_11);
-  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
+  bindNativeMethod(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
                        ARGS_ARITY_12);
-  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
+  bindNativeMethod(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
                        ARGS_ARITY_13);
-  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
+  bindNativeMethod(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
                        ARGS_ARITY_14);
-  defineNativeFunction(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
+  bindNativeMethod(&vm->arrayClass->methods, "insert", __nativeArrayInsert,
                        ARGS_ARITY_15);
-  defineNativeFunction(&vm->arrayClass->methods, "remove", __nativeArrayRemove,
+  bindNativeMethod(&vm->arrayClass->methods, "remove", __nativeArrayRemove,
                        ARGS_ARITY_2);
-  defineNativeFunction(&vm->arrayClass->methods, "take", __nativeArrayTake,
+  bindNativeMethod(&vm->arrayClass->methods, "take", __nativeArrayTake,
                        ARGS_ARITY_1);
-  defineNativeFunction(&vm->arrayClass->methods, "join", __nativeArrayJoin,
+  bindNativeMethod(&vm->arrayClass->methods, "join", __nativeArrayJoin,
                        ARGS_ARITY_1);
-  defineNativeFunction(&vm->arrayClass->methods, "reverse",
+  bindNativeMethod(&vm->arrayClass->methods, "reverse",
                        __nativeArrayReverse, ARGS_ARITY_0);
 
   vm->metaErrorClass = defineNewClass("MetaError");
   inherit((Obj *)vm->metaErrorClass, vm->klass);
 
-  defineNativeFunction(&vm->metaErrorClass->methods, "new",
+  bindNativeMethod(&vm->metaErrorClass->methods, "new",
                        __nativeStaticErrorNew, ARGS_ARITY_1);
-  defineNativeFunction(&vm->metaErrorClass->methods, "Error",
+  bindNativeMethod(&vm->metaErrorClass->methods, "Error",
                        __nativeStaticErrorNew, ARGS_ARITY_1);
 
   vm->errorClass = defineNewClass("Error");
@@ -1248,32 +1248,21 @@ void initCore(VM *vm) {
   vm->metaSystemSyncClass = defineNewClass("MetaSync");
   inherit((Obj *)vm->metaSystemSyncClass, vm->klass);
 
-  defineNativeFunction(&vm->metaSystemSyncClass->methods, "lockInit",
+  bindNativeMethod(&vm->metaSystemSyncClass->methods, "lockInit",
                        __nativeStaticSystemSyncLockInit, ARGS_ARITY_1);
-  defineNativeFunction(&vm->metaSystemSyncClass->methods, "lock",
+  bindNativeMethod(&vm->metaSystemSyncClass->methods, "lock",
                        __nativeStaticSystemSyncLock, ARGS_ARITY_1);
-  defineNativeFunction(&vm->metaSystemSyncClass->methods, "unlock",
+  bindNativeMethod(&vm->metaSystemSyncClass->methods, "unlock",
                        __nativeStaticSystemSyncUnlock, ARGS_ARITY_1);
-  defineNativeFunction(&vm->metaSystemSyncClass->methods, "semInit",
+  bindNativeMethod(&vm->metaSystemSyncClass->methods, "semInit",
                        __nativeStaticSystemSyncSemaphoreInit, ARGS_ARITY_2);
-  defineNativeFunction(&vm->metaSystemSyncClass->methods, "semPost",
+  bindNativeMethod(&vm->metaSystemSyncClass->methods, "semPost",
                        __nativeStaticSystemSyncSemaphorePost, ARGS_ARITY_1);
-  defineNativeFunction(&vm->metaSystemSyncClass->methods, "semWait",
+  bindNativeMethod(&vm->metaSystemSyncClass->methods, "semWait",
                        __nativeStaticSystemSyncSemaphoreWait, ARGS_ARITY_1);
 
   vm->syncClass = defineNewClass("Sync");
   inherit((Obj *)vm->syncClass, vm->metaSystemSyncClass);
-
-  vm->metaSystemThreadingClass = defineNewClass("MetaThreading");
-  inherit((Obj *)vm->metaSystemThreadingClass, vm->klass);
-
-  defineNativeFunction(&vm->metaSystemThreadingClass->methods, "start",
-                       __nativeSystemThreadingStart, ARGS_ARITY_1);
-  defineNativeFunction(&vm->metaSystemThreadingClass->methods, "join",
-                       __nativeSystemThreadingJoin, ARGS_ARITY_1);
-
-  vm->threadingClass = defineNewClass("Threading");
-  inherit((Obj *)vm->threadingClass, vm->metaSystemThreadingClass);
 
   vm->moduleExportsClass = defineNewClass("Exports");
   inherit((Obj *)vm->moduleExportsClass, vm->klass);
@@ -1283,13 +1272,13 @@ void initCore(VM *vm) {
 
   tableSet(&vm->metaSystemClass->methods, vm->syncClass->name,
            OBJ_VAL(vm->syncClass));
-  tableSet(&vm->metaSystemClass->methods, vm->threadingClass->name,
-           OBJ_VAL(vm->threadingClass));
-  defineNativeFunction(&vm->metaSystemClass->methods, "clock",
+  // tableSet(&vm->metaSystemClass->methods, vm->threadingClass->name,
+  //          OBJ_VAL(vm->threadingClass));
+  bindNativeMethod(&vm->metaSystemClass->methods, "clock",
                        __nativeSystemClock, ARGS_ARITY_0);
-  defineNativeFunction(&vm->metaSystemClass->methods, "log", __nativeSystemLog,
+  bindNativeMethod(&vm->metaSystemClass->methods, "log", __nativeSystemLog,
                        ARGS_ARITY_1);
-  defineNativeFunction(&vm->metaSystemClass->methods, "scan",
+  bindNativeMethod(&vm->metaSystemClass->methods, "scan",
                        __nativeSystemScan, ARGS_ARITY_0);
 
   vm->systemClass = defineNewClass("System");
@@ -1299,19 +1288,39 @@ void initCore(VM *vm) {
   inherit((Obj *)vm->metaObjectClass, vm->klass);
 
   // Object static methods
-  defineNativeFunction(&vm->metaObjectClass->methods, "keys",
+  bindNativeMethod(&vm->metaObjectClass->methods, "keys",
                        __nativeStaticObjectKeys, ARGS_ARITY_1);
-  defineNativeFunction(&vm->metaObjectClass->methods, "values",
+  bindNativeMethod(&vm->metaObjectClass->methods, "values",
                        __nativeStaticObjectValues, ARGS_ARITY_1);
-  defineNativeFunction(&vm->metaObjectClass->methods, "entries",
+  bindNativeMethod(&vm->metaObjectClass->methods, "entries",
                        __nativeStaticObjectEntries, ARGS_ARITY_1);
 
   vm->objectClass = defineNewClass("Object");
   inherit((Obj *)vm->objectClass, vm->metaObjectClass);
 
-  vm->state = EXTENDING;
+  // -------------------------------- Bind native modules to native modules table ---------
 
+  initTable(&vm->nativeModules);
+
+  // Bind "threads" module
+
+  ObjClass* metaThreadsClass = defineNewClass("MetaThreads");
+
+  bindNativeMethod(&metaThreadsClass->methods, "start", __nativeSystemThreadingStart, ARGS_ARITY_1);
+  bindNativeMethod(&metaThreadsClass->methods, "join", __nativeSystemThreadingJoin, ARGS_ARITY_1);
+
+  ObjClass* threadsClass = defineNewClass("Threads");
+  inherit((Obj* ) threadsClass, metaThreadsClass);
+
+  tableSet(&vm->nativeModules, CONSTANT_STRING("threads"), OBJ_VAL(threadsClass));
+
+  // -------------------------------- Interpret simpl code --------------------------------
+  
+  vm->state = EXTENDING;
+  
   interpret(coreExtension, NULL);
+
+  // -------------------------------- Bind program global namespace -----------------------
 
   tableSet(&vm->program.global, vm->errorClass->name, OBJ_VAL(vm->errorClass));
   tableSet(&vm->program.global, vm->stringClass->name,
@@ -1324,4 +1333,5 @@ void initCore(VM *vm) {
            OBJ_VAL(vm->systemClass));
   tableSet(&vm->program.global, vm->objectClass->name,
            OBJ_VAL(vm->objectClass));
+
 }

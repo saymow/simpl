@@ -84,9 +84,26 @@ ObjArray *newArray() {
 ObjModule *newModule(ObjFunction *function) {
   ObjModule *module = ALLOCATE_OBJ(OBJ_MODULE, ObjModule);
   module->function = function;
-  module->evaluated = false;
+  module->resolved = false;
   module->obj.klass = vm.moduleExportsClass;
-  initTable(&module->exports);
+  module->exports = NIL_VAL;
+
+  return module;
+}
+
+ObjModule *newNativeModule(ObjString* moduleName) {
+  ObjModule *module = ALLOCATE_OBJ(OBJ_MODULE, ObjModule);
+  module->function = NULL;
+  module->native = true;
+  module->resolved = true;
+  module->obj.klass = vm.moduleExportsClass;
+
+  // get native module from table
+  Value value;
+  tableGet(&vm.nativeModules, moduleName, &value);  
+
+  // copy to exports 
+  module->exports = value;
 
   return module;
 }
@@ -277,7 +294,12 @@ void printObject(Value value) {
       printValueArray(&AS_ARRAY(value)->list);
       break;
     case OBJ_MODULE:
-      printf("<%s module>", AS_MODULE(value)->function->name->chars);
+      ObjModule* module = AS_MODULE(value);
+      if (module->native) {
+        printf("<native module>");
+      } else {
+        printf("<%s module>", AS_MODULE(value)->function->name->chars);
+      }
       break;
     case OBJ_INSTANCE:
       printf("instance of %s", AS_INSTANCE(value)->obj.klass->name->chars);

@@ -35,9 +35,13 @@ typedef enum { INITIALIZING, EXTENDING, INITIALIZED } VMState;
 // namespace.
 //
 typedef struct {
+  // Instruction pointer (a pointer to to the closure or module chunk)
   uint8_t* ip;
+  // A pointer to the start of it share of the program stack
   Value* slots;
+  // Frame can either be normal functions or a module
   CallFrameType type;
+  // Global variables
   Table namespace;
   union {
     ObjClosure* closure;
@@ -45,6 +49,7 @@ typedef struct {
   } as;
 } CallFrame;
 
+// Auxiliary struct to handle try-catch statements 
 typedef struct TryCatch {
   CallFrame* frame;
   Value* frameStackTop;
@@ -54,6 +59,7 @@ typedef struct TryCatch {
   bool hasCatchParameter;
 } TryCatch;
 
+// Auxiliary struct to handle loops statements
 typedef struct Loop {
   CallFrame* frame;
   Value* frameStackTop;
@@ -61,6 +67,7 @@ typedef struct Loop {
   uint8_t* outIp;
 } Loop;
 
+// Auxiliary struct to handle switch-case sstatements
 typedef struct Switch {
   CallFrame* frame;
   Value* expression;
@@ -120,31 +127,48 @@ typedef struct ThreadLock {
   ObjString* id;
   // pthreads mutex
   pthread_mutex_t mutex;
-  // Pointer to next active thread
+  // Pointer to next lock
   struct ThreadLock* next;
 } ThreadLock;
 
 typedef struct ThreadSemaphore {
   // id
   ObjString* id;
-  // pthreads mutex
+  // pthreads semaphore
   sem_t semaphore;
-  // Pointer to next active thread
+  // Pointer to next semaphore
   struct ThreadSemaphore* next;
 } ThreadSemaphore;
 
 typedef struct {
+  // The process of initializing the VM is complex and need the VM itself to
+  // interpret some core functionalities. For this, we have a few states to
+  // tweak the VM behavior a little:
+  //
+  //  INITIALIZING: Heap memory allocation, system classes, native
+  //  functions and settings are configured.
+  //
+  //  EXTENDING: Simpl code is interpreted to extend core functionalities.
+  //
+  //  INTIALIZED: It is ready to interpret user code.
+  VMState state;
+
   // String interning table.
   // For performance sake, strings are interned and reused in case it appears
   // somewhere else in the code.
   Table strings;
+
+  // Native modules table.
+  // All native modules are stored in this table and later bound to the user program
+  // when imported. 
+  Table nativeModules;
 
   // Process main thread program
   Thread program;
 
   // Process active threads linked list
   ActiveThread* threads;
-  // Used to assign threads ids and keep them trackable
+  // Counter used to assign threads ids and keep them trackable
   uint32_t threadsCount;
 
   // Process critical sections locks linked list
@@ -154,6 +178,7 @@ typedef struct {
 
   // Root class, everything inherits from it
   ObjClass* klass;
+
   // Meta Classes are used to define static methods and are exposed to the
   // global namespace These are superclasses of the Data Type Classes
   // - Where Array static methods are defined
@@ -172,8 +197,6 @@ typedef struct {
   ObjClass* metaObjectClass;
   // - Where System.Sync static utils methods are defined
   ObjClass* metaSystemSyncClass;
-  // - Where System.Threading static utils methods are defined
-  ObjClass* metaSystemThreadingClass;
 
   // Data Type Classes are superclasses of all data types
   // - Where nil literal inherits from
@@ -198,24 +221,26 @@ typedef struct {
   ObjClass* moduleExportsClass;
   // - Placeholder System subclass (used to access superclass)
   ObjClass* systemClass;
-  // - Placeholder System object (used to access superclass)
+  // - Placeholder Object subclass (used to access superclass)
   // This class is not part of objectInstance inherintance chain
   ObjClass* objectClass;
   // - Placeholder System.Sync utility object (used to access superclass)
   ObjClass* syncClass;
-  // - Placeholder System.Threading utility object (used to access superclass)
-  ObjClass* threadingClass;
 
-  // Default name for lambda functions
+  // Name for lambda functions
   ObjString* lambdaFunctionName;
 
-  // Only one thread can allocate memory at a time, in order to avoid
-  // complications with the GC This mutex is used to guarantee mutual exclusion
-  // between threads.
+  // Only one thread can allocate memory at a time, in order to avoid complications with the GC.
+  // This mutex is used to guarantee mutual exclusion between threads.
   pthread_mutex_t memoryAllocationMutex;
   pthread_mutexattr_t memoryAllocationMutexAttr;
 
   // Garbage Collector fields
+  // fix: when multithreading, the ongoing abstraction for compound allocation is not flawed.  
+  // todo: figure out a thread safe abstraction to lock memory allocation during compound allocation. 
+  // GCWhiteList is not thread safe, but a combination of GCWhiteList + wrapping the entire compound allocation
+  // with the memoryAllocationMutex is thread safe. Though it is pretty ugly and it has a lot of overhead to tweak the GC.  
+  //
   // Memory allocating are handling in three ways:
   //    1. Manual allocation, e.g, module resolution
   //    2. Garbage Collector allocation, we leave the task of freeing unused
@@ -224,8 +249,10 @@ typedef struct {
   //    to several manually allocated objects. Garbage Collector can handle this
   //    by freing the object and its pointers, if the object has ownership of
   //    it.
+  //
   // All tracked objects that Gargage Collector has control over
   Obj* objects;
+  //
   // Most Objects only exists in the presence of others Objects. For instance a
   // Function MUST be associated with a String in order to have a name to be
   // referenced. This field is intended to track the objects assembly line, i.e,
@@ -234,34 +261,21 @@ typedef struct {
   // is triggered.
   Obj* GCWhiteList[GC_WHITE_LIST_MAX];
   int GCWhiteListCount;
+  //
   // Quantity of bytes allocated by the program, it can be manual allocation or
   // not.
   // TODO: files read are not being counted on this.
   size_t bytesAllocated;
+  //
   // Threshold of bytes allocated to trigger Garbage Collector
-  // TODO: there may exist a corner case in which a Garbage collection is
-  // triggered because of too much manual memory allocation - which it should
-  // not.
   size_t GCThreshold;
-  // Garbage Collector Auxiliary list of Objects it was able to mark
-  // The collected objects are: ALL_OBJECTS - MARKED_OBJECTS
+  //
+  // Garbage Collector Auxiliary list of the Objects it was able to mark.
+  // The collected objects are: objects - grayStack
   // That is, objects it could not mark
   Obj** grayStack;
   int grayCount;
   int grayCapacity;
-  // The process of initializing the VM is complex and need VM itself to
-  // interpret some core functionalities. For this, we have a few states to
-  // tweak the VM behavior a little:
-  //
-  //  INITIALIZING: Where the heap memory allocation, system classes, native
-  //  functions
-  // and settings are established.
-  //
-  //  EXTENDING: Where Simpl code is interpreted to extend core functionalities.
-  //
-  //  INTIALIZED: Where it is ready to interpret user code.
-  //
-  VMState state;
 } VM;
 
 typedef enum {

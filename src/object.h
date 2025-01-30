@@ -119,9 +119,16 @@ typedef struct {
 
 typedef struct ObjModule {
   Obj obj;
+  
+  // Native modules (e.g, standard libs) are compiled in C.
+  bool native;
+  // User modules are required to be compiled and have its function.
   ObjFunction *function;
-  bool evaluated;
-  Table exports;
+  // User modules compiled function must be resolved just once.
+  bool resolved;
+  // Native modules exports is bound in compilation time.
+  // User modules exports is the result of the module function and is computed in runtime.
+  Value exports;
 } ObjModule;
 
 typedef struct ObjArray {
@@ -176,6 +183,7 @@ ObjOverloadedMethod *newNativeOverloadedMethod(ObjString *name);
 ObjOverloadedMethod *newOverloadedMethod(ObjString *name);
 ObjString *toString(Value value);
 ObjArray *newArray();
+ObjModule *newNativeModule(ObjString* moduleName);
 ObjModule *newModule(ObjFunction *function);
 ObjInstance *newInstance(ObjClass *klass);
 ObjClass *newClass(ObjString *name);

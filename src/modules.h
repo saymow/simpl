@@ -7,8 +7,7 @@
 // Module id is a hash of the module absolute path and shoud be of type uint32_t
 typedef uint32_t module_id_t;
 
-// Module is created in COMPILING_STATE and after compilation turns to
-// COMPILED_STATE
+// Module is created in COMPILING_STATE and after compilation turns to COMPILED_STATE
 typedef enum { COMPILING_STATE, COMPILED_STATE } ModuleState;
 
 // Module node structure

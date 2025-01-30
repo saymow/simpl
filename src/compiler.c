@@ -494,7 +494,6 @@ static void initCompiler(Compiler* compiler, char* absPath, FunctionType type) {
       break;
     }
     case TYPE_SCRIPT:
-      compiler->function->name = CONSTANT_STRING("main");
       break;
   }
 
@@ -1277,13 +1276,13 @@ static void returnStatement() {
   }
 }
 
-ObjModule* compileModule(ModuleNode* node, char* absPath, const char* source) {
+ObjModule* compileModule(ModuleNode* node, char* path, const char* source) {
   Compiler compiler;
   Lexer moduleLexer;
   Parser moduleParser;
   Parser previousParser = parser;
 
-  initCompiler(&compiler, absPath, TYPE_MODULE);
+  initCompiler(&compiler, path, TYPE_MODULE);
 
   moduleParser.module = node;
   moduleParser.hadError = parser.hadError;
@@ -1306,7 +1305,7 @@ ObjModule* compileModule(ModuleNode* node, char* absPath, const char* source) {
   ObjModule* returnValue = parser.hadError ? NULL : module;
 
   if (parser.hadError) {
-    fprintf(stderr, "at file: %s\n", absPath);
+    fprintf(stderr, "at file: %s\n", path);
   }
 
   parser = previousParser;
@@ -1350,22 +1349,36 @@ static void importStatement() {
   }
   consume(TOKEN_STRING, "Expect import path.");
 
-  ObjString* importPath =
+  ObjString* importName =
       copyString(parser.previous.start + 1, parser.previous.length - 2);
-  char* absPath = resolvePath(basePath, current->absPath, importPath->chars);
-  char* source = readFile(absPath);
-  ObjModule* module = resolveModule(absPath, source);
+  ObjModule* module;
+  Value dummyValue;
 
-  if (module == NULL) {
-    error("Cannot compile module.");
-    return;
+  if (tableGet(&vm.nativeModules, importName, &dummyValue)) {
+    // resolve module as Native module
+    // Native modules are not computed on the dependency tree
+    
+    module = newNativeModule(importName);
+  } else {
+    // resolve module as User module
+
+    // resolve path to always be absolute and hence unique
+    char* absPath = resolvePath(basePath, current->absPath, importName->chars);
+    // load module source code
+    char* source = readFile(absPath);
+    // compile module and arrange module dependencies
+    module = resolveModule(absPath, source);
+
+    if (module == NULL) {
+      error("Cannot compile module.");
+      return;
+    }
+
+    free(source);
+    free(absPath);
   }
 
   uint8_t moduleConstant = makeConstant(OBJ_VAL(module));
-
-  free(source);
-  free(absPath);
-
   emitBytes(OP_IMPORT, moduleConstant);
   if (constant != -1) {
     defineVariable(constant);

@@ -2,6 +2,9 @@
 
 #include <assert.h>
 #include <pthread.h>
+#ifndef PTHREAD_MUTEX_RECURSIVE
+#define PTHREAD_MUTEX_RECURSIVE PTHREAD_MUTEX_RECURSIVE_NP
+#endif
 #include <semaphore.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -76,7 +79,7 @@ void freeVM() {
   freeTable(&vm.strings);
 }
 
-// GCWhiteList is not a thread-safe function.
+// ***** GCWhiteList is not a thread-safe function. ******
 // GCWhiteList should always be followed by a corresponding GCPopWhiteList call.
 // We leverage this fact to guarantuee mutual exclusion.
 Obj* GCWhiteList(Obj* obj) {
@@ -666,6 +669,9 @@ static inline void getObjectProperty(Thread* program, Obj* obj, Value index,
 //  - 2°) Fill resulting string, swapping placeholder literal for placeholder
 //  string value
 static inline Value stringInterpolation(Thread* program, ObjString* template) {
+  
+  pthread_mutex_lock(&vm.memoryAllocationMutex); 
+
   ObjArray* valueArray = (ObjArray*)GCWhiteList((Obj*)newArray());
   int length = template->length;
 
@@ -734,6 +740,8 @@ static inline Value stringInterpolation(Thread* program, ObjString* template) {
 
   GCPopWhiteList(&valueArray);
   buffer[idx] = '\0';
+
+  pthread_mutex_unlock(&vm.memoryAllocationMutex);
 
   return OBJ_VAL(copyString(buffer, idx));
 }
@@ -1523,30 +1531,23 @@ InterpretResult run(Thread* program) {
         break;
       }
       case OP_EXPORT: {
-        ObjString* name = READ_STRING();
+        READ_STRING();
 
-        if (!tableSet(&FRAME_AS_MODULE(program->frame)->exports, name,
-                      pop(program))) {
-          runtimeError(program, NULL,
-                       "Already exporting member with name '%s'.", name->chars);
-        }
-
+        FRAME_AS_MODULE(program->frame)->exports = pop(program); 
         break;
       }
       case OP_IMPORT: {
         ObjModule* module = AS_MODULE(READ_CONSTANT());
 
-        if (!module->evaluated) {
+        if (!module->native && !module->resolved) {
           // Call module function
           push(program, OBJ_VAL(module->function));
           callModule(program, module);
 
           program->frame = &program->frames[program->framesCount - 1];
         } else {
-          // If resolved, just copy it exports properties
-          ObjInstance* exports = newInstance(vm.moduleExportsClass);
-          tableAddAll(&module->exports, &exports->properties);
-          push(program, OBJ_VAL(exports));
+          // If resolved, just copy it exports
+          push(program, module->exports);
         }
 
         break;
@@ -1557,17 +1558,11 @@ InterpretResult run(Thread* program) {
         closeUpValues(program, program->frame->slots);
 
         if (IS_FRAME_MODULE(program->frame)) {
-          // Free module variables namespace and flag as evaluated
+          // Free module variables namespace and flag as resolved
           freeTable(&program->frame->namespace);
-          FRAME_AS_MODULE(program->frame)->evaluated = true;
+          FRAME_AS_MODULE(program->frame)->resolved = true;
 
-          // Copy it exports properties to frame call result
-          ObjInstance* exports = (ObjInstance*)GCWhiteList(
-              (Obj*)newInstance(vm.moduleExportsClass));
-          tableAddAll(&FRAME_AS_MODULE(program->frame)->exports,
-                      &exports->properties);
-          GCPopWhiteList();
-          result = OBJ_VAL(exports);
+          result = FRAME_AS_MODULE(program->frame)->exports;
         }
 
         // Ensure loop blocks are popped if returned inside them

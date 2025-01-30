@@ -75,7 +75,7 @@ static void freeObject(Obj* object) {
     }
     case OBJ_MODULE: {
       ObjModule* module = (ObjModule*)object;
-      freeTable(&module->exports);
+      markValue(module->exports);
       FREE(ObjModule, module);
       break;
     }
@@ -203,6 +203,7 @@ static void markThreads() {
 }
 
 static void markRoots() {
+  markTable(&vm.nativeModules);
   markProgram(&vm.program);
   markThreads();
   markGCWhiteList();
@@ -217,7 +218,6 @@ static void markRoots() {
   markObject((Obj*)vm.metaSystemClass);
   markObject((Obj*)vm.metaObjectClass);
   markObject((Obj*)vm.metaSystemSyncClass);
-  markObject((Obj*)vm.metaSystemThreadingClass);
   markObject((Obj*)vm.nilClass);
   markObject((Obj*)vm.boolClass);
   markObject((Obj*)vm.numberClass);
@@ -231,7 +231,6 @@ static void markRoots() {
   markObject((Obj*)vm.systemClass);
   markObject((Obj*)vm.objectClass);
   markObject((Obj*)vm.syncClass);
-  markObject((Obj*)vm.threadingClass);
 }
 
 static void blackenObject(Obj* obj) {
@@ -240,6 +239,8 @@ static void blackenObject(Obj* obj) {
   printValue(OBJ_VAL(obj));
   printf("\n");
 #endif
+
+  markObject((Obj*) obj->klass);
 
   switch (obj->type) {
     case OBJ_BOUND_OVERLOADED_METHOD: {
@@ -270,7 +271,7 @@ static void blackenObject(Obj* obj) {
     }
     case OBJ_MODULE: {
       ObjModule* module = (ObjModule*)obj;
-      markTable(&module->exports);
+      markValue(module->exports);
       markObject((Obj*)module->function);
       break;
     }
