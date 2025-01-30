@@ -141,8 +141,7 @@ typedef struct Compiler {
   // used mainly for isolating variables between modules, e.g:
   //
   //    enclosing: Main <- module_A <- module_B <- function_A <- function_B
-  //    semanticallyEnclosing: Main | module_A | module_B <- function_A <-
-  //    function_B
+  //    semanticallyEnclosing: Main | module_A | module_B <- function_A <- function_B
   //
   // This allows for variable-access isolation between modules.
   struct Compiler* semanticallyEnclosing;
@@ -151,6 +150,9 @@ typedef struct Compiler {
   // block, which type of block is, and how nested we are.
   Block blockStack[LOOP_STACK_MAX + SWITCH_STACK_MAX];
   int blockStackCount;
+
+  // Modules are expected to use the export statement just once.  
+  bool hasExported; 
 } Compiler;
 
 ObjFunction* compile(const char* source, char* absPath);
@@ -1393,11 +1395,18 @@ static void exportStatement() {
     errorAtCurrent("Expect export statement at the top level of a module.");
     return;
   }
+  if (current->hasExported) {
+    error("Modules can only export once.");
+    return;
+  }
+
   consume(TOKEN_IDENTIFIER, "Expect name.");
   uint8_t constant = identifierConstant(&parser.previous);
 
   namedVariable(parser.previous, false);
   emitBytes(OP_EXPORT, constant);
+  current->hasExported = true;
+  
   consume(TOKEN_SEMICOLON, "Expect ';' after export statement.");
 }
 

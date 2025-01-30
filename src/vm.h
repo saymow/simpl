@@ -241,7 +241,7 @@ typedef struct {
   // GCWhiteList is not thread safe, but a combination of GCWhiteList + wrapping the entire compound allocation
   // with the memoryAllocationMutex is thread safe. Though it is pretty ugly and it has a lot of overhead to tweak the GC.  
   //
-  // Memory allocating are handling in three ways:
+  // Memory allocation is handled in three ways:
   //    1. Manual allocation, e.g, module resolution
   //    2. Garbage Collector allocation, we leave the task of freeing unused
   //    Objects to the GC.
