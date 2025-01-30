@@ -1531,8 +1531,6 @@ InterpretResult run(Thread* program) {
         break;
       }
       case OP_EXPORT: {
-        READ_STRING();
-
         FRAME_AS_MODULE(program->frame)->exports = pop(program); 
         break;
       }

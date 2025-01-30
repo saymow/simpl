@@ -476,6 +476,7 @@ static void initCompiler(Compiler* compiler, char* absPath, FunctionType type) {
   compiler->localCount = 0;
   compiler->scopeDepth = 0;
   compiler->blockStackCount = 0;
+  compiler->hasExported = false;
 
   current = compiler;
 
@@ -1400,13 +1401,10 @@ static void exportStatement() {
     return;
   }
 
-  consume(TOKEN_IDENTIFIER, "Expect name.");
-  uint8_t constant = identifierConstant(&parser.previous);
-
-  namedVariable(parser.previous, false);
-  emitBytes(OP_EXPORT, constant);
+  expression();
+  emitByte(OP_EXPORT);
   current->hasExported = true;
-  
+
   consume(TOKEN_SEMICOLON, "Expect ';' after export statement.");
 }
 

@@ -120,8 +120,6 @@ int disassembleInstruction(Chunk* chunk, int offset) {
       return constantInstruction("OP_DEFINE_GLOBAL", chunk, offset);
     case OP_SET_GLOBAL:
       return constantInstruction("OP_SET_GLOBAL", chunk, offset);
-    case OP_EXPORT:
-      return constantInstruction("OP_EXPORT", chunk, offset);
     case OP_METHOD:
       return constantInstruction("OP_METHOD", chunk, offset);
     case OP_GET_LOCAL:
@@ -158,6 +156,8 @@ int disassembleInstruction(Chunk* chunk, int offset) {
       return flaggedSimpleInstruction("OP_GET_ITEM", chunk, offset);
     case OP_SET_ITEM:
       return simpleInstruction("OP_SET_ITEM", offset);
+    case OP_EXPORT:
+      return simpleInstruction("OP_EXPORT", offset);
     case OP_POP:
       return simpleInstruction("OP_POP", offset);
     case OP_CLOSE_UPVALUE:
