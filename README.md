@@ -21,14 +21,14 @@ fun program(ctx) {
     return sum;
 }
 
-fun papallelSum(array, threadsCount) {
+fun parallelSum(array, threadsCount) {
     var threads = Array(threadsCount);
     var count = 0;
 
     for idx in range(threadsCount) {
         var start = count;
         count += array.length() / threadsCount;
-        threads[idx] = Threads.start(program, { array: array, start: start, end: count });
+        threads[idx] = Threads.start(program, { array, start, end });
     } 
 
     return threads.reduce((acc, thread) -> acc + Threads.join(thread), 0);
