@@ -1,4 +1,5 @@
 // Array of length = 500000000 multiplication with 100 threads
+import Threads from "threads";
 
 fun program(ctx) {
     var sum = 0;
@@ -17,10 +18,10 @@ fun papallelSum(array, threadsCount) {
     for idx in range(threadsCount) {
         var start = count;
         count += array.length() / threadsCount;
-        threads[idx] = System.Thread(program, { array: array, start: start, end: count });
+        threads[idx] = Threads.start(program, { array: array, start: start, end: count });
     } 
 
-    return threads.reduce((acc, thread) -> acc + System.threadJoin(thread), 0);
+    return threads.reduce((acc, thread) -> acc + Threads.join(thread), 0);
 }
 
 var array = Array(500000000).map(() -> 1);
