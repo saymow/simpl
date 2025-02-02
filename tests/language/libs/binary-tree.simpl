@@ -1,0 +1,48 @@
+import BinaryTree from "binary-tree";
+
+var binaryTree = BinaryTree();
+
+binaryTree.insert(20, "a");
+binaryTree.insert(10, "b");
+binaryTree.insert(11, "c");
+binaryTree.insert(9, "d");
+binaryTree.insert(8, "e");
+binaryTree.insert(7, "f");
+binaryTree.insert(15, "g");
+binaryTree.insert(6, "h");
+binaryTree.insert(5, "i");
+binaryTree.insert(4, "j");
+binaryTree.insert(2, "k");
+binaryTree.insert(1, "l");
+
+System.log(binaryTree.find(10));                        // expect b
+System.log(binaryTree.find(14));                        // expect nil
+System.log(binaryTree.find(20));                        // expect a
+System.log(binaryTree.find(15));                        // expect g
+System.log(binaryTree.find(4));                         // expect j
+System.log(binaryTree.find(2));                         // expect k
+System.log(binaryTree.find(55));                        // expect nil
+
+var arr = [];
+
+fun height(node) {
+    if (node == nil) {
+        return 0;
+    }
+
+    return node.height;
+}
+
+fun inOrderTraversal(root, arr) {
+    if (root == nil) {
+        return;
+    }
+
+
+    inOrderTraversal(root.left, arr);
+    arr.push([root.key, root.value, height(root.right) - height(root.left)]);
+    inOrderTraversal(root.right, arr);
+}
+
+inOrderTraversal(binaryTree.root, arr);
+System.log(arr);                                        // expect [[1, l, 0], [2, k, 0], [4, j, 0], [5, i, 0], [6, h, 0], [7, f, 0], [8, e, 0], [9, d, 0], [10, b, 0], [11, c, 1], [15, g, 0], [20, a, -1]]
