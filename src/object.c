@@ -100,7 +100,7 @@ ObjModule *newNativeModule(ObjString* moduleName) {
 
   // get native module from table
   Value value;
-  tableGet(&vm.nativeModules, moduleName, &value);  
+  tableGet(&vm.modules, moduleName, &value);  
 
   // copy to exports 
   module->exports = value;
@@ -172,7 +172,7 @@ ObjClass *newSystemClass(ObjString *name) {
       klass->obj.klass = vm.klass;
       tableAddAllInherintance(&vm.klass->methods, &klass->methods);
 
-      tableSet(&vm.nativeModules, pascalCaseToSnakeCase(name), OBJ_VAL(klass));
+      tableSet(&vm.modules, pascalCaseToSnakeCase(name), OBJ_VAL(klass));
 
       return klass;
     }

@@ -1357,7 +1357,7 @@ static void importStatement() {
   ObjModule* module;
   Value dummyValue;
 
-  if (tableGet(&vm.nativeModules, importName, &dummyValue)) {
+  if (tableGet(&vm.modules, importName, &dummyValue)) {
     // resolve module as Native module
     // Native modules are not computed on the dependency tree
     

@@ -159,10 +159,13 @@ typedef struct {
   // somewhere else in the code.
   Table strings;
 
-  // Native modules table.
-  // All native modules are stored in this table and later bound to the user program
-  // when imported. 
-  Table nativeModules;
+  // Modules table that stores all simpl imported modules.
+  // Native Modules (*) are written in C and common modules in Simpl.
+  // Modules are:
+  // - priority-queue
+  // - (*) threads
+  // - (*) sync
+  Table modules;
 
   // Process main thread program
   Thread program;

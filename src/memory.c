@@ -203,7 +203,7 @@ static void markThreads() {
 }
 
 static void markRoots() {
-  markTable(&vm.nativeModules);
+  markTable(&vm.modules);
   markProgram(&vm.program);
   markThreads();
   markGCWhiteList();

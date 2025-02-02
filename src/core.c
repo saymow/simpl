@@ -445,6 +445,12 @@ static inline bool __nativeSystemClock(void *thread, int argCount,
   NATIVE_RETURN(thread, NUMBER_VAL(clock() / (double)CLOCKS_PER_SEC));
 }
 
+static inline bool __nativeStringHash(void* thread, int argCount, Value *args) {
+  ObjString* string = AS_STRING(*args);
+  
+  NATIVE_RETURN(thread, NUMBER_VAL(string->hash));
+}
+
 static inline bool __nativeStringToUpperCase(void *thread, int argCount,
                                              Value *args) {
   ObjString *string = AS_STRING(*args);
@@ -1082,6 +1088,7 @@ void initCore(VM *vm) {
 
   inherit((Obj *)vm->stringClass, vm->metaStringClass);
 
+  bindNativeMethod(&vm->stringClass->methods, "hash", __nativeStringHash, ARGS_ARITY_0);
   bindNativeMethod(&vm->stringClass->methods, "toUpperCase",
                        __nativeStringToUpperCase, ARGS_ARITY_0);
   bindNativeMethod(&vm->stringClass->methods, "toLowerCase",
@@ -1276,7 +1283,7 @@ void initCore(VM *vm) {
 
   // -------------------------------- Bind native modules to native modules table ---------
 
-  initTable(&vm->nativeModules);
+  initTable(&vm->modules);
 
   // Bind "threads" module
 
@@ -1289,7 +1296,7 @@ void initCore(VM *vm) {
   ObjClass* threadsClass = defineNewClass("Threads");
   inherit((Obj* ) threadsClass, metaThreadsClass);
 
-  tableSet(&vm->nativeModules, CONSTANT_STRING("threads"), OBJ_VAL(threadsClass));
+  tableSet(&vm->modules, CONSTANT_STRING("threads"), OBJ_VAL(threadsClass));
 
   // Bind "sync" module
 
@@ -1312,7 +1319,7 @@ void initCore(VM *vm) {
   ObjClass* syncClass = defineNewClass("Sync");
   inherit((Obj *)syncClass, metaSystemSyncClass);
 
-  tableSet(&vm->nativeModules, CONSTANT_STRING("sync"), OBJ_VAL(syncClass));
+  tableSet(&vm->modules, CONSTANT_STRING("sync"), OBJ_VAL(syncClass));
 
   // -------------------------------- Extending core --------------------------------
   
