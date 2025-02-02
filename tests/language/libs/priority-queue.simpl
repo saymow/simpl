@@ -1,0 +1,16 @@
+import PriorityQueue from "priority-queue";
+
+var queue = PriorityQueue((item) -> item.key);
+
+queue.enqueue({ key: 10 });
+queue.enqueue({ key: 3 });
+System.log(queue.arr.map((item) -> item.key));                  // expect [3, 10]
+queue.enqueue({ key: 2 });
+System.log(queue.arr.map((item) -> item.key));                  // expect [2, 10, 3]
+queue.enqueue({ key: 1 });
+System.log(queue.arr.map((item) -> item.key));                  // expect [1, 2, 3, 10]
+
+System.log(queue.dequeue().key);                                // expect 1
+System.log(queue.dequeue().key);                                // expect 2
+System.log(queue.dequeue().key);                                // expect 3
+System.log(queue.dequeue().key);                                // expect 10
