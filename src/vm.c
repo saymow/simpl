@@ -1628,7 +1628,6 @@ InterpretResult interpret(const char* source, char* absPath) {
   callEntry(&vm.program, closure);
 
   InterpretResult result = run(&vm.program);
-  freeProgram(&vm.program);
 
   return result;
 }

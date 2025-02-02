@@ -116,37 +116,71 @@ ObjInstance *newInstance(ObjClass *klass) {
   return instance;
 }
 
-// System Classes are configured in two phases
-//
-// - When the VM is INITIALIZING we are essentialy creating them
-// and adding native functions.
-// - When the VM is EXTENDING, we are extending their methods using
-// Simpl functions.
-//
-// During the INITIALIZING phase, all inheritance should be handle
-// manually by the VM.
-ObjClass *newSystemClass(ObjString *name) {
-  if (vm.state == INITIALIZING) {
-    ObjClass *klass = ALLOCATE_OBJ(OBJ_CLASS, ObjClass);
-    klass->name = name;
-    initTable(&klass->methods);
+ObjString* pascalCaseToSnakeCase(ObjString* pascalCase) {
+  char buffer[256];
 
-    return klass;
-  } else {
-    if (name->chars == vm.arrayClass->name->chars) {
-      return vm.arrayClass;
-    } else if (name->chars == vm.stringClass->name->chars) {
-      return vm.stringClass;
-    } else if (name->chars == vm.errorClass->name->chars) {
-      return vm.errorClass;
-    } else if (name->chars == vm.mathClass->name->chars) {
-      return vm.metaMathClass;
+  int j = 0;
+  for (int i = 0; i < pascalCase->length; i++) {
+    if (pascalCase->chars[i] > 'A' && pascalCase->chars[i] < 'Z') {
+      if (i > 0) {
+        buffer[j++] = '-';
+      }
+      buffer[j++] = pascalCase->chars[i] + ASCII_UPPERCASE_TO_LOWERCASE_OFFSET; 
     } else {
-      // unreachable
-      fprintf(stderr, "Unable to find system class to extend from.");
-      exit(1);
+      buffer[j++] = pascalCase->chars[i];
     }
   }
+
+  return copyString(buffer, j);
+}
+
+ObjClass *newSystemClass(ObjString *name) {
+  switch (vm.state) {
+    case INITIALIZING: {
+      // VM INITIALIZING phase:
+      // new classes creation is seen as system classes without a propper inheritance structure. 
+
+      ObjClass *klass = ALLOCATE_OBJ(OBJ_CLASS, ObjClass);
+      klass->name = name;
+      initTable(&klass->methods);
+
+      return klass;
+    }
+    case EXTENDING_CORE: {
+      // VM EXTENDING_CORE phase:
+      // new classes creation is seen as increments to existing core classes.
+      // In practice we add methods written in Simpl to classes that contains native methods. 
+
+      if (name->chars == vm.arrayClass->name->chars) {
+        return vm.arrayClass;
+      } else if (name->chars == vm.stringClass->name->chars) {
+        return vm.stringClass;
+      } else if (name->chars == vm.errorClass->name->chars) {
+        return vm.errorClass;
+      } else if (name->chars == vm.mathClass->name->chars) {
+        return vm.metaMathClass;
+      } 
+    }
+    case EXTENDING_MODULES: {
+      // VM EXTENDING_MODULES phase:
+      // new classes creation is seen as new modules to be registred in the native modules table.
+      // Classes names are used for the module name after convertion from PascalCase to snake-case. 
+      ObjClass *klass = ALLOCATE_OBJ(OBJ_CLASS, ObjClass);
+      klass->name = name;
+      initTable(&klass->methods);
+
+      klass->obj.klass = vm.klass;
+      tableAddAllInherintance(&vm.klass->methods, &klass->methods);
+
+      tableSet(&vm.nativeModules, pascalCaseToSnakeCase(name), OBJ_VAL(klass));
+
+      return klass;
+    }
+    case INITIALIZED:
+  }
+
+  fprintf(stderr, "unreachable.");
+  exit(1);
 }
 
 ObjClass *newClass(ObjString *name) {

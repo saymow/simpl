@@ -8,6 +8,7 @@
 
 #include "common.h"
 #include "core-inc.h"
+#include "modules-inc.h"
 #include "memory.h"
 #include "multithreading.h"
 #include "object.h"
@@ -1313,13 +1314,11 @@ void initCore(VM *vm) {
 
   tableSet(&vm->nativeModules, CONSTANT_STRING("sync"), OBJ_VAL(syncClass));
 
-  // -------------------------------- Interpret simpl code --------------------------------
+  // -------------------------------- Extending core --------------------------------
   
-  vm->state = EXTENDING;
+  vm->state = EXTENDING_CORE;
   
   interpret(coreExtension, NULL);
-
-  // -------------------------------- Bind program global namespace -----------------------
 
   tableSet(&vm->program.global, vm->errorClass->name, OBJ_VAL(vm->errorClass));
   tableSet(&vm->program.global, vm->stringClass->name,
@@ -1333,4 +1332,9 @@ void initCore(VM *vm) {
   tableSet(&vm->program.global, vm->objectClass->name,
            OBJ_VAL(vm->objectClass));
 
+  // -------------------------------- Extending modules --------------------------------
+           
+  vm->state = EXTENDING_MODULES;
+
+  interpret(modulesExtension, NULL);
 }

@@ -20,7 +20,7 @@
 
 typedef enum { FRAME_TYPE_CLOSURE, FRAME_TYPE_MODULE } CallFrameType;
 
-typedef enum { INITIALIZING, EXTENDING, INITIALIZED } VMState;
+typedef enum { INITIALIZING, EXTENDING_CORE, EXTENDING_MODULES, INITIALIZED } VMState;
 
 // CallFrames are either function calls or modules, both have their own
 // instruction pointer (ip) and share of the stack (slots). the namespace
@@ -145,10 +145,11 @@ typedef struct {
   // interpret some core functionalities. For this, we have a few states to
   // tweak the VM behavior a little:
   //
-  //  INITIALIZING: Heap memory allocation, system classes, native
-  //  functions and settings are configured.
+  //  INITIALIZING: VM configuration and native core/native modules load.  
   //
-  //  EXTENDING: Simpl code is interpreted to extend core functionalities.
+  //  EXTENDING_CORE: Core is extended with Simpl code.
+  //
+  //  EXTENDING_MODULES: Modules are created with Simpl code.
   //
   //  INTIALIZED: It is ready to interpret user code.
   VMState state;
