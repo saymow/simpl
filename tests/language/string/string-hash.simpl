@@ -1,0 +1,5 @@
+// String.hash
+
+System.log("John".hash());                                              // expect 1.30864e+09
+System.log("Doe".hash());                                               // expect 1.23193e+09
+System.log("John Doe".hash());                                          // expect 1.17234e+09
