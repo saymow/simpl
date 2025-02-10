@@ -34,6 +34,7 @@ static void resetStack(Thread* program) { program->stackTop = program->stack; }
 void initProgram(Thread* program) {
   initTable(&program->global);
   resetStack(program);
+  program->id = 0;
   program->frame = NULL;
   program->upvalues = NULL;
   program->framesCount = 0;
@@ -51,7 +52,16 @@ void initVM() {
   vm.threads = NULL;
   vm.locks = NULL;
   vm.semaphores = NULL;
-  vm.threadsCount = 0;
+  vm.threadsIdCounter = 1;
+  vm.threadsCounter = 0;
+  vm.GCTriggered = false;
+  vm.GCThreadSpawned = false;
+  pthread_mutexattr_init(&vm.GCMutexAttr);
+  pthread_mutexattr_settype(&vm.GCMutexAttr,
+                            PTHREAD_MUTEX_RECURSIVE);
+  pthread_mutex_init(&vm.GCMutex, &vm.GCMutexAttr);
+  pthread_cond_init(&vm.GCSafezoneCond, NULL);
+  vm.safezoneCounter = 0;
   vm.objects = NULL;
   vm.grayCount = 0;
   vm.grayCapacity = 0;
@@ -773,6 +783,8 @@ InterpretResult run(Thread* program) {
   } while (false)
 
   for (;;) {
+    passGCSafezone(program);
+
 #ifdef DEBUG_TRACE_EXECUTION
     printf("        ");
     for (Value* slot = program->stack; slot < program->stackTop; slot++) {

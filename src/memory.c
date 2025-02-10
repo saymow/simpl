@@ -21,16 +21,14 @@ void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
 
   vm.bytesAllocated += newSize - oldSize;
 
-  if (newSize > oldSize) {
+  if (newSize > oldSize && vm.state == INITIALIZED && !vm.GCTriggered) {
 #ifdef DEBUG_STRESS_GC
-    if (vm.state == INITIALIZED) {
-      startGarbageCollector();
+    triggerGarbageCollector();
+#else
+    if (vm.bytesAllocated >= vm.GCThreshold) {
+      triggerGarbageCollector();
     }
 #endif
-
-    if (vm.bytesAllocated >= vm.GCThreshold && vm.state == INITIALIZED) {
-      startGarbageCollector();
-    }
   }
 
   if (newSize == 0) {
@@ -344,10 +342,48 @@ static void sweep() {
   }
 }
 
-void startGarbageCollector() {
-#ifdef DEBUG_LOG_GC
+void triggerGarbageCollector() {
+  pthread_t threadId;
+  if (pthread_create(&threadId, NULL, startGarbageCollector, NULL) != 0) {
+    fprintf(stderr, "Can't spawn garbage collector thread\n");
+    exit(1);
+  }
+
+  vm.GCTriggered = true;
+#if defined(DEBUG_LOG_GC) || defined(DEBUG_LOG_GC_SAFEZONE)
+  printf("-- gc collector is triggered\n");
+#endif
+}
+
+void* startGarbageCollector() {
+  pthread_mutex_lock(&vm.GCMutex);
+  vm.GCThreadSpawned = true;
+#if defined(DEBUG_LOG_GC) || defined(DEBUG_LOG_GC_SAFEZONE)
+  printf("-- gc collector thread is spawned (%d/%d program threads synchronized)\n", 
+        vm.safezoneCounter, 1 + vm.threadsCounter);
+#endif
+
+#if defined(DEBUG_LOG_GC) || defined(DEBUG_LOG_GC_SAFEZONE)
+  uint32_t count = 0;
+#endif
+
+  while (vm.safezoneCounter < 1 + vm.threadsCounter) {
+#if defined(DEBUG_LOG_GC) || defined(DEBUG_LOG_GC_SAFEZONE)
+    if (count % 10000000 == 0) {
+      printf("-- gc collector is awating for sync (%d/%d program threads synchronized)\n", 
+          vm.safezoneCounter, 1 + vm.threadsCounter);
+    }
+    count++;
+#endif
+    pthread_mutex_unlock(&vm.GCMutex);
+    pthread_mutex_lock(&vm.GCMutex);
+  }
+
+#if defined(DEBUG_LOG_GC) || defined(DEBUG_LOG_GC_SAFEZONE)
   int before = vm.bytesAllocated;
-  printf("-- gc begin\n");
+  printf("-- gc collector thread is synchronized (%d/%d program threads synchronized)\n", 
+      vm.safezoneCounter, 1 + vm.threadsCounter);
+  printf("-- gc collector thread begin\n");
 #endif
 
   markRoots();
@@ -356,10 +392,85 @@ void startGarbageCollector() {
   sweep();
 
   vm.GCThreshold = vm.bytesAllocated * GC_HEAP_GROW_FACTOR;
-
-#ifdef DEBUG_LOG_GC
-  printf("-- gc end\n");
+  vm.GCThreadSpawned = false;
+  vm.GCTriggered = false;
+  
+#if defined(DEBUG_LOG_GC) || defined(DEBUG_LOG_GC_SAFEZONE)
+  printf("-- gc collector thread end\n");
   printf(" collected %ld bytes (from %d to %ld) next at %ld\n",
          before - vm.bytesAllocated, before, vm.bytesAllocated, vm.GCThreshold);
+  printf(" program threads about to be released\n");
 #endif
+
+  pthread_mutex_unlock(&vm.GCMutex);
+  pthread_cond_broadcast(&vm.GCSafezoneCond);
+
+  return NULL;
+}
+
+void passGCSafezone(Thread* thread) {
+  pthread_mutex_lock(&vm.GCMutex);
+
+  if (vm.GCThreadSpawned) {
+    vm.safezoneCounter++;
+    #ifdef DEBUG_LOG_GC_SAFEZONE
+      printf("-- gc program %d thread entered safe zone (%d/%d program threads synchronized)\n",
+              thread->id, vm.safezoneCounter, 1 + vm.threadsCounter);
+    #endif
+
+    while (vm.GCThreadSpawned) {
+      #ifdef DEBUG_LOG_GC_SAFEZONE
+        printf("-- gc program %d thread is about to sleep (%d/%d program threads synchronized)\n",
+              thread->id, vm.safezoneCounter, 1 + vm.threadsCounter);
+      #endif
+      pthread_cond_wait(&vm.GCSafezoneCond, &vm.GCMutex);
+      #ifdef DEBUG_LOG_GC_SAFEZONE
+        printf("-- gc program %d thread waked up (%d/%d program threads synchronized)\n",
+              thread->id, vm.safezoneCounter, 1 + vm.threadsCounter);
+      #endif
+    }
+
+    vm.safezoneCounter--;
+    #ifdef DEBUG_LOG_GC_SAFEZONE
+      printf("-- gc program %d thread left safe zone (%d/%d program threads synchronized)\n",
+              thread->id, vm.safezoneCounter, 1 + vm.threadsCounter);
+    #endif
+  }
+
+  pthread_mutex_unlock(&vm.GCMutex);
+}
+
+void enterGCSafezone(Thread* thread) {
+  pthread_mutex_lock(&vm.GCMutex);
+
+  vm.safezoneCounter++;
+  #ifdef DEBUG_LOG_GC_SAFEZONE
+    printf("-- gc program %d thread entered safe zone (%d/%d program threads synchronized)\n",
+            thread->id, vm.safezoneCounter, 1 + vm.threadsCounter);
+  #endif
+
+  pthread_mutex_unlock(&vm.GCMutex);
+}
+
+void leaveGCSafezone(Thread* thread) {
+  pthread_mutex_lock(&vm.GCMutex);
+  
+  while (vm.GCThreadSpawned) {
+    #ifdef DEBUG_LOG_GC_SAFEZONE
+      printf("-- gc program %d thread is about to sleep (%d/%d program threads synchronized)\n",
+              thread->id, vm.safezoneCounter, 1 + vm.threadsCounter);
+    #endif
+    pthread_cond_wait(&vm.GCSafezoneCond, &vm.GCMutex);
+    #ifdef DEBUG_LOG_GC_SAFEZONE
+      printf("-- gc program %d thread waked up (%d/%d program threads synchronized)\n",
+              thread->id, vm.safezoneCounter, 1 + vm.threadsCounter);
+    #endif
+  }
+
+  vm.safezoneCounter--;
+  #ifdef DEBUG_LOG_GC_SAFEZONE
+    printf("-- gc program %d thread left safe zone (%d/%d program threads synchronized)\n", 
+            thread->id, vm.safezoneCounter, 1 + vm.threadsCounter);
+  #endif
+  pthread_mutex_unlock(&vm.GCMutex);
 }

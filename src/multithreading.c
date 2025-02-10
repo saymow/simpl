@@ -15,8 +15,9 @@ ActiveThread* spawnThread(Thread* program) {
   initProgram(workerThread);
   tableAddAll(&program->frame->namespace, &workerThread->global);
 
-  activeThread->id = vm.threadsCount++;
+  activeThread->id = vm.threadsIdCounter++;
   activeThread->program = workerThread;
+  workerThread->id = activeThread->id; 
 
   activeThread->next = vm.threads;
   vm.threads = activeThread;
@@ -40,7 +41,7 @@ ActiveThread* getThread(uint32_t threadId) {
   return thread;
 }
 
-void killThread(uint32_t threadId) {
+void killThread(Thread* program, uint32_t threadId) {
   // Lock memory allocation area
   pthread_mutex_lock(&vm.memoryAllocationMutex);
 
@@ -103,7 +104,9 @@ void lockSection(Thread* program, ObjString* lockId) {
         program, "Unable to unlock undefined %s lock", lockId->chars);
   }
 
+  enterGCSafezone(program);
   pthread_mutex_lock(&tmp->mutex);
+  leaveGCSafezone(program);
 }
 
 void unlockSection(Thread* program, ObjString* lockId) {

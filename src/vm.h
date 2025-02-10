@@ -78,6 +78,9 @@ typedef struct Switch {
 } Switch;
 
 typedef struct {
+  // Mainly used for debugging
+  int id;  
+
   // Program frames
   CallFrame frames[FRAMES_MAX];
   int framesCount;
@@ -172,8 +175,12 @@ typedef struct {
 
   // Process active threads linked list
   ActiveThread* threads;
-  // Counter used to assign threads ids and keep them trackable
-  uint32_t threadsCount;
+  // A precise counter of operating system thread running. 
+  // This is not a correct count of the vm.threads len, since the VM keeps the opened
+  // thread metadata allocated until a pthread_join is called.  
+  uint32_t threadsCounter;
+  // Counter used to assign threads unique ids and keep them trackable
+  uint32_t threadsIdCounter;
 
   // Process critical sections locks linked list
   ThreadLock* locks;
@@ -235,11 +242,16 @@ typedef struct {
   pthread_mutex_t memoryAllocationMutex;
   pthread_mutexattr_t memoryAllocationMutexAttr;
 
-  // Garbage Collector fields
-  // fix: when multithreading, the ongoing abstraction for compound allocation is not flawed.  
-  // todo: figure out a thread safe abstraction to lock memory allocation during compound allocation. 
-  // GCWhiteList is not thread safe, but a combination of GCWhiteList + wrapping the entire compound allocation
-  // with the memoryAllocationMutex is thread safe. Though it is pretty ugly and it has a lot of overhead to tweak the GC.  
+  // Stop-The-World Garbage Collector  
+  // 
+  // During garbage collection the VM spawns a collector thread that busy awaits
+  // for all threads to enter a safe zone. After that, it runs the garbabe collection
+  // and signals to sleeping threads to wake up.
+  //
+  // *safe zone: An area that the thread memory objects are correctly stored in the GC roots
+  // and the GC can safely runs.
+  // *GC roots: Mark-and-sweep algorithm relies on memory roots to crawl for all objects it 
+  // can mark. Objects marked during this phase are not collected.  
   //
   // Memory allocation is handled in three ways:
   //    1. Manual allocation, e.g, module resolution
@@ -250,6 +262,34 @@ typedef struct {
   //    by freing the object and its pointers, if the object has ownership of
   //    it.
   //
+  // There are two kinds of safe zones:
+  //
+  // - Standard safe zones: So far we have this safe zone only  during instruction changes 
+  // (vm IP changes) - we can safely say our roots are safe here.
+  //
+  // - Forced safe zones: During blocking io we MUST (to prevent deadlocks) enter a GC safe zone,
+  // even if the GC thread is not spawned (in case it spawns during the IO). After the io, 
+  // the program thread can either continue or can sleep awaiting for a possible GC run to finish.     
+  //
+  // Indicate whether a memory allocation triggered the GC
+  bool GCTriggered;
+  //
+  // Indicate whether a GC thread is spawned
+  bool GCThreadSpawned;
+  //
+  // Only one thread can manipulate the GC fields at a time.
+  // Program threads updates the stop-the-world safezone counter.
+  // Collector thread updates internal fields to handle garbage collection. 
+  pthread_mutex_t GCMutex; 
+  pthread_mutexattr_t GCMutexAttr;
+  //
+  // Program threads usually sleeps on this conditional variable while the
+  // GC running. Exceptions are when we leverage the fact the thread is blocked
+  // by IO operations to run the GC.
+  pthread_cond_t GCSafezoneCond;
+  //
+  // Number of threads in the safe zone.
+  uint32_t safezoneCounter;
   // All tracked objects that Gargage Collector has control over
   Obj* objects;
   //

@@ -33,9 +33,13 @@
     // All memory allocations trigger garbage collection.
     #define DEBUG_STRESS_GC
     
-    // Log all memory allocation and deallocation
-    // This is specially handful for triggering segmentation fault because of freed memory access. 
+    // Log all memory allocation, deallocation
+    // This is specially handful for triggering segmentation fault because of freed memory access.
     #define DEBUG_LOG_GC
+
+    // Log all safezone transitions
+    // This is specially handful for debugging deadlocks
+    #define DEBUG_LOG_GC_SAFEZONE
 #endif
 
 // Total values handled by 1 byte or uint8_t 

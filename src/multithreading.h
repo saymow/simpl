@@ -5,7 +5,7 @@
 
 ActiveThread* spawnThread(Thread* program);
 ActiveThread* getThread(uint32_t threadId);
-void killThread(uint32_t threadId);
+void killThread(Thread* program, uint32_t threadId);
 void initLock(Thread* program, ObjString* lockId);
 void lockSection(Thread* program, ObjString* lockId);
 void unlockSection(Thread* program, ObjString* lockId);

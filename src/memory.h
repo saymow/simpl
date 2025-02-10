@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "object.h"
+#include "vm.h"
 
 #define ARRAY_INITIAL_CAPACITY 8
 
@@ -24,10 +25,31 @@
 #define FREE_ARRAY(type, pointer, oldCount) \
   reallocate(pointer, sizeof(type) * oldCount, 0)
 
+// Shortcut for mem allocation
 void* reallocate(void* pointer, size_t oldSize, size_t newSize);
+
+// Free object
 void freeObjects();
+
+// Mark value using Mark-and-sweep
 void markValue(Value value);
+
+// Mark object using Mark-and-sweep
 void markObject(Obj* obj);
-void startGarbageCollector();
+
+// Trigger a GC run
+void triggerGarbageCollector();
+
+// GC thread entry point
+void* startGarbageCollector();
+
+// Run a standard GC safezone 
+void passGCSafezone(Thread *thread);
+
+// Enter forced GC safe zone 
+void enterGCSafezone(Thread *thread);
+
+// Leave forced GC safe zone
+void leaveGCSafezone(Thread *thread);
 
 #endif

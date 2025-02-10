@@ -809,6 +809,9 @@ static inline bool __nativeStaticErrorNew(void *thread, int argCount,
 
 void *runThread(void *ctx) {
   Thread *programThread = (Thread *)ctx;
+  pthread_mutex_lock(&vm.GCMutex);
+  vm.threadsCounter++;
+  pthread_mutex_unlock(&vm.GCMutex);
 
   InterpretResult result = run(programThread);
 
@@ -816,8 +819,14 @@ void *runThread(void *ctx) {
     Value *returnValue = ALLOCATE(Value, 1);
     *returnValue = peek(programThread, 0);
 
+    pthread_mutex_lock(&vm.GCMutex);
+    vm.threadsCounter--;
+    pthread_mutex_unlock(&vm.GCMutex);
     pthread_exit(returnValue);
   } else {
+    pthread_mutex_lock(&vm.GCMutex);
+    vm.threadsCounter--;
+    pthread_mutex_unlock(&vm.GCMutex);
     pthread_exit(NULL);
   }
 
@@ -855,16 +864,21 @@ static inline bool __nativeSystemThreadingJoin(void *currentThread,
   if (thread == NULL) {
     NATIVE_ERROR(currentThread, "Can't find thread.");
   }
+  
+  enterGCSafezone(currentThread);
   if (pthread_join(thread->pthreadId, &res) != 0) {
     NATIVE_ERROR(currentThread, "Can't join thread.");
   }
+  leaveGCSafezone(currentThread);  
+
   if ((void *)res == NULL) {
     NATIVE_ERROR(currentThread, "Joined thread errored.");
   }
 
+  killThread(currentThread, threadId);
+
   Value returnValue = *(Value *)res;
 
-  killThread(threadId);
   FREE(int *, res);
 
   NATIVE_RETURN(currentThread, returnValue);
