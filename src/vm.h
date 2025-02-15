@@ -175,9 +175,10 @@ typedef struct {
 
   // Process active threads linked list
   ActiveThread* threads;
-  // A precise counter of operating system thread running. 
-  // This is not a correct count of the vm.threads len, since the VM keeps the opened
-  // thread metadata allocated until a pthread_join is called.  
+  // A precise counter of operating system threads running.
+  // So, it starts as 1 - because of the main thread.  
+  // This is not a correct proxy of the vm.threads count, since the VM keeps the opened
+  // threads metadata allocated until a pthread_join is called.  
   uint32_t threadsCounter;
   // Counter used to assign threads unique ids and keep them trackable
   uint32_t threadsIdCounter;

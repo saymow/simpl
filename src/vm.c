@@ -53,7 +53,7 @@ void initVM() {
   vm.locks = NULL;
   vm.semaphores = NULL;
   vm.threadsIdCounter = 1;
-  vm.threadsCounter = 0;
+  vm.threadsCounter = 1;
   vm.GCTriggered = false;
   vm.GCThreadSpawned = false;
   pthread_mutexattr_init(&vm.GCMutexAttr);

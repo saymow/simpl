@@ -1,6 +1,8 @@
 #ifndef memory_h
 #define memory_h
 
+#include <stdio.h>
+
 #include "common.h"
 #include "object.h"
 #include "vm.h"
@@ -44,7 +46,37 @@ void triggerGarbageCollector();
 void* startGarbageCollector();
 
 // Run a standard GC safezone 
-void passGCSafezone(Thread *thread);
+void static inline passGCSafezone(Thread* thread) {
+  if (!vm.GCThreadSpawned) return;
+  
+  pthread_mutex_lock(&vm.GCMutex);
+
+  vm.safezoneCounter++;
+  #ifdef DEBUG_LOG_GC_SAFEZONE
+    printf("-- gc program %d thread entered safe zone (%d/%d program threads synchronized)\n",
+            thread->id, vm.safezoneCounter, vm.threadsCounter);
+  #endif
+
+  while (vm.GCThreadSpawned) {
+    #ifdef DEBUG_LOG_GC_SAFEZONE
+      printf("-- gc program %d thread is about to sleep (%d/%d program threads synchronized)\n",
+            thread->id, vm.safezoneCounter, vm.threadsCounter);
+    #endif
+    pthread_cond_wait(&vm.GCSafezoneCond, &vm.GCMutex);
+    #ifdef DEBUG_LOG_GC_SAFEZONE
+      printf("-- gc program %d thread waked up (%d/%d program threads synchronized)\n",
+            thread->id, vm.safezoneCounter, vm.threadsCounter);
+    #endif
+  }
+
+  vm.safezoneCounter--;
+  #ifdef DEBUG_LOG_GC_SAFEZONE
+    printf("-- gc program %d thread left safe zone (%d/%d program threads synchronized)\n",
+            thread->id, vm.safezoneCounter, vm.threadsCounter);
+  #endif
+
+  pthread_mutex_unlock(&vm.GCMutex);
+}
 
 // Enter forced GC safe zone 
 void enterGCSafezone(Thread *thread);
